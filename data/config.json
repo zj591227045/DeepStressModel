@@ -1,0 +1,43 @@
+{
+    "window": {
+        "title": "DeepStressModel",
+        "width": 1257,
+        "height": 898
+    },
+    "gpu_monitor": {
+        "update_interval": 1.0,
+        "history_size": 60,
+        "remote": {
+            "enabled": true,
+            "host": "10.255.0.75",
+            "username": "root",
+            "password": "P@$$2023?!"
+        }
+    },
+    "test": {
+        "default_concurrency": 1,
+        "max_concurrency": 10,
+        "timeout": 30,
+        "retry_count": 3
+    },
+    "models": {
+        "qwen2.5:14b": {
+            "name": "qwen2.5:14b",
+            "api_url": "http://10.255.0.75:11434/v1/chat/completions",
+            "api_key": "nonerrr",
+            "model": "qwen2.5:14b",
+            "max_tokens": 2048,
+            "temperature": 0.7,
+            "top_p": 0.9
+        },
+        "qwen2.5:latest": {
+            "name": "qwen2.5:latest",
+            "api_url": "http://10.255.0.75:11434/v1/chat/completions",
+            "api_key": "noneeee",
+            "model": "qwen2.5:latest",
+            "max_tokens": 2048,
+            "temperature": 0.7,
+            "top_p": 0.9
+        }
+    }
+}

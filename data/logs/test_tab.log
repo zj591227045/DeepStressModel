@@ -471,3 +471,762 @@
 2025-02-26 07:27:46 [INFO] test_tab: 创建数据集列表项: 文本生成
 2025-02-26 07:27:46 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
 2025-02-26 07:27:46 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 07:52:54 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 07:52:54 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 07:52:54 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 07:52:54 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 07:52:54 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 07:52:54 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 07:58:25 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 07:58:25 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 07:58:25 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 07:58:25 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 07:58:25 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 07:58:25 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 07:58:27 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 07:58:29 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 07:58:31 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 07:58:33 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 07:58:35 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 07:58:37 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 07:58:39 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 07:58:41 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 07:58:43 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 07:58:45 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 07:58:47 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 07:58:49 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 07:58:51 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 07:58:53 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:04:43 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 08:04:43 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 08:04:43 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 08:04:43 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 08:04:43 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 08:04:43 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 08:07:39 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 08:07:39 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 08:07:39 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 08:07:39 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 08:07:39 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 08:07:39 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 08:10:12 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 08:10:12 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 08:10:12 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 08:10:12 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 08:10:12 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 08:10:12 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 08:15:27 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:15:27 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 08:15:27 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 08:15:27 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 08:15:27 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 08:15:27 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 08:15:27 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 08:15:29 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:15:32 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:15:36 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:15:40 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:15:42 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:15:46 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:15:48 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:15:52 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:15:54 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:15:58 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:16:00 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:16:02 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:16:04 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:16:08 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:16:12 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:16:14 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:16:16 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:16:20 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:16:22 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:16:26 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:16:30 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:16:32 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:16:36 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:16:40 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:16:44 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:16:48 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:16:52 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:16:54 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:16:58 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:02 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:04 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:06 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:08 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:12 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:14 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:16 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:20 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:24 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:26 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:30 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:32 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:34 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:36 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:40 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:42 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:46 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:50 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:54 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:17:58 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:18:00 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:18:04 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:18:06 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:18:08 [ERROR] test_tab: 更新GPU统计信息失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:18:22 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:18:22 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 08:18:22 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 08:18:22 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 08:18:22 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 08:18:22 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 08:18:22 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 08:18:26 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:18:28 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:18:32 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:18:36 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:18:38 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:18:42 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:18:46 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:18:48 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:18:50 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:18:54 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:18:56 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:00 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:04 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:08 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:10 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:17 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:21 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:23 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:27 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:29 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:33 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:35 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:39 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:41 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:43 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:45 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:49 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:51 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:53 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:55 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:19:59 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:20:03 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:20:07 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:20:11 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:20:13 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:20:17 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:20:21 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:20:25 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:20:27 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:20:31 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:20:33 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:20:37 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:20:39 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:20:43 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:20:47 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:20:51 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:20:55 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:20:59 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:01 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:05 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:07 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:11 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:13 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:15 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:19 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:21 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:25 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:29 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:31 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:33 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:35 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:39 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:43 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:45 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:49 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:53 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:55 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:21:57 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:01 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:05 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:09 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:11 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:13 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:15 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:19 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:21 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:23 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:27 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:29 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:31 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:35 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:39 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:43 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:47 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:49 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:51 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:55 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:22:59 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:23:03 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:23:07 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:23:09 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:23:13 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:23:15 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:23:19 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:23:21 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:23:23 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:23:27 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:23:31 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:23:35 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:23:39 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:23:41 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:23:45 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:23:47 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:23:51 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:23:53 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:23:57 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:23:59 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:24:03 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:24:07 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:24:11 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:24:15 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:24:19 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:24:23 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:24:25 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:24:27 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:24:29 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:24:33 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:24:35 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:24:39 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:24:43 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:24:47 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:24:49 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:24:53 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:24:55 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:24:57 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:25:01 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:25:03 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:25:07 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:25:09 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:25:11 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:25:15 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:25:19 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:25:21 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:25:25 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:25:27 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:25:31 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:25:35 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:25:44 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:25:44 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 08:25:44 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 08:25:44 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 08:25:44 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 08:25:44 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 08:25:44 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 08:25:46 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:25:50 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:25:52 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:25:56 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:26:00 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:28:27 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:28:27 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 08:28:27 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 08:28:27 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 08:28:27 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 08:28:27 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 08:28:27 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 08:28:29 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:28:31 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:28:34 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:28:36 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:28:40 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:28:42 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:28:46 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:28:50 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:28:52 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:28:56 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:28:58 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:29:02 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:29:06 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:29:10 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:29:14 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:29:18 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:29:22 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:29:24 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:29:28 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:29:30 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:29:34 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:29:38 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:29:42 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:29:44 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:29:48 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:29:50 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:31:56 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:31:56 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 08:31:56 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 08:31:56 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 08:31:56 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 08:31:56 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 08:31:56 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 08:32:00 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:32:02 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:32:06 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:32:10 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:32:12 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:32:16 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:32:20 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:32:22 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:32:24 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:32:28 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:32:30 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:32:34 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:32:36 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:32:40 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:32:42 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:32:46 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:32:50 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:32:58 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:32:58 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 08:32:58 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 08:32:58 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 08:32:58 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 08:32:58 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 08:32:58 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 08:33:00 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:33:02 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:33:06 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:33:08 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:33:12 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:33:14 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:33:18 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:33:20 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:33:24 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:33:28 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:33:32 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:33:36 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:33:40 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:33:42 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:33:44 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:33:48 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:33:52 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:33:56 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:33:58 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:02 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:04 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:06 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:10 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:14 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:16 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:20 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:22 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:26 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:30 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:32 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:36 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:38 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:40 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:44 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:46 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:50 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:52 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:54 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:34:58 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:35:02 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:35:04 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:35:08 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:35:10 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:35:12 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:35:14 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:35:18 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:35:20 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:35:24 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:35:28 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:35:32 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:35:34 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:35:38 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:35:42 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:35:46 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:35:48 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:35:52 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:35:56 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:36:00 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:36:02 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:36:04 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:36:08 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:36:10 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:36:14 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:36:18 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:36:22 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:36:24 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:36:28 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:36:30 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:36:32 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:36:36 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:36:38 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:36:42 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:36:46 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:36:48 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:36:50 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:00 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:00 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 08:37:00 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 08:37:00 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 08:37:00 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 08:37:00 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 08:37:00 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 08:37:02 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:05 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:08 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:11 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:15 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:17 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:19 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:23 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:25 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:29 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:31 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:35 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:39 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:43 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:47 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:49 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:51 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:55 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:37:57 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:01 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:05 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:07 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:09 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:11 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:15 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:19 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:23 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:25 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:27 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:31 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:35 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:39 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:41 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:45 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:47 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:51 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:53 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:57 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:38:59 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:01 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:05 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:07 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:11 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:13 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:17 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:19 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:23 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:25 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:27 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:29 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:33 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:37 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:39 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:43 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:47 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:49 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:51 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:55 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:57 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:39:59 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:03 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:05 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:09 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:13 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:15 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:17 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:19 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:23 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:25 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:29 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:33 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:35 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:39 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:41 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:43 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:47 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:49 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:53 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:57 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:40:59 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:01 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:05 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:07 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:11 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:15 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:17 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:19 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:21 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:23 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:27 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:29 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:31 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:35 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:39 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:43 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:45 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:49 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:53 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:55 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:41:57 [DEBUG] test_tab: GPU监控更新失败: cannot import name 'gpu_monitor' from 'src.monitor.gpu_monitor' (/Users/jackson/Documents/Code/DeepStressModel/src/monitor/gpu_monitor.py)
+2025-02-26 08:44:59 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 08:44:59 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 08:45:00 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 08:45:00 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 08:45:00 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 08:45:00 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 08:45:12 [INFO] test_tab: 数据集 文本生成 权重改变: 6
+2025-02-26 08:49:29 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 08:49:29 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 08:49:29 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 08:49:29 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 08:49:29 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 08:49:29 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 08:54:27 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 08:54:27 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 08:54:27 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 08:54:27 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 08:54:27 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 08:54:27 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 08:57:09 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 08:57:09 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 08:57:09 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 08:57:09 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 08:57:09 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 08:57:09 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 08:59:26 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 08:59:26 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 08:59:26 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 08:59:26 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 08:59:26 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 08:59:26 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 08:59:27 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 08:59:27 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 08:59:30 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 08:59:33 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 08:59:36 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 08:59:40 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 08:59:42 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 08:59:45 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 08:59:50 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 08:59:54 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 08:59:57 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 08:59:57 [INFO] test_tab: 开始测试...
+2025-02-26 08:59:57 [INFO] test_tab: 选中的模型配置: {'name': 'qwen2.5:14b', 'api_url': 'http://10.255.0.75:11434/v1/chat/completions', 'api_key': 'nonerrr', 'model': 'qwen2.5:14b', 'max_tokens': 2048, 'temperature': 0.7, 'top_p': 0.9}
+2025-02-26 08:59:57 [INFO] test_tab: 开始获取选中的数据集...
+2025-02-26 08:59:57 [INFO] test_tab: 获取数据集 简单问答 的权重: 1
+2025-02-26 08:59:57 [INFO] test_tab: 数据集项 0: weight = 1
+2025-02-26 08:59:57 [INFO] test_tab: 添加数据集: 简单问答, prompts数量: 20, 并发数: 1
+2025-02-26 08:59:57 [INFO] test_tab: 获取数据集 文本生成 的权重: 1
+2025-02-26 08:59:57 [INFO] test_tab: 数据集项 1: weight = 1
+2025-02-26 08:59:57 [INFO] test_tab: 添加数据集: 文本生成, prompts数量: 20, 并发数: 1
+2025-02-26 08:59:57 [INFO] test_tab: 数据集项 2 未被选中，跳过
+2025-02-26 08:59:57 [INFO] test_tab: 最终选中的数据集: {'简单问答': (['1+1等于几？请直接回答数字。', '2+2等于几？请直接回答数字。', '3+3等于几？请直接回答数字。', '4+4等于几？请直接回答数字。', '5+5等于几？请直接回答数字。', '6+6等于几？请直接回答数字。', '7+7等于几？请直接回答数字。', '8+8等于几？请直接回答数字。', '9+9等于几？请直接回答数字。', '10+10等于几？请直接回答数字。', '20-5等于几？请直接回答数字。', '30-10等于几？请直接回答数字。', '15+25等于几？请直接回答数字。', '50-20等于几？请直接回答数字。', '100/2等于几？请直接回答数字。', '8×9等于几？请直接回答数字。', '7×8等于几？请直接回答数字。', '60÷3等于几？请直接回答数字。', '45+55等于几？请直接回答数字。', '200-150等于几？请直接回答数字。'], 1), '文本生成': (['写一个100字的春天的描写。', '写一个100字的夏天的描写。', '写一个100字的秋天的描写。', '写一个100字的冬天的描写。', '写一个100字的雨天的描写。', '写一个100字的雪景描写。', '写一个100字的日出描写。', '写一个100字的日落描写。', '写一个100字的海边描写。', '写一个100字的山景描写。', '写一个100字的校园生活场景。', '写一个100字的城市夜景描写。', '写一个100字的乡村田园风光描写。', '写一个100字的森林景色描写。', '写一个100字的瀑布景色描写。', '写一个100字的集市场景描写。', '写一个100字的公园游玩场景。', '写一个100字的节日庆典场景。', '写一个100字的清晨街道描写。', '写一个100字的黄昏市场描写。'], 1)}
+2025-02-26 08:59:57 [INFO] test_tab: 选中的数据集任务: {'简单问答': (['1+1等于几？请直接回答数字。', '2+2等于几？请直接回答数字。', '3+3等于几？请直接回答数字。', '4+4等于几？请直接回答数字。', '5+5等于几？请直接回答数字。', '6+6等于几？请直接回答数字。', '7+7等于几？请直接回答数字。', '8+8等于几？请直接回答数字。', '9+9等于几？请直接回答数字。', '10+10等于几？请直接回答数字。', '20-5等于几？请直接回答数字。', '30-10等于几？请直接回答数字。', '15+25等于几？请直接回答数字。', '50-20等于几？请直接回答数字。', '100/2等于几？请直接回答数字。', '8×9等于几？请直接回答数字。', '7×8等于几？请直接回答数字。', '60÷3等于几？请直接回答数字。', '45+55等于几？请直接回答数字。', '200-150等于几？请直接回答数字。'], 1), '文本生成': (['写一个100字的春天的描写。', '写一个100字的夏天的描写。', '写一个100字的秋天的描写。', '写一个100字的冬天的描写。', '写一个100字的雨天的描写。', '写一个100字的雪景描写。', '写一个100字的日出描写。', '写一个100字的日落描写。', '写一个100字的海边描写。', '写一个100字的山景描写。', '写一个100字的校园生活场景。', '写一个100字的城市夜景描写。', '写一个100字的乡村田园风光描写。', '写一个100字的森林景色描写。', '写一个100字的瀑布景色描写。', '写一个100字的集市场景描写。', '写一个100字的公园游玩场景。', '写一个100字的节日庆典场景。', '写一个100字的清晨街道描写。', '写一个100字的黄昏市场描写。'], 1)}
+2025-02-26 08:59:57 [INFO] test_tab: 设置的总并发数: 22
+2025-02-26 08:59:57 [INFO] test_tab: 总权重: 2
+2025-02-26 08:59:57 [INFO] test_tab: 数据集 简单问答 分配的并发数: 11
+2025-02-26 08:59:57 [INFO] test_tab: 创建测试任务: dataset=简单问答, prompts=20, weight=1, concurrency=11
+2025-02-26 08:59:57 [INFO] test_tab: 数据集 文本生成 分配的并发数: 11
+2025-02-26 08:59:57 [INFO] test_tab: 创建测试任务: dataset=文本生成, prompts=20, weight=1, concurrency=11
+2025-02-26 08:59:57 [INFO] test_tab: 测试线程已创建
+2025-02-26 08:59:57 [INFO] test_tab: 测试线程已启动
+2025-02-26 08:59:57 [INFO] test_tab: 测试线程开始运行
+2025-02-26 08:59:57 [INFO] test_tab: 开始执行测试任务...
+2025-02-26 08:59:59 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 09:00:02 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 09:00:06 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 09:00:09 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 09:00:11 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 09:00:14 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 09:00:15 [INFO] test_tab: 测试任务执行完成
+2025-02-26 09:00:15 [INFO] test_tab: 正在关闭事件循环...
+2025-02-26 09:00:15 [INFO] test_tab: 测试线程结束运行
+2025-02-26 09:00:15 [INFO] test_tab: 测试完成回调被触发
+2025-02-26 09:00:15 [INFO] test_tab: 正在清理测试线程...
+2025-02-26 09:00:15 [INFO] test_tab: 测试线程已正常退出
+2025-02-26 09:00:15 [INFO] test_tab: 测试完成处理结束
+2025-02-26 09:00:17 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 09:00:20 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 09:00:23 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 09:00:27 [INFO] test_tab: 监控线程收到服务器配置: 默认服务器
+2025-02-26 09:00:29 [INFO] test_tab: 监控线程收到服务器配置: 默认服务器
+2025-02-26 09:00:32 [INFO] test_tab: 监控线程收到服务器配置: 默认服务器
+2025-02-26 09:00:35 [INFO] test_tab: 监控线程收到服务器配置: 默认服务器
+2025-02-26 09:04:54 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 09:04:54 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 09:04:54 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 09:04:54 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 09:04:54 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 09:04:54 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 09:04:54 [WARNING] test_tab: 未找到模型配置
+2025-02-26 09:04:57 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 09:05:01 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 09:05:05 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 09:05:08 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 09:05:12 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 09:05:16 [INFO] test_tab: 监控线程收到服务器配置: 10.255.0.75
+2025-02-26 09:07:23 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 09:07:23 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 09:07:23 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 09:07:23 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 09:07:23 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 09:07:23 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 09:07:23 [WARNING] test_tab: 未找到模型配置
+2025-02-26 09:07:26 [INFO] test_tab: 监控线程收到新的服务器配置: 10.255.0.75
+2025-02-26 09:17:42 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 09:17:42 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 09:17:42 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 09:17:42 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 09:17:42 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 09:17:42 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 09:17:42 [WARNING] test_tab: 未找到模型配置
+2025-02-26 09:17:51 [INFO] test_tab: 监控线程收到新的服务器配置: 10.255.0.75
+2025-02-26 09:25:32 [INFO] test_tab: 数据集 简单问答 初始化完成，默认权重: 1
+2025-02-26 09:25:32 [INFO] test_tab: 创建数据集列表项: 简单问答
+2025-02-26 09:25:32 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 09:25:32 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 09:25:32 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 09:25:32 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 09:25:32 [WARNING] test_tab: 未找到模型配置
+2025-02-26 09:25:36 [INFO] test_tab: 监控线程收到新的服务器配置: 10.255.0.75
+2025-02-26 09:29:42 [INFO] test_tab: 数据集 基础问答 初始化完成，默认权重: 1
+2025-02-26 09:29:42 [INFO] test_tab: 创建数据集列表项: 基础问答
+2025-02-26 09:29:42 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 09:29:42 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 09:29:42 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 09:29:42 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 09:29:42 [WARNING] test_tab: 未找到模型配置
+2025-02-26 09:29:45 [INFO] test_tab: 监控线程收到新的服务器配置: 10.255.0.75
+2025-02-26 09:33:16 [INFO] test_tab: 数据集 基础问答 初始化完成，默认权重: 1
+2025-02-26 09:33:16 [INFO] test_tab: 创建数据集列表项: 基础问答
+2025-02-26 09:33:16 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 09:33:16 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 09:33:16 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 09:33:16 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 09:33:16 [WARNING] test_tab: 未找到模型配置
+2025-02-26 09:33:23 [INFO] test_tab: 监控线程收到新的服务器配置: 10.255.0.75
+2025-02-26 09:41:06 [INFO] test_tab: 数据集 基础问答 初始化完成，默认权重: 1
+2025-02-26 09:41:06 [INFO] test_tab: 创建数据集列表项: 基础问答
+2025-02-26 09:41:06 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 09:41:06 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 09:41:06 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 09:41:06 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 09:41:06 [WARNING] test_tab: 未找到模型配置
+2025-02-26 09:41:09 [INFO] test_tab: 监控线程收到新的服务器配置: 10.255.0.75
+2025-02-26 09:45:00 [INFO] test_tab: 数据集 基础问答 初始化完成，默认权重: 1
+2025-02-26 09:45:00 [INFO] test_tab: 创建数据集列表项: 基础问答
+2025-02-26 09:45:00 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 09:45:00 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 09:45:00 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 09:45:00 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 09:45:00 [WARNING] test_tab: 未找到模型配置
+2025-02-26 09:50:53 [INFO] test_tab: 选择GPU服务器: 10.255.0.75
+2025-02-26 09:50:53 [INFO] test_tab: 监控线程收到新的服务器配置: 10.255.0.75
+2025-02-26 09:50:53 [INFO] test_tab: 开始监控GPU服务器: 10.255.0.75
+2025-02-26 09:50:53 [INFO] test_tab: 监控线程收到新的服务器配置: 10.255.0.75
+2025-02-26 09:50:53 [INFO] test_tab: 开始监控GPU服务器: 10.255.0.75
+2025-02-26 09:50:53 [INFO] test_tab: 数据集 基础问答 初始化完成，默认权重: 1
+2025-02-26 09:50:53 [INFO] test_tab: 创建数据集列表项: 基础问答
+2025-02-26 09:50:53 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 09:50:53 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 09:50:53 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 09:50:53 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 09:50:54 [INFO] test_tab: 监控线程收到新的服务器配置: 10.255.0.75
+2025-02-26 09:50:54 [INFO] test_tab: 开始监控GPU服务器: 10.255.0.75
+2025-02-26 09:50:54 [WARNING] test_tab: 未找到模型配置
+2025-02-26 09:55:00 [INFO] test_tab: 选择GPU服务器: 10.255.0.75
+2025-02-26 09:55:03 [INFO] test_tab: 开始监控GPU服务器: 10.255.0.75
+2025-02-26 09:55:03 [ERROR] test_tab: 获取GPU状态失败: 'GPUMonitorManager' object has no attribute 'get_gpu_stats'
+2025-02-26 09:55:08 [INFO] test_tab: 开始监控GPU服务器: 10.255.0.75
+2025-02-26 09:55:08 [ERROR] test_tab: 获取GPU状态失败: 'GPUMonitorManager' object has no attribute 'get_gpu_stats'
+2025-02-26 09:55:08 [INFO] test_tab: 数据集 基础问答 初始化完成，默认权重: 1
+2025-02-26 09:55:08 [INFO] test_tab: 创建数据集列表项: 基础问答
+2025-02-26 09:55:08 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 09:55:08 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 09:55:08 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 09:55:08 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 09:55:13 [INFO] test_tab: 开始监控GPU服务器: 10.255.0.75
+2025-02-26 09:55:13 [ERROR] test_tab: 获取GPU状态失败: 'GPUMonitorManager' object has no attribute 'get_gpu_stats'
+2025-02-26 09:55:13 [INFO] test_tab: 已加载 1 个模型配置
+2025-02-26 09:55:15 [ERROR] test_tab: 获取GPU状态失败: 'GPUMonitorManager' object has no attribute 'get_gpu_stats'
+2025-02-26 09:55:17 [ERROR] test_tab: 获取GPU状态失败: 'GPUMonitorManager' object has no attribute 'get_gpu_stats'
+2025-02-26 09:55:19 [ERROR] test_tab: 获取GPU状态失败: 'GPUMonitorManager' object has no attribute 'get_gpu_stats'
+2025-02-26 09:55:21 [ERROR] test_tab: 获取GPU状态失败: 'GPUMonitorManager' object has no attribute 'get_gpu_stats'
+2025-02-26 09:55:23 [ERROR] test_tab: 获取GPU状态失败: 'GPUMonitorManager' object has no attribute 'get_gpu_stats'
+2025-02-26 09:55:23 [INFO] test_tab: 选择GPU服务器: 10.255.0.75
+2025-02-26 09:55:27 [INFO] test_tab: 开始监控GPU服务器: 10.255.0.75
+2025-02-26 09:55:27 [ERROR] test_tab: 获取GPU状态失败: 'GPUMonitorManager' object has no attribute 'get_gpu_stats'
+2025-02-26 09:55:32 [INFO] test_tab: 开始监控GPU服务器: 10.255.0.75
+2025-02-26 09:55:32 [ERROR] test_tab: 获取GPU状态失败: 'GPUMonitorManager' object has no attribute 'get_gpu_stats'
+2025-02-26 09:58:35 [INFO] test_tab: 监控线程收到新的服务器配置: 10.255.0.75
+2025-02-26 09:58:35 [INFO] test_tab: 已切换到服务器: 10.255.0.75
+2025-02-26 09:58:40 [INFO] test_tab: 服务器列表已刷新
+2025-02-26 09:58:40 [INFO] test_tab: 数据集 基础问答 初始化完成，默认权重: 1
+2025-02-26 09:58:40 [INFO] test_tab: 创建数据集列表项: 基础问答
+2025-02-26 09:58:40 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 09:58:40 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 09:58:40 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 09:58:40 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 10:10:09 [INFO] test_tab: 监控线程收到新的服务器配置: 10.255.0.75
+2025-02-26 10:10:09 [INFO] test_tab: 已更新GPU监控配置: 10.255.0.75
+2025-02-26 10:10:09 [ERROR] test_tab: 切换服务器失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:10:12 [INFO] test_tab: 已更新GPU监控配置: 10.255.0.75
+2025-02-26 10:10:12 [INFO] test_tab: 已刷新GPU服务器列表
+2025-02-26 10:10:12 [INFO] test_tab: 已选择模型: qwen2.5:7b
+2025-02-26 10:13:28 [INFO] test_tab: 监控线程收到新的服务器配置: 10.255.0.75
+2025-02-26 10:13:28 [INFO] test_tab: 已更新GPU监控配置: 10.255.0.75
+2025-02-26 10:13:28 [ERROR] test_tab: 切换服务器失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:13:32 [INFO] test_tab: 已更新GPU监控配置: 10.255.0.75
+2025-02-26 10:13:32 [INFO] test_tab: 已刷新GPU服务器列表
+2025-02-26 10:13:32 [INFO] test_tab: 已选择模型: qwen2.5:7b
+2025-02-26 10:15:53 [INFO] test_tab: 监控线程收到新的服务器配置: 10.255.0.75
+2025-02-26 10:15:53 [INFO] test_tab: 已更新GPU监控配置: 10.255.0.75
+2025-02-26 10:15:53 [INFO] test_tab: 已切换到服务器: 10.255.0.75
+2025-02-26 10:15:56 [INFO] test_tab: 已更新GPU监控配置: 10.255.0.75
+2025-02-26 10:15:56 [INFO] test_tab: 已刷新GPU服务器列表
+2025-02-26 10:15:56 [INFO] test_tab: 已选择模型: qwen2.5:7b
+2025-02-26 10:15:56 [INFO] test_tab: 已刷新模型列表
+2025-02-26 10:15:56 [INFO] test_tab: 数据集 基础问答 初始化完成，默认权重: 1
+2025-02-26 10:15:56 [INFO] test_tab: 创建数据集列表项: 基础问答
+2025-02-26 10:15:56 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 10:15:56 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 10:15:56 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 10:15:56 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 10:15:56 [INFO] test_tab: GPU监控线程已启动
+2025-02-26 10:15:59 [INFO] test_tab: 已更新GPU监控配置: 10.255.0.75
+2025-02-26 10:15:59 [ERROR] test_tab: 更新UI失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:16:00 [ERROR] test_tab: 更新UI失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:16:03 [ERROR] test_tab: 更新UI失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:16:06 [ERROR] test_tab: 更新UI失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:16:08 [ERROR] test_tab: 更新UI失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:16:13 [ERROR] test_tab: 更新UI失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:16:16 [ERROR] test_tab: 更新UI失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:16:19 [ERROR] test_tab: 更新UI失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:16:21 [ERROR] test_tab: 更新UI失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:16:24 [ERROR] test_tab: 更新UI失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:16:27 [ERROR] test_tab: 更新UI失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:16:29 [ERROR] test_tab: 更新UI失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:16:32 [ERROR] test_tab: 更新UI失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:16:35 [ERROR] test_tab: 更新UI失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:16:38 [ERROR] test_tab: 更新UI失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:16:40 [ERROR] test_tab: 更新UI失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:16:44 [ERROR] test_tab: 更新UI失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:16:47 [ERROR] test_tab: 更新UI失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:16:51 [ERROR] test_tab: 更新UI失败: GPUMonitorWidget.show_monitor_ui() missing 1 required positional argument: 'show'
+2025-02-26 10:17:01 [INFO] test_tab: 数据集 基础问答 初始化完成，默认权重: 1
+2025-02-26 10:17:01 [INFO] test_tab: 创建数据集列表项: 基础问答
+2025-02-26 10:17:02 [INFO] test_tab: 数据集 代码生成 初始化完成，默认权重: 1
+2025-02-26 10:17:02 [INFO] test_tab: 创建数据集列表项: 代码生成
+2025-02-26 10:17:02 [INFO] test_tab: 数据集 文本生成 初始化完成，默认权重: 1
+2025-02-26 10:17:02 [INFO] test_tab: 创建数据集列表项: 文本生成
+2025-02-26 10:17:02 [WARNING] test_tab: 未找到模型配置
+2025-02-26 10:17:06 [INFO] test_tab: 监控线程收到新的服务器配置: 10.255.0.75

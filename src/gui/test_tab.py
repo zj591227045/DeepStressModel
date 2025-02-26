@@ -2,19 +2,21 @@
 测试标签页模块
 """
 import asyncio
+import time
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGroupBox,
     QLabel, QComboBox, QSpinBox, QPushButton,
     QProgressBar, QTextEdit, QListWidget, QAbstractItemView,
-    QListWidgetItem, QSlider, QMessageBox, QGridLayout, QSizePolicy
+    QListWidgetItem, QSlider, QMessageBox, QGridLayout, QSizePolicy, QFormLayout
 )
 from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal
 from src.utils.config import config
 from src.utils.logger import setup_logger
-from src.monitor.gpu_monitor import gpu_manager
+from src.monitor.gpu_monitor import gpu_monitor
 from src.engine.test_manager import TestManager, TestTask, TestProgress
 from src.gui.results_tab import ResultsTab
 from src.data.test_datasets import DATASETS
+from src.data.db_manager import db_manager
 
 logger = setup_logger("test_tab")
 
@@ -69,164 +71,351 @@ class DatasetListItem(QWidget):
         logger.info(f"获取数据集 {self.dataset_name} 的权重: {weight}")
         return weight
 
+class MonitorThread(QThread):
+    """GPU监控线程"""
+    stats_updated = pyqtSignal(object)  # 数据更新信号
+    server_config_needed = pyqtSignal()  # 请求服务器配置信号
+    
+    def __init__(self, update_interval=0.5):
+        super().__init__()
+        self.update_interval = update_interval
+        self.running = False
+        self._last_stats = None
+        self._active_server = None
+        self._initialized = False  # 添加初始化标志
+    
+    def set_active_server(self, server_config):
+        """从主线程设置活动服务器配置"""
+        if server_config != self._active_server:  # 只在配置变化时更新
+            self._active_server = server_config
+            self._initialized = False  # 重置初始化标志
+            if server_config:
+                logger.info(f"监控线程收到新的服务器配置: {server_config['name']}")
+            else:
+                logger.info("监控线程收到空服务器配置")
+    
+    def run(self):
+        """运行监控循环"""
+        self.running = True
+        while self.running:
+            try:
+                if not self._initialized:  # 只在未初始化时请求配置
+                    self.server_config_needed.emit()
+                    self._initialized = True
+                
+                if self._active_server:
+                    stats = gpu_monitor.get_stats()
+                    if stats and stats != self._last_stats:
+                        self._last_stats = stats
+                        self.stats_updated.emit(stats)
+                else:
+                    self.stats_updated.emit(None)
+            except Exception as e:
+                logger.debug(f"监控数据获取失败: {e}")
+                self.stats_updated.emit(None)
+            
+            time.sleep(self.update_interval)
+    
+    def stop(self):
+        """停止监控"""
+        self.running = False
+
 class GPUMonitorWidget(QGroupBox):
     """GPU监控组件"""
     def __init__(self):
-        super().__init__("系统监控")
+        super().__init__("GPU监控")
+        self.monitor_thread = MonitorThread(update_interval=0.5)
+        self.monitor_thread.stats_updated.connect(self._on_stats_updated)
+        self.monitor_thread.server_config_needed.connect(self._update_server_config)
+        self._monitor_initialized = False  # 添加初始化标志
         self.init_ui()
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_stats)
-        self.error_count = 0  # 添加错误计数器
-        self.max_error_logs = 5  # 最大错误日志次数
+    
+    def _update_server_config(self):
+        """响应监控线程的服务器配置请求"""
+        try:
+            active_server = db_manager.get_active_gpu_server()
+            if active_server and not self._monitor_initialized:  # 只在未初始化时初始化
+                gpu_monitor.init_monitor()
+                self._monitor_initialized = True
+            self.monitor_thread.set_active_server(active_server)
+        except Exception as e:
+            logger.error(f"获取活动服务器配置失败: {e}")
+            self.monitor_thread.set_active_server(None)
     
     def init_ui(self):
         """初始化UI"""
         layout = QVBoxLayout()
         
-        # 硬件信息
-        hw_group = QGroupBox("硬件信息")
-        hw_layout = QGridLayout()
+        # 服务器选择区域
+        server_layout = QHBoxLayout()
+        self.server_selector = QComboBox()
+        self.server_selector.currentIndexChanged.connect(self.on_server_changed)
+        self.refresh_button = QPushButton("刷新")
+        self.refresh_button.clicked.connect(self.refresh_servers)
+        self.add_button = QPushButton("添加")
+        self.add_button.clicked.connect(self.add_server)
         
-        # CPU信息
-        hw_layout.addWidget(QLabel("CPU型号:"), 0, 0)
-        self.cpu_info_label = QLabel("获取中...")
-        hw_layout.addWidget(self.cpu_info_label, 0, 1, 1, 3)
+        server_layout.addWidget(QLabel("选择服务器:"))
+        server_layout.addWidget(self.server_selector)
+        server_layout.addWidget(self.refresh_button)
+        server_layout.addWidget(self.add_button)
+        layout.addLayout(server_layout)
         
-        # GPU信息
-        hw_layout.addWidget(QLabel("GPU型号:"), 1, 0)
-        self.gpu_info_label = QLabel("获取中...")
-        hw_layout.addWidget(self.gpu_info_label, 1, 1, 1, 2)
+        # 提示标签
+        self.hint_label = QLabel()
+        self.hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.hint_label.setStyleSheet("color: #666666;")
+        layout.addWidget(self.hint_label)
         
-        hw_layout.addWidget(QLabel("GPU数量:"), 1, 3)
-        self.gpu_count_label = QLabel("0")
-        hw_layout.addWidget(self.gpu_count_label, 1, 4)
+        # 监控信息显示区域（分为左右两栏）
+        info_layout = QHBoxLayout()
         
-        # 内存信息
-        hw_layout.addWidget(QLabel("系统内存:"), 2, 0)
-        self.total_memory_label = QLabel("0 GB")
-        hw_layout.addWidget(self.total_memory_label, 2, 1)
+        # 左侧 GPU 信息
+        gpu_group = QGroupBox("GPU信息")
+        gpu_layout = QFormLayout()
         
-        hw_group.setLayout(hw_layout)
-        layout.addWidget(hw_group)
+        # GPU型号信息
+        self.gpu_info_label = QLabel("未连接")
+        gpu_layout.addRow("GPU型号:", self.gpu_info_label)
         
-        # GPU信息
-        gpu_group = QGroupBox("GPU状态")
-        gpu_layout = QGridLayout()
-        
-        # GPU使用率
-        gpu_layout.addWidget(QLabel("GPU使用率:"), 0, 0)
+        # GPU利用率
         self.gpu_util_label = QLabel("0%")
-        gpu_layout.addWidget(self.gpu_util_label, 0, 1)
+        gpu_layout.addRow("GPU利用率:", self.gpu_util_label)
         
         # 显存使用率
-        gpu_layout.addWidget(QLabel("显存使用率:"), 0, 2)
         self.memory_util_label = QLabel("0%")
-        gpu_layout.addWidget(self.memory_util_label, 0, 3)
+        gpu_layout.addRow("显存使用率:", self.memory_util_label)
         
-        # GPU温度
-        gpu_layout.addWidget(QLabel("GPU温度:"), 1, 0)
+        # 温度
         self.temp_label = QLabel("0°C")
-        gpu_layout.addWidget(self.temp_label, 1, 1)
-        
-        # 风扇转速
-        gpu_layout.addWidget(QLabel("风扇转速:"), 1, 2)
-        self.fan_speed_label = QLabel("0%")
-        gpu_layout.addWidget(self.fan_speed_label, 1, 3)
+        gpu_layout.addRow("温度:", self.temp_label)
         
         # 功率使用
-        gpu_layout.addWidget(QLabel("功率使用:"), 2, 0)
-        self.power_label = QLabel("0W / 0W")
-        gpu_layout.addWidget(self.power_label, 2, 1)
+        self.power_label = QLabel("0W")
+        gpu_layout.addRow("功率使用:", self.power_label)
         
         gpu_group.setLayout(gpu_layout)
-        layout.addWidget(gpu_group)
+        info_layout.addWidget(gpu_group)
         
-        # 系统信息
-        sys_group = QGroupBox("系统状态")
-        sys_layout = QGridLayout()
+        # 右侧系统信息
+        system_group = QGroupBox("系统信息")
+        system_layout = QFormLayout()
         
         # CPU使用率
-        sys_layout.addWidget(QLabel("CPU使用率:"), 0, 0)
         self.cpu_util_label = QLabel("0%")
-        sys_layout.addWidget(self.cpu_util_label, 0, 1)
+        system_layout.addRow("CPU使用率:", self.cpu_util_label)
         
-        # 内存使用率
-        sys_layout.addWidget(QLabel("内存使用率:"), 0, 2)
-        self.sys_memory_util_label = QLabel("0%")
-        sys_layout.addWidget(self.sys_memory_util_label, 0, 3)
+        # 系统内存使用率
+        self.memory_util_sys_label = QLabel("0%")
+        system_layout.addRow("内存使用率:", self.memory_util_sys_label)
         
         # 磁盘使用率
-        sys_layout.addWidget(QLabel("磁盘使用率:"), 1, 0)
         self.disk_util_label = QLabel("0%")
-        sys_layout.addWidget(self.disk_util_label, 1, 1)
+        system_layout.addRow("磁盘使用率:", self.disk_util_label)
         
-        # 磁盘IO
-        sys_layout.addWidget(QLabel("磁盘IO:"), 1, 2)
-        self.disk_io_label = QLabel("读: 0 MB/s, 写: 0 MB/s")
-        sys_layout.addWidget(self.disk_io_label, 1, 3)
+        # 网络使用率
+        self.network_recv_label = QLabel("0 B/s")
+        system_layout.addRow("网络接收:", self.network_recv_label)
         
-        # 磁盘延迟
-        sys_layout.addWidget(QLabel("磁盘延迟:"), 2, 0)
-        self.disk_latency_label = QLabel("0ms")
-        sys_layout.addWidget(self.disk_latency_label, 2, 1)
+        self.network_send_label = QLabel("0 B/s")
+        system_layout.addRow("网络发送:", self.network_send_label)
         
-        sys_group.setLayout(sys_layout)
-        layout.addWidget(sys_group)
+        system_group.setLayout(system_layout)
+        info_layout.addWidget(system_group)
+        
+        layout.addLayout(info_layout)
+        
+        # 状态信息
+        self.status_label = QLabel()
+        layout.addWidget(self.status_label)
         
         self.setLayout(layout)
+        
+        # 加载服务器列表
+        self.refresh_servers()
+    
+    def refresh_servers(self):
+        """刷新服务器列表"""
+        try:
+            self.server_selector.clear()
+            servers = db_manager.get_gpu_servers()
+            
+            if not servers:
+                self.show_no_servers_hint()
+                return
+            
+            for server in servers:
+                self.server_selector.addItem(
+                    f"{server['name']} ({server['host']})", 
+                    server
+                )
+                
+            # 选择激活的服务器
+            active_server = db_manager.get_active_gpu_server()
+            if active_server:
+                index = self.server_selector.findText(
+                    f"{active_server['name']} ({active_server['host']})"
+                )
+                if index >= 0:
+                    self.server_selector.setCurrentIndex(index)
+                    # 启动监控
+                    self.start_monitoring()
+                else:
+                    self.show_no_servers_hint()
+            else:
+                self.show_no_servers_hint()
+        except Exception as e:
+            logger.error(f"刷新服务器列表失败: {e}")
+            self.show_no_servers_hint()
+    
+    def show_no_servers_hint(self):
+        """显示无服务器配置的提示"""
+        hint_text = '请点击"添加"按钮配置GPU服务器'
+        self.hint_label.setText(hint_text)
+        self.hint_label.show()  # 确保提示标签可见
+        
+        # 隐藏监控界面
+        self.gpu_info_label.hide()
+        self.gpu_util_label.hide()
+        self.memory_util_label.hide()
+        self.temp_label.hide()
+        self.power_label.hide()
+        self.cpu_util_label.hide()
+        self.memory_util_sys_label.hide()
+        self.disk_util_label.hide()
+        self.network_recv_label.hide()
+        self.network_send_label.hide()
+        
+        self.status_label.setText("状态: 未配置")
+        self.status_label.setStyleSheet("color: #666666")  # 使用灰色表示未配置状态
+    
+    def show_monitor_ui(self):
+        """显示监控界面"""
+        self.hint_label.hide()
+        self.gpu_info_label.show()
+        self.gpu_util_label.show()
+        self.memory_util_label.show()
+        self.temp_label.show()
+        self.power_label.show()
+        self.cpu_util_label.show()
+        self.memory_util_sys_label.show()
+        self.disk_util_label.show()
+        self.network_recv_label.show()
+        self.network_send_label.show()
+        self.status_label.setText("状态: 已连接")
+        self.status_label.setStyleSheet("color: green")
+    
+    def add_server(self):
+        """添加服务器配置"""
+        from src.gui.settings.gpu_settings import ServerEditDialog
+        dialog = ServerEditDialog(parent=self)
+        if dialog.exec():
+            self.refresh_servers()
+    
+    def on_server_changed(self, index: int):
+        """服务器选择改变时的处理"""
+        if index >= 0:
+            server_data = self.server_selector.currentData()
+            if server_data:
+                try:
+                    db_manager.set_gpu_server_active(server_data["name"])
+                    # 立即检查 GPU 状态
+                    stats = gpu_monitor.get_stats()
+                    if stats:
+                        self.show_monitor_ui()
+                        self.error_count = 0  # 重置错误计数
+                    else:
+                        self.show_no_servers_hint()
+                except Exception as e:
+                    logger.error(f"设置活动服务器失败: {e}")
+                    self.show_no_servers_hint()
     
     def start_monitoring(self):
         """开始监控"""
-        self.timer.start(2000)  # 每2秒更新一次
+        self.monitor_thread.start()
     
-    def _format_size(self, size_kb: float) -> str:
-        """格式化大小显示"""
-        if size_kb < 1024:
-            return f"{size_kb:.1f} KB/s"
+    def _format_size(self, size_mb: float) -> str:
+        """格式化显存大小显示"""
+        if size_mb >= 1024:
+            return f"{size_mb/1024:.1f} GB"
+        return f"{size_mb:.0f} MB"
+    
+    def _format_network_speed(self, bytes_per_sec: float) -> str:
+        """格式化网络速度显示"""
+        if bytes_per_sec >= 1024 * 1024 * 1024:
+            return f"{bytes_per_sec / (1024 * 1024 * 1024):.1f} GB/s"
+        elif bytes_per_sec >= 1024 * 1024:
+            return f"{bytes_per_sec / (1024 * 1024):.1f} MB/s"
+        elif bytes_per_sec >= 1024:
+            return f"{bytes_per_sec / 1024:.1f} KB/s"
         else:
-            return f"{size_kb/1024:.1f} MB/s"
-    
-    def update_stats(self):
-        """更新统计信息"""
-        stats = gpu_manager.get_stats()
+            return f"{bytes_per_sec:.1f} B/s"
+
+    def _on_stats_updated(self, stats):
+        """处理监控数据更新"""
         if not stats:
-            self.error_count += 1
-            if self.error_count <= self.max_error_logs:
-                logger.error("获取GPU统计数据失败")
+            self.show_no_servers_hint()
             return
         
-        self.error_count = 0  # 重置错误计数器
-        
         try:
-            # 更新硬件信息
-            self.cpu_info_label.setText(stats.cpu_info or "未知")
-            self.gpu_info_label.setText(stats.gpu_info or "未知")
-            self.gpu_count_label.setText(str(stats.gpu_count))
-            self.total_memory_label.setText(f"{stats.total_memory} GB")
-            
             # 更新GPU信息
-            self.gpu_util_label.setText(f"{stats.gpu_util:.1f}%")
-            self.memory_util_label.setText(f"{stats.gpu_memory_util:.1f}%")
-            self.temp_label.setText(f"{stats.temperature:.1f}°C")
-            self.fan_speed_label.setText(f"{stats.fan_speed:.1f}%")
-            self.power_label.setText(f"{stats.power_usage:.1f}W / {stats.power_limit:.1f}W")
+            self.gpu_info_label.setText(stats.gpu_info or "未知型号")
             
-            # 更新系统信息
+            # 更新GPU利用率
+            self.gpu_util_label.setText(f"{stats.gpu_util:.1f}%")
+            
+            # 更新显存使用率
+            memory_util = stats.gpu_memory_util
+            self.memory_util_label.setText(
+                f"{memory_util:.1f}% ({self._format_size(stats.memory_used)}/{self._format_size(stats.memory_total)})"
+            )
+            
+            # 更新温度
+            self.temp_label.setText(f"{stats.temperature:.1f}°C")
+            
+            # 更新功率使用
+            if stats.power_limit > 0:
+                self.power_label.setText(
+                    f"{stats.power_usage:.1f}W/{stats.power_limit:.1f}W ({(stats.power_usage / stats.power_limit) * 100:.1f}%)"
+                )
+            else:
+                self.power_label.setText("N/A")
+            
+            # 更新CPU使用率
             self.cpu_util_label.setText(f"{stats.cpu_util:.1f}%")
-            self.sys_memory_util_label.setText(f"{stats.memory_util:.1f}%")
+            
+            # 更新系统内存使用率
+            self.memory_util_sys_label.setText(f"{stats.memory_util:.1f}%")
+            
+            # 更新磁盘使用率
             self.disk_util_label.setText(f"{stats.disk_util:.1f}%")
             
-            # 更新磁盘IO信息
-            if stats.disk_io:
-                read_speed = self._format_size(stats.disk_io["read"])
-                write_speed = self._format_size(stats.disk_io["write"])
-                self.disk_io_label.setText(f"读: {read_speed}, 写: {write_speed}")
-                self.disk_latency_label.setText(f"{stats.disk_io.get('await', 0.0):.1f}ms")
+            # 更新网络使用率
+            if stats.network_io:
+                recv_speed = stats.network_io.get('receive', 0)
+                send_speed = stats.network_io.get('transmit', 0)
+                self.network_recv_label.setText(self._format_network_speed(recv_speed))
+                self.network_send_label.setText(self._format_network_speed(send_speed))
+            else:
+                self.network_recv_label.setText("N/A")
+                self.network_send_label.setText("N/A")
+            
+            self.status_label.setText("状态: 正常")
+            self.status_label.setStyleSheet("color: green")
+            self.error_count = 0
+            
+            # 显示监控UI
+            self.show_monitor_ui()
             
         except Exception as e:
-            self.error_count += 1
-            if self.error_count <= self.max_error_logs:
-                logger.error(f"更新GPU统计数据显示失败: {e}")
+            logger.error(f"更新UI失败: {e}")
+            self.show_no_servers_hint()
+    
+    def closeEvent(self, event):
+        """窗口关闭事件"""
+        self.monitor_thread.stop()
+        self.monitor_thread.wait()
+        super().closeEvent(event)
 
 class TestProgressWidget(QGroupBox):
     """测试进度组件"""

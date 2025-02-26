@@ -35,10 +35,7 @@ DEFAULT_CONFIG = {
         "update_interval": 2.0,  # GPU监控更新间隔（秒）
         "history_size": 60,      # 保存历史数据点数量
         "remote": {
-            "enabled": True,
-            "host": "10.255.0.75",  # 替换为实际的服务器IP
-            "username": "root",  # 替换为实际的用户名
-            "password": "P@$$2023?!"  # 替换为实际的密码
+            "enabled": False     # 默认使用本地监控
         }
     },
     "test": {
@@ -47,26 +44,7 @@ DEFAULT_CONFIG = {
         "timeout": 30,           # API请求超时时间（秒）
         "retry_count": 3,        # 失败重试次数
     },
-    "models": {
-        "qwen2.5:14b": {
-            "name": "qwen2.5:14b",
-            "api_url": "http://10.255.0.75:11434/v1/chat/completions",
-            "api_key": "nonerrr",  # 本地部署的模型可能不需要API密钥
-            "model": "qwen2.5:14b",
-            "max_tokens": 2048,
-            "temperature": 0.7,
-            "top_p": 0.9
-        },
-        "qwen2.5:latest": {
-            "name": "qwen2.5:latest",
-            "api_url": "http://10.255.0.75:11434/v1/chat/completions",
-            "api_key": "noneeee",
-            "model": "qwen2.5:latest",
-            "max_tokens": 2048,
-            "temperature": 0.7,
-            "top_p": 0.9
-        }
-    }
+    "models": {}  # 移除默认模型配置
 }
 
 class Config:

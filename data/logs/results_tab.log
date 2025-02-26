@@ -3218,3 +3218,328 @@
 2025-02-26 07:24:50 [INFO] results_tab:     * 总数: 10
 2025-02-26 07:24:50 [INFO] results_tab:     * 平均TPS: 28.7
 2025-02-26 07:24:50 [INFO] results_tab:   - 表格显示文本: 10/10 (失败: 0)
+2025-02-26 08:59:57 [INFO] results_tab: 开始准备测试...
+2025-02-26 08:59:57 [INFO] results_tab: 接收到的dataset_tasks: {'简单问答': (['1+1等于几？请直接回答数字。', '2+2等于几？请直接回答数字。', '3+3等于几？请直接回答数字。', '4+4等于几？请直接回答数字。', '5+5等于几？请直接回答数字。', '6+6等于几？请直接回答数字。', '7+7等于几？请直接回答数字。', '8+8等于几？请直接回答数字。', '9+9等于几？请直接回答数字。', '10+10等于几？请直接回答数字。', '20-5等于几？请直接回答数字。', '30-10等于几？请直接回答数字。', '15+25等于几？请直接回答数字。', '50-20等于几？请直接回答数字。', '100/2等于几？请直接回答数字。', '8×9等于几？请直接回答数字。', '7×8等于几？请直接回答数字。', '60÷3等于几？请直接回答数字。', '45+55等于几？请直接回答数字。', '200-150等于几？请直接回答数字。'], 11), '文本生成': (['写一个100字的春天的描写。', '写一个100字的夏天的描写。', '写一个100字的秋天的描写。', '写一个100字的冬天的描写。', '写一个100字的雨天的描写。', '写一个100字的雪景描写。', '写一个100字的日出描写。', '写一个100字的日落描写。', '写一个100字的海边描写。', '写一个100字的山景描写。', '写一个100字的校园生活场景。', '写一个100字的城市夜景描写。', '写一个100字的乡村田园风光描写。', '写一个100字的森林景色描写。', '写一个100字的瀑布景色描写。', '写一个100字的集市场景描写。', '写一个100字的公园游玩场景。', '写一个100字的节日庆典场景。', '写一个100字的清晨街道描写。', '写一个100字的黄昏市场描写。'], 11)}
+2025-02-26 08:59:57 [INFO] results_tab: 初始化数据集 简单问答:
+2025-02-26 08:59:57 [INFO] results_tab:   - 原始任务数: 20
+2025-02-26 08:59:57 [INFO] results_tab:   - 并发数: 11
+2025-02-26 08:59:57 [INFO] results_tab:   - 设置的任务数: 11
+2025-02-26 08:59:57 [INFO] results_tab: 数据集 简单问答 的初始状态:
+2025-02-26 08:59:57 [INFO] results_tab:   - _dataset_rows: {'row': 0, 'total': 11, 'completed': 0, 'successful': 0, 'failed': 0, 'total_time': 0, 'total_chars': 0, 'total_tokens': 0, 'current_speed': 0.0, 'current_tps': 0.0, 'start_time': 1740531597.360933}
+2025-02-26 08:59:57 [INFO] results_tab:   - 当前总任务数: 11
+2025-02-26 08:59:57 [INFO] results_tab: 初始化数据集 文本生成:
+2025-02-26 08:59:57 [INFO] results_tab:   - 原始任务数: 20
+2025-02-26 08:59:57 [INFO] results_tab:   - 并发数: 11
+2025-02-26 08:59:57 [INFO] results_tab:   - 设置的任务数: 11
+2025-02-26 08:59:57 [INFO] results_tab: 数据集 文本生成 的初始状态:
+2025-02-26 08:59:57 [INFO] results_tab:   - _dataset_rows: {'row': 1, 'total': 11, 'completed': 0, 'successful': 0, 'failed': 0, 'total_time': 0, 'total_chars': 0, 'total_tokens': 0, 'current_speed': 0.0, 'current_tps': 0.0, 'start_time': 1740531597.3614578}
+2025-02-26 08:59:57 [INFO] results_tab:   - 当前总任务数: 22
+2025-02-26 08:59:57 [INFO] results_tab: 测试准备完成，最终总任务数: 22
+2025-02-26 09:00:03 [INFO] results_tab: 更新数据集 简单问答 的统计信息:
+2025-02-26 09:00:03 [INFO] results_tab:   - 更新前状态: {'row': 0, 'total': 11, 'completed': 0, 'successful': 0, 'failed': 0, 'total_time': 0, 'total_chars': 0, 'total_tokens': 0, 'current_speed': 0.0, 'current_tps': 0.0, 'start_time': 1740531597.360933}
+2025-02-26 09:00:03 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:03 [INFO] results_tab:     * 总字符数: 2
+2025-02-26 09:00:03 [INFO] results_tab:     * 总token数: 1
+2025-02-26 09:00:03 [INFO] results_tab:     * 当前TPS: 0.2
+2025-02-26 09:00:03 [INFO] results_tab:     * 响应时间: 6.14s
+2025-02-26 09:00:03 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:03 [INFO] results_tab:     * 完成数: 1
+2025-02-26 09:00:03 [INFO] results_tab:     * 成功数: 1
+2025-02-26 09:00:03 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:03 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:03 [INFO] results_tab:     * 平均TPS: 0.2
+2025-02-26 09:00:03 [INFO] results_tab:   - 表格显示文本: 1/11 (失败: 0)
+2025-02-26 09:00:03 [INFO] results_tab: 更新数据集 简单问答 的统计信息:
+2025-02-26 09:00:03 [INFO] results_tab:   - 更新前状态: {'row': 0, 'total': 11, 'completed': 1, 'successful': 1, 'failed': 0, 'total_time': 6.143331050872803, 'total_chars': 2, 'total_tokens': 1, 'current_speed': 0.3255562263992964, 'current_tps': 0.1627781131996482, 'start_time': 1740531597.360933}
+2025-02-26 09:00:03 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:03 [INFO] results_tab:     * 总字符数: 4
+2025-02-26 09:00:03 [INFO] results_tab:     * 总token数: 2
+2025-02-26 09:00:03 [INFO] results_tab:     * 当前TPS: 0.2
+2025-02-26 09:00:03 [INFO] results_tab:     * 响应时间: 6.14s
+2025-02-26 09:00:03 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:03 [INFO] results_tab:     * 完成数: 2
+2025-02-26 09:00:03 [INFO] results_tab:     * 成功数: 2
+2025-02-26 09:00:03 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:03 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:03 [INFO] results_tab:     * 平均TPS: 0.2
+2025-02-26 09:00:03 [INFO] results_tab:   - 表格显示文本: 2/11 (失败: 0)
+2025-02-26 09:00:03 [INFO] results_tab: 更新数据集 简单问答 的统计信息:
+2025-02-26 09:00:03 [INFO] results_tab:   - 更新前状态: {'row': 0, 'total': 11, 'completed': 2, 'successful': 2, 'failed': 0, 'total_time': 12.28827714920044, 'total_chars': 4, 'total_tokens': 2, 'current_speed': 0.32547066199224156, 'current_tps': 0.16273533099612078, 'start_time': 1740531597.360933}
+2025-02-26 09:00:03 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:03 [INFO] results_tab:     * 总字符数: 6
+2025-02-26 09:00:03 [INFO] results_tab:     * 总token数: 3
+2025-02-26 09:00:03 [INFO] results_tab:     * 当前TPS: 0.2
+2025-02-26 09:00:03 [INFO] results_tab:     * 响应时间: 6.22s
+2025-02-26 09:00:03 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:03 [INFO] results_tab:     * 完成数: 3
+2025-02-26 09:00:03 [INFO] results_tab:     * 成功数: 3
+2025-02-26 09:00:03 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:03 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:03 [INFO] results_tab:     * 平均TPS: 0.2
+2025-02-26 09:00:03 [INFO] results_tab:   - 表格显示文本: 3/11 (失败: 0)
+2025-02-26 09:00:03 [INFO] results_tab: 更新数据集 简单问答 的统计信息:
+2025-02-26 09:00:03 [INFO] results_tab:   - 更新前状态: {'row': 0, 'total': 11, 'completed': 3, 'successful': 3, 'failed': 0, 'total_time': 18.51244020462036, 'total_chars': 6, 'total_tokens': 3, 'current_speed': 0.32132829118770184, 'current_tps': 0.16066414559385092, 'start_time': 1740531597.360933}
+2025-02-26 09:00:03 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:03 [INFO] results_tab:     * 总字符数: 7
+2025-02-26 09:00:03 [INFO] results_tab:     * 总token数: 4
+2025-02-26 09:00:03 [INFO] results_tab:     * 当前TPS: 0.2
+2025-02-26 09:00:03 [INFO] results_tab:     * 响应时间: 6.36s
+2025-02-26 09:00:03 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:03 [INFO] results_tab:     * 完成数: 4
+2025-02-26 09:00:03 [INFO] results_tab:     * 成功数: 4
+2025-02-26 09:00:03 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:03 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:03 [INFO] results_tab:     * 平均TPS: 0.2
+2025-02-26 09:00:03 [INFO] results_tab:   - 表格显示文本: 4/11 (失败: 0)
+2025-02-26 09:00:03 [INFO] results_tab: 更新数据集 简单问答 的统计信息:
+2025-02-26 09:00:03 [INFO] results_tab:   - 更新前状态: {'row': 0, 'total': 11, 'completed': 4, 'successful': 4, 'failed': 0, 'total_time': 24.871759176254272, 'total_chars': 7, 'total_tokens': 4, 'current_speed': 0.15724951794540198, 'current_tps': 0.15724951794540198, 'start_time': 1740531597.360933}
+2025-02-26 09:00:03 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:03 [INFO] results_tab:     * 总字符数: 9
+2025-02-26 09:00:03 [INFO] results_tab:     * 总token数: 5
+2025-02-26 09:00:03 [INFO] results_tab:     * 当前TPS: 0.2
+2025-02-26 09:00:03 [INFO] results_tab:     * 响应时间: 6.54s
+2025-02-26 09:00:03 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:03 [INFO] results_tab:     * 完成数: 5
+2025-02-26 09:00:03 [INFO] results_tab:     * 成功数: 5
+2025-02-26 09:00:03 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:03 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:03 [INFO] results_tab:     * 平均TPS: 0.2
+2025-02-26 09:00:03 [INFO] results_tab:   - 表格显示文本: 5/11 (失败: 0)
+2025-02-26 09:00:04 [INFO] results_tab: 更新数据集 简单问答 的统计信息:
+2025-02-26 09:00:04 [INFO] results_tab:   - 更新前状态: {'row': 0, 'total': 11, 'completed': 5, 'successful': 5, 'failed': 0, 'total_time': 31.40771722793579, 'total_chars': 9, 'total_tokens': 5, 'current_speed': 0.3059994691192957, 'current_tps': 0.15299973455964785, 'start_time': 1740531597.360933}
+2025-02-26 09:00:04 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:04 [INFO] results_tab:     * 总字符数: 11
+2025-02-26 09:00:04 [INFO] results_tab:     * 总token数: 6
+2025-02-26 09:00:04 [INFO] results_tab:     * 当前TPS: 0.1
+2025-02-26 09:00:04 [INFO] results_tab:     * 响应时间: 6.71s
+2025-02-26 09:00:04 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:04 [INFO] results_tab:     * 完成数: 6
+2025-02-26 09:00:04 [INFO] results_tab:     * 成功数: 6
+2025-02-26 09:00:04 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:04 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:04 [INFO] results_tab:     * 平均TPS: 0.2
+2025-02-26 09:00:04 [INFO] results_tab:   - 表格显示文本: 6/11 (失败: 0)
+2025-02-26 09:00:07 [INFO] results_tab: 更新数据集 文本生成 的统计信息:
+2025-02-26 09:00:07 [INFO] results_tab:   - 更新前状态: {'row': 1, 'total': 11, 'completed': 0, 'successful': 0, 'failed': 0, 'total_time': 0, 'total_chars': 0, 'total_tokens': 0, 'current_speed': 0.0, 'current_tps': 0.0, 'start_time': 1740531597.3614578}
+2025-02-26 09:00:07 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:07 [INFO] results_tab:     * 总字符数: 151
+2025-02-26 09:00:07 [INFO] results_tab:     * 总token数: 226
+2025-02-26 09:00:07 [INFO] results_tab:     * 当前TPS: 22.6
+2025-02-26 09:00:07 [INFO] results_tab:     * 响应时间: 10.00s
+2025-02-26 09:00:07 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:07 [INFO] results_tab:     * 完成数: 1
+2025-02-26 09:00:07 [INFO] results_tab:     * 成功数: 1
+2025-02-26 09:00:07 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:07 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:07 [INFO] results_tab:     * 平均TPS: 22.6
+2025-02-26 09:00:07 [INFO] results_tab:   - 表格显示文本: 1/11 (失败: 0)
+2025-02-26 09:00:07 [INFO] results_tab: 更新数据集 文本生成 的统计信息:
+2025-02-26 09:00:07 [INFO] results_tab:   - 更新前状态: {'row': 1, 'total': 11, 'completed': 1, 'successful': 1, 'failed': 0, 'total_time': 10.001635074615479, 'total_chars': 151, 'total_tokens': 226, 'current_speed': 15.097529931452273, 'current_tps': 22.596303076213335, 'start_time': 1740531597.3614578}
+2025-02-26 09:00:07 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:07 [INFO] results_tab:     * 总字符数: 313
+2025-02-26 09:00:07 [INFO] results_tab:     * 总token数: 468
+2025-02-26 09:00:07 [INFO] results_tab:     * 当前TPS: 24.2
+2025-02-26 09:00:07 [INFO] results_tab:     * 响应时间: 10.01s
+2025-02-26 09:00:07 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:07 [INFO] results_tab:     * 完成数: 2
+2025-02-26 09:00:07 [INFO] results_tab:     * 成功数: 2
+2025-02-26 09:00:07 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:07 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:07 [INFO] results_tab:     * 平均TPS: 23.4
+2025-02-26 09:00:07 [INFO] results_tab:   - 表格显示文本: 2/11 (失败: 0)
+2025-02-26 09:00:07 [INFO] results_tab: 更新数据集 简单问答 的统计信息:
+2025-02-26 09:00:07 [INFO] results_tab:   - 更新前状态: {'row': 0, 'total': 11, 'completed': 6, 'successful': 6, 'failed': 0, 'total_time': 38.11460518836975, 'total_chars': 11, 'total_tokens': 6, 'current_speed': 0.2982008516614226, 'current_tps': 0.1491004258307113, 'start_time': 1740531597.360933}
+2025-02-26 09:00:07 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:07 [INFO] results_tab:     * 总字符数: 13
+2025-02-26 09:00:07 [INFO] results_tab:     * 总token数: 7
+2025-02-26 09:00:07 [INFO] results_tab:     * 当前TPS: 0.1
+2025-02-26 09:00:07 [INFO] results_tab:     * 响应时间: 10.19s
+2025-02-26 09:00:07 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:07 [INFO] results_tab:     * 完成数: 7
+2025-02-26 09:00:07 [INFO] results_tab:     * 成功数: 7
+2025-02-26 09:00:07 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:07 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:07 [INFO] results_tab:     * 平均TPS: 0.1
+2025-02-26 09:00:07 [INFO] results_tab:   - 表格显示文本: 7/11 (失败: 0)
+2025-02-26 09:00:07 [INFO] results_tab: 更新数据集 简单问答 的统计信息:
+2025-02-26 09:00:07 [INFO] results_tab:   - 更新前状态: {'row': 0, 'total': 11, 'completed': 7, 'successful': 7, 'failed': 0, 'total_time': 48.30101251602173, 'total_chars': 13, 'total_tokens': 7, 'current_speed': 0.1963400578171218, 'current_tps': 0.0981700289085609, 'start_time': 1740531597.360933}
+2025-02-26 09:00:07 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:07 [INFO] results_tab:     * 总字符数: 15
+2025-02-26 09:00:07 [INFO] results_tab:     * 总token数: 8
+2025-02-26 09:00:07 [INFO] results_tab:     * 当前TPS: 0.1
+2025-02-26 09:00:07 [INFO] results_tab:     * 响应时间: 10.19s
+2025-02-26 09:00:07 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:07 [INFO] results_tab:     * 完成数: 8
+2025-02-26 09:00:07 [INFO] results_tab:     * 成功数: 8
+2025-02-26 09:00:07 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:07 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:07 [INFO] results_tab:     * 平均TPS: 0.1
+2025-02-26 09:00:07 [INFO] results_tab:   - 表格显示文本: 8/11 (失败: 0)
+2025-02-26 09:00:07 [INFO] results_tab: 更新数据集 文本生成 的统计信息:
+2025-02-26 09:00:07 [INFO] results_tab:   - 更新前状态: {'row': 1, 'total': 11, 'completed': 2, 'successful': 2, 'failed': 0, 'total_time': 20.012959003448486, 'total_chars': 313, 'total_tokens': 468, 'current_speed': 16.18167436893729, 'current_tps': 24.172624674585332, 'start_time': 1740531597.3614578}
+2025-02-26 09:00:07 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:07 [INFO] results_tab:     * 总字符数: 463
+2025-02-26 09:00:07 [INFO] results_tab:     * 总token数: 695
+2025-02-26 09:00:07 [INFO] results_tab:     * 当前TPS: 22.2
+2025-02-26 09:00:07 [INFO] results_tab:     * 响应时间: 10.21s
+2025-02-26 09:00:07 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:07 [INFO] results_tab:     * 完成数: 3
+2025-02-26 09:00:07 [INFO] results_tab:     * 成功数: 3
+2025-02-26 09:00:07 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:07 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:07 [INFO] results_tab:     * 平均TPS: 23.0
+2025-02-26 09:00:07 [INFO] results_tab:   - 表格显示文本: 3/11 (失败: 0)
+2025-02-26 09:00:07 [INFO] results_tab: 更新数据集 简单问答 的统计信息:
+2025-02-26 09:00:07 [INFO] results_tab:   - 更新前状态: {'row': 0, 'total': 11, 'completed': 8, 'successful': 8, 'failed': 0, 'total_time': 58.48948550224304, 'total_chars': 15, 'total_tokens': 8, 'current_speed': 0.19630025092126258, 'current_tps': 0.09815012546063129, 'start_time': 1740531597.360933}
+2025-02-26 09:00:07 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:07 [INFO] results_tab:     * 总字符数: 16
+2025-02-26 09:00:07 [INFO] results_tab:     * 总token数: 9
+2025-02-26 09:00:07 [INFO] results_tab:     * 当前TPS: 0.1
+2025-02-26 09:00:07 [INFO] results_tab:     * 响应时间: 10.34s
+2025-02-26 09:00:07 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:07 [INFO] results_tab:     * 完成数: 9
+2025-02-26 09:00:07 [INFO] results_tab:     * 成功数: 9
+2025-02-26 09:00:07 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:07 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:07 [INFO] results_tab:     * 平均TPS: 0.1
+2025-02-26 09:00:07 [INFO] results_tab:   - 表格显示文本: 9/11 (失败: 0)
+2025-02-26 09:00:07 [INFO] results_tab: 更新数据集 文本生成 的统计信息:
+2025-02-26 09:00:07 [INFO] results_tab:   - 更新前状态: {'row': 1, 'total': 11, 'completed': 3, 'successful': 3, 'failed': 0, 'total_time': 30.22694993019104, 'total_chars': 463, 'total_tokens': 695, 'current_speed': 14.685737082605861, 'current_tps': 22.22441545167687, 'start_time': 1740531597.3614578}
+2025-02-26 09:00:07 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:07 [INFO] results_tab:     * 总字符数: 610
+2025-02-26 09:00:07 [INFO] results_tab:     * 总token数: 900
+2025-02-26 09:00:07 [INFO] results_tab:     * 当前TPS: 19.8
+2025-02-26 09:00:07 [INFO] results_tab:     * 响应时间: 10.34s
+2025-02-26 09:00:07 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:07 [INFO] results_tab:     * 完成数: 4
+2025-02-26 09:00:07 [INFO] results_tab:     * 成功数: 4
+2025-02-26 09:00:07 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:07 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:07 [INFO] results_tab:     * 平均TPS: 22.2
+2025-02-26 09:00:07 [INFO] results_tab:   - 表格显示文本: 4/11 (失败: 0)
+2025-02-26 09:00:10 [INFO] results_tab: 更新数据集 文本生成 的统计信息:
+2025-02-26 09:00:10 [INFO] results_tab:   - 更新前状态: {'row': 1, 'total': 11, 'completed': 4, 'successful': 4, 'failed': 0, 'total_time': 40.56342387199402, 'total_chars': 610, 'total_tokens': 900, 'current_speed': 14.22148274219673, 'current_tps': 19.832680014628092, 'start_time': 1740531597.3614578}
+2025-02-26 09:00:10 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:10 [INFO] results_tab:     * 总字符数: 746
+2025-02-26 09:00:10 [INFO] results_tab:     * 总token数: 1094
+2025-02-26 09:00:10 [INFO] results_tab:     * 当前TPS: 14.4
+2025-02-26 09:00:10 [INFO] results_tab:     * 响应时间: 13.47s
+2025-02-26 09:00:10 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:10 [INFO] results_tab:     * 完成数: 5
+2025-02-26 09:00:10 [INFO] results_tab:     * 成功数: 5
+2025-02-26 09:00:10 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:10 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:10 [INFO] results_tab:     * 平均TPS: 20.2
+2025-02-26 09:00:10 [INFO] results_tab:   - 表格显示文本: 5/11 (失败: 0)
+2025-02-26 09:00:11 [INFO] results_tab: 更新数据集 简单问答 的统计信息:
+2025-02-26 09:00:11 [INFO] results_tab:   - 更新前状态: {'row': 0, 'total': 11, 'completed': 9, 'successful': 9, 'failed': 0, 'total_time': 68.82587957382202, 'total_chars': 16, 'total_tokens': 9, 'current_speed': 0.09674552811449774, 'current_tps': 0.09674552811449774, 'start_time': 1740531597.360933}
+2025-02-26 09:00:11 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:11 [INFO] results_tab:     * 总字符数: 18
+2025-02-26 09:00:11 [INFO] results_tab:     * 总token数: 10
+2025-02-26 09:00:11 [INFO] results_tab:     * 当前TPS: 0.1
+2025-02-26 09:00:11 [INFO] results_tab:     * 响应时间: 13.65s
+2025-02-26 09:00:11 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:11 [INFO] results_tab:     * 完成数: 10
+2025-02-26 09:00:11 [INFO] results_tab:     * 成功数: 10
+2025-02-26 09:00:11 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:11 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:11 [INFO] results_tab:     * 平均TPS: 0.1
+2025-02-26 09:00:11 [INFO] results_tab:   - 表格显示文本: 10/11 (失败: 0)
+2025-02-26 09:00:11 [INFO] results_tab: 更新数据集 文本生成 的统计信息:
+2025-02-26 09:00:11 [INFO] results_tab:   - 更新前状态: {'row': 1, 'total': 11, 'completed': 5, 'successful': 5, 'failed': 0, 'total_time': 54.03192377090454, 'total_chars': 746, 'total_tokens': 1094, 'current_speed': 10.097634548994325, 'current_tps': 14.403978694888963, 'start_time': 1740531597.3614578}
+2025-02-26 09:00:11 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:11 [INFO] results_tab:     * 总字符数: 893
+2025-02-26 09:00:11 [INFO] results_tab:     * 总token数: 1304
+2025-02-26 09:00:11 [INFO] results_tab:     * 当前TPS: 14.5
+2025-02-26 09:00:11 [INFO] results_tab:     * 响应时间: 14.43s
+2025-02-26 09:00:11 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:11 [INFO] results_tab:     * 完成数: 6
+2025-02-26 09:00:11 [INFO] results_tab:     * 成功数: 6
+2025-02-26 09:00:11 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:11 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:11 [INFO] results_tab:     * 平均TPS: 19.0
+2025-02-26 09:00:11 [INFO] results_tab:   - 表格显示文本: 6/11 (失败: 0)
+2025-02-26 09:00:11 [INFO] results_tab: 更新数据集 文本生成 的统计信息:
+2025-02-26 09:00:11 [INFO] results_tab:   - 更新前状态: {'row': 1, 'total': 11, 'completed': 6, 'successful': 6, 'failed': 0, 'total_time': 68.46639966964722, 'total_chars': 893, 'total_tokens': 1304, 'current_speed': 10.183950622609991, 'current_tps': 14.548500889442845, 'start_time': 1740531597.3614578}
+2025-02-26 09:00:11 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:11 [INFO] results_tab:     * 总字符数: 1042
+2025-02-26 09:00:11 [INFO] results_tab:     * 总token数: 1536
+2025-02-26 09:00:11 [INFO] results_tab:     * 当前TPS: 16.0
+2025-02-26 09:00:11 [INFO] results_tab:     * 响应时间: 14.47s
+2025-02-26 09:00:11 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:11 [INFO] results_tab:     * 完成数: 7
+2025-02-26 09:00:11 [INFO] results_tab:     * 成功数: 7
+2025-02-26 09:00:11 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:11 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:11 [INFO] results_tab:     * 平均TPS: 18.5
+2025-02-26 09:00:11 [INFO] results_tab:   - 表格显示文本: 7/11 (失败: 0)
+2025-02-26 09:00:12 [INFO] results_tab: 更新数据集 文本生成 的统计信息:
+2025-02-26 09:00:12 [INFO] results_tab:   - 更新前状态: {'row': 1, 'total': 11, 'completed': 7, 'successful': 7, 'failed': 0, 'total_time': 82.93417572975159, 'total_chars': 1042, 'total_tokens': 1536, 'current_speed': 10.29874868689227, 'current_tps': 16.035635539322193, 'start_time': 1740531597.3614578}
+2025-02-26 09:00:12 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:12 [INFO] results_tab:     * 总字符数: 1203
+2025-02-26 09:00:12 [INFO] results_tab:     * 总token数: 1787
+2025-02-26 09:00:12 [INFO] results_tab:     * 当前TPS: 17.1
+2025-02-26 09:00:12 [INFO] results_tab:     * 响应时间: 14.65s
+2025-02-26 09:00:12 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:12 [INFO] results_tab:     * 完成数: 8
+2025-02-26 09:00:12 [INFO] results_tab:     * 成功数: 8
+2025-02-26 09:00:12 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:12 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:12 [INFO] results_tab:     * 平均TPS: 18.3
+2025-02-26 09:00:12 [INFO] results_tab:   - 表格显示文本: 8/11 (失败: 0)
+2025-02-26 09:00:12 [INFO] results_tab: 更新数据集 简单问答 的统计信息:
+2025-02-26 09:00:12 [INFO] results_tab:   - 更新前状态: {'row': 0, 'total': 11, 'completed': 10, 'successful': 10, 'failed': 0, 'total_time': 82.47683668136597, 'total_chars': 18, 'total_tokens': 10, 'current_speed': 0.14650986284213544, 'current_tps': 0.07325493142106772, 'start_time': 1740531597.360933}
+2025-02-26 09:00:12 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:12 [INFO] results_tab:     * 总字符数: 20
+2025-02-26 09:00:12 [INFO] results_tab:     * 总token数: 11
+2025-02-26 09:00:12 [INFO] results_tab:     * 当前TPS: 0.1
+2025-02-26 09:00:12 [INFO] results_tab:     * 响应时间: 14.83s
+2025-02-26 09:00:12 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:12 [INFO] results_tab:     * 完成数: 11
+2025-02-26 09:00:12 [INFO] results_tab:     * 成功数: 11
+2025-02-26 09:00:12 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:12 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:12 [INFO] results_tab:     * 平均TPS: 0.1
+2025-02-26 09:00:12 [INFO] results_tab:   - 表格显示文本: 11/11 (失败: 0)
+2025-02-26 09:00:14 [INFO] results_tab: 更新数据集 文本生成 的统计信息:
+2025-02-26 09:00:14 [INFO] results_tab:   - 更新前状态: {'row': 1, 'total': 11, 'completed': 8, 'successful': 8, 'failed': 0, 'total_time': 97.58556365966797, 'total_chars': 1203, 'total_tokens': 1787, 'current_speed': 10.988719279116076, 'current_tps': 17.131481609056742, 'start_time': 1740531597.3614578}
+2025-02-26 09:00:14 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:14 [INFO] results_tab:     * 总字符数: 1352
+2025-02-26 09:00:14 [INFO] results_tab:     * 总token数: 2016
+2025-02-26 09:00:14 [INFO] results_tab:     * 当前TPS: 13.3
+2025-02-26 09:00:14 [INFO] results_tab:     * 响应时间: 17.18s
+2025-02-26 09:00:14 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:14 [INFO] results_tab:     * 完成数: 9
+2025-02-26 09:00:14 [INFO] results_tab:     * 成功数: 9
+2025-02-26 09:00:14 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:14 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:14 [INFO] results_tab:     * 平均TPS: 17.6
+2025-02-26 09:00:14 [INFO] results_tab:   - 表格显示文本: 9/11 (失败: 0)
+2025-02-26 09:00:15 [INFO] results_tab: 更新数据集 文本生成 的统计信息:
+2025-02-26 09:00:15 [INFO] results_tab:   - 更新前状态: {'row': 1, 'total': 11, 'completed': 9, 'successful': 9, 'failed': 0, 'total_time': 114.76517081260681, 'total_chars': 1352, 'total_tokens': 2016, 'current_speed': 8.673073254846688, 'current_tps': 13.329756881610011, 'start_time': 1740531597.3614578}
+2025-02-26 09:00:15 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:15 [INFO] results_tab:     * 总字符数: 1503
+2025-02-26 09:00:15 [INFO] results_tab:     * 总token数: 2241
+2025-02-26 09:00:15 [INFO] results_tab:     * 当前TPS: 12.6
+2025-02-26 09:00:15 [INFO] results_tab:     * 响应时间: 17.85s
+2025-02-26 09:00:15 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:15 [INFO] results_tab:     * 完成数: 10
+2025-02-26 09:00:15 [INFO] results_tab:     * 成功数: 10
+2025-02-26 09:00:15 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:15 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:15 [INFO] results_tab:     * 平均TPS: 16.9
+2025-02-26 09:00:15 [INFO] results_tab:   - 表格显示文本: 10/11 (失败: 0)
+2025-02-26 09:00:15 [INFO] results_tab: 更新数据集 文本生成 的统计信息:
+2025-02-26 09:00:15 [INFO] results_tab:   - 更新前状态: {'row': 1, 'total': 11, 'completed': 10, 'successful': 10, 'failed': 0, 'total_time': 132.61035990715027, 'total_chars': 1503, 'total_tokens': 2241, 'current_speed': 8.461663854517942, 'current_tps': 12.608439518321438, 'start_time': 1740531597.3614578}
+2025-02-26 09:00:15 [INFO] results_tab:   - 成功任务统计:
+2025-02-26 09:00:15 [INFO] results_tab:     * 总字符数: 1677
+2025-02-26 09:00:15 [INFO] results_tab:     * 总token数: 2474
+2025-02-26 09:00:15 [INFO] results_tab:     * 当前TPS: 13.0
+2025-02-26 09:00:15 [INFO] results_tab:     * 响应时间: 17.98s
+2025-02-26 09:00:15 [INFO] results_tab:   - 更新后状态:
+2025-02-26 09:00:15 [INFO] results_tab:     * 完成数: 11
+2025-02-26 09:00:15 [INFO] results_tab:     * 成功数: 11
+2025-02-26 09:00:15 [INFO] results_tab:     * 失败数: 0
+2025-02-26 09:00:15 [INFO] results_tab:     * 总数: 11
+2025-02-26 09:00:15 [INFO] results_tab:     * 平均TPS: 16.4
+2025-02-26 09:00:15 [INFO] results_tab:   - 表格显示文本: 11/11 (失败: 0)

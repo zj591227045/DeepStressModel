@@ -196,63 +196,57 @@ class ModelSettingsWidget(QWidget):
         """添加模型"""
         dialog = ModelEditDialog(parent=self)
         if dialog.exec():
-            try:
-                model_data = dialog.get_model_data()
-                if db_manager.add_model_config(model_data):
-                    self.load_models()
-                    self.model_updated.emit()
-                    logger.info(f"添加模型配置成功: {model_data['name']}")
-            except Exception as e:
-                logger.error(f"添加模型配置失败: {e}")
-                QMessageBox.critical(self, "错误", f"添加模型配置失败：{e}")
+            model_data = dialog.get_model_data()
+            if db_manager.add_model_config(model_data):
+                self.load_models()
+                self.model_updated.emit()
+                logger.info(f"添加模型配置成功: {model_data['name']}")
+            else:
+                QMessageBox.critical(self, "错误", "添加模型配置失败")
     
     def edit_model(self):
         """编辑模型"""
-        current_row = self.model_list.currentRow()
-        if current_row < 0:
+        current_item = self.model_list.currentItem()
+        if not current_item:
             return
         
-        try:
-            models = db_manager.get_model_configs()
-            model = next((m for m in models if m["name"] == self.model_list.item(current_row).text()), None)
-            if model:
-                dialog = ModelEditDialog(model, parent=self)
-                if dialog.exec():
-                    model_data = dialog.get_model_data()
-                    if db_manager.add_model_config(model_data):
-                        self.load_models()
-                        self.model_updated.emit()
-                        logger.info(f"编辑模型配置成功: {model_data['name']}")
-        except Exception as e:
-            logger.error(f"编辑模型配置失败: {e}")
-            QMessageBox.critical(self, "错误", f"编辑模型配置失败：{e}")
+        model_name = current_item.text()
+        models = db_manager.get_model_configs()
+        model_data = next((m for m in models if m["name"] == model_name), None)
+        
+        if model_data:
+            dialog = ModelEditDialog(model_data, parent=self)
+            if dialog.exec():
+                new_data = dialog.get_model_data()
+                if db_manager.add_model_config(new_data):
+                    self.load_models()
+                    self.model_updated.emit()
+                    logger.info(f"更新模型配置成功: {new_data['name']}")
+                else:
+                    QMessageBox.critical(self, "错误", "更新模型配置失败")
     
     def delete_model(self):
         """删除模型"""
-        current_row = self.model_list.currentRow()
-        if current_row < 0:
+        current_item = self.model_list.currentItem()
+        if not current_item:
             return
         
-        model_name = self.model_list.item(current_row).text()
-        msg = "确定要删除模型配置\"{}\"吗？".format(model_name)
-        
+        model_name = current_item.text()
         reply = QMessageBox.question(
-            self, 
-            "确认删除", 
-            msg,
+            self,
+            "确认删除",
+            f"确定要删除模型 {model_name} 吗？",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
         
         if reply == QMessageBox.StandardButton.Yes:
-            try:
-                db_manager.delete_model_config(model_name)
+            if db_manager.delete_model_config(model_name):
                 self.load_models()
                 self.model_updated.emit()
                 logger.info(f"删除模型配置成功: {model_name}")
-            except Exception as e:
-                logger.error(f"删除模型配置失败: {e}")
-                QMessageBox.critical(self, "错误", f"删除模型配置失败：{e}")
+            else:
+                QMessageBox.critical(self, "错误", "删除模型配置失败")
     
     def reset_settings(self):
         """重置设置"""

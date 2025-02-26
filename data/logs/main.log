@@ -73,3 +73,7 @@
 2025-02-26 09:58:40 [ERROR] main: 程序启动失败: 'GPUMonitorWidget' object has no attribute 'start_monitoring'
 2025-02-26 10:15:56 [INFO] main: 程序启动成功
 2025-02-26 10:17:02 [INFO] main: 程序启动成功
+2025-02-26 10:22:50 [ERROR] main: 程序启动失败: 'NoneType' object has no attribute 'parent'
+2025-02-26 10:24:56 [INFO] main: 程序启动成功
+2025-02-26 10:28:57 [INFO] main: 程序启动成功
+2025-02-26 10:31:14 [INFO] main: 程序启动成功

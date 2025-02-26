@@ -17,6 +17,7 @@ class SettingsTab(QWidget):
     """设置标签页"""
     def __init__(self):
         super().__init__()
+        self.setObjectName("settings_tab")  # 设置对象名称
         self.init_ui()
     
     def init_ui(self):
@@ -34,6 +35,7 @@ class SettingsTab(QWidget):
         
         # 添加模型设置
         self.model_settings = ModelSettingsWidget()
+        self.model_settings.setObjectName("model_settings")  # 设置对象名称
         self.model_settings.setMaximumHeight(400)  # 限制高度
         left_layout.addWidget(self.model_settings)
         

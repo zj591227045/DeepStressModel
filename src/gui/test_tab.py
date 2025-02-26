@@ -478,10 +478,38 @@ class TestTab(QWidget):
         self.init_ui()
         
         # 连接信号
-        self.test_manager.progress_updated.connect(self._on_progress_updated)  # 添加进度更新信号连接
+        self.test_manager.progress_updated.connect(self._on_progress_updated)
         self.test_manager.result_received.connect(self.results_tab.add_result)
         
+        # 加载数据
         self.load_models()
+        self.load_datasets()
+        
+        # 使用定时器延迟连接设置更新信号
+        QTimer.singleShot(0, self.connect_settings_signals)
+    
+    def connect_settings_signals(self):
+        """连接设置更新信号"""
+        try:
+            # 查找主窗口
+            main_window = self.window()
+            if main_window:
+                # 查找设置标签页
+                settings_tab = main_window.findChild(QWidget, "settings_tab")
+                if settings_tab:
+                    # 查找模型设置组件
+                    model_settings = settings_tab.findChild(QWidget, "model_settings")
+                    if model_settings:
+                        model_settings.model_updated.connect(self.load_models)
+                        logger.info("成功连接模型更新信号")
+                    else:
+                        logger.warning("未找到模型设置组件")
+                else:
+                    logger.warning("未找到设置标签页")
+            else:
+                logger.warning("未找到主窗口")
+        except Exception as e:
+            logger.error(f"连接设置信号失败: {e}")
     
     def init_ui(self):
         """初始化UI"""
@@ -496,8 +524,8 @@ class TestTab(QWidget):
         # 模型选择
         model_group = QGroupBox("模型选择")
         model_layout = QVBoxLayout()
-        self.model_selector = QComboBox()
-        model_layout.addWidget(self.model_selector)
+        self.model_combo = QComboBox()
+        model_layout.addWidget(self.model_combo)
         model_group.setLayout(model_layout)
         left_panel.addWidget(model_group)
         
@@ -555,9 +583,6 @@ class TestTab(QWidget):
         
         self.setLayout(layout)
         
-        # 加载数据集
-        self.load_datasets()
-        
         # 启动GPU监控
         self.gpu_monitor.start_monitoring()
     
@@ -572,55 +597,76 @@ class TestTab(QWidget):
     
     def load_models(self):
         """加载模型配置"""
-        models = config.get("models", {})
-        if not models:
-            logger.warning("未找到模型配置")
-            return
-        
-        self.model_selector.clear()
-        for model_name in models.keys():
-            self.model_selector.addItem(model_name)
+        try:
+            # 清空当前列表
+            self.model_combo.clear()
+            
+            # 从数据库获取模型配置
+            models = db_manager.get_model_configs()
+            if models:
+                for model in models:
+                    self.model_combo.addItem(model["name"])
+                logger.info(f"已加载 {len(models)} 个模型配置")
+            else:
+                logger.warning("未找到模型配置")
+        except Exception as e:
+            logger.error(f"加载模型配置失败: {e}")
+            QMessageBox.critical(self, "错误", f"加载模型配置失败：{e}")
     
     def get_selected_model(self) -> dict:
         """获取选中的模型配置"""
-        model_name = self.model_selector.currentText()
-        models = config.get("models", {})
-        return models.get(model_name)
+        model_name = self.model_combo.currentText()
+        if not model_name:
+            return None
+            
+        models = db_manager.get_model_configs()
+        return next((m for m in models if m["name"] == model_name), None)
     
     def get_selected_datasets(self) -> dict:
         """获取选中的数据集及其权重"""
         logger.info("开始获取选中的数据集...")
         selected_datasets = {}
         
-        # 遍历数据集列表
-        for i in range(self.dataset_list.count()):
-            item = self.dataset_list.item(i)
-            if not item:
-                logger.warning(f"列表项 {i} 为空")
-                continue
+        try:
+            # 获取所有数据集
+            all_datasets = {d["name"]: d["prompts"] for d in db_manager.get_datasets()}
             
-            # 检查数据集是否在UI中被选中
-            if not item.isSelected():
-                logger.info(f"数据集项 {i} 未被选中，跳过")
-                continue
+            # 遍历数据集列表
+            for i in range(self.dataset_list.count()):
+                item = self.dataset_list.item(i)
+                if not item:
+                    logger.warning(f"列表项 {i} 为空")
+                    continue
+                
+                # 检查数据集是否在UI中被选中
+                if not item.isSelected():
+                    logger.info(f"数据集项 {i} 未被选中，跳过")
+                    continue
+                
+                dataset_widget = self.dataset_list.itemWidget(item)
+                if not dataset_widget:
+                    logger.warning(f"列表项 {i} 的widget为空")
+                    continue
+                
+                weight = dataset_widget.get_weight()
+                logger.info(f"数据集项 {i}: weight = {weight}")
+                
+                if weight > 0:  # 如果权重大于0，表示选中
+                    dataset_name = dataset_widget.dataset_name
+                    if dataset_name in all_datasets:
+                        prompts = all_datasets[dataset_name]
+                        # 使用权重作为并发数
+                        selected_datasets[dataset_name] = (prompts, weight)
+                        logger.info(f"添加数据集: {dataset_name}, prompts数量: {len(prompts)}, 并发数: {weight}")
+                    else:
+                        logger.warning(f"数据集 {dataset_name} 未在数据库中找到")
             
-            dataset_widget = self.dataset_list.itemWidget(item)
-            if not dataset_widget:
-                logger.warning(f"列表项 {i} 的widget为空")
-                continue
-            
-            weight = dataset_widget.get_weight()
-            logger.info(f"数据集项 {i}: weight = {weight}")
-            
-            if weight > 0:  # 如果权重大于0，表示选中
-                dataset_name = dataset_widget.dataset_name
-                prompts = DATASETS[dataset_name]
-                # 使用权重作为并发数
-                selected_datasets[dataset_name] = (prompts, weight)
-                logger.info(f"添加数据集: {dataset_name}, prompts数量: {len(prompts)}, 并发数: {weight}")
-        
-        logger.info(f"最终选中的数据集: {selected_datasets}")
-        return selected_datasets
+            logger.info(f"最终选中的数据集: {selected_datasets}")
+            return selected_datasets
+        except Exception as e:
+            logger.error(f"获取选中数据集失败: {e}")
+            QMessageBox.critical(self, "错误", f"获取选中数据集失败：{e}")
+            return {}
     
     def start_test(self):
         """开始测试"""

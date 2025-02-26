@@ -24,3 +24,4 @@
 2025-02-26 09:17:42 [INFO] model_settings: 已加载 2 个模型配置
 2025-02-26 09:18:18 [ERROR] model_settings: 获取模型详情失败: 'DatabaseManager' object has no attribute 'get_model_config_by_name'
 2025-02-26 09:45:58 [INFO] model_settings: 添加模型配置成功: qwen2.5:7b
+2025-02-26 10:30:58 [INFO] model_settings: 添加模型配置成功: qwen2.5:14b

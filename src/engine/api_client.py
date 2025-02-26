@@ -110,7 +110,14 @@ class APIClient:
         max_retries: int = 3,
         **model_params
     ):
-        self.api_url = api_url
+        # 确保 API URL 以 /v1/chat/completions 结尾
+        self.api_url = api_url.rstrip('/')
+        if not self.api_url.endswith('/v1/chat/completions'):
+            if self.api_url.endswith('/v1'):
+                self.api_url += '/chat/completions'
+            elif not self.api_url.endswith('/chat/completions'):
+                self.api_url += '/v1/chat/completions'
+        
         self.headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}"
@@ -118,8 +125,13 @@ class APIClient:
         self.model = model
         self.timeout = timeout
         self.max_retries = max_retries
-        self.model_params = model_params
+        # 只保留 OpenAI API 支持的参数
+        self.model_params = {
+            k: v for k, v in model_params.items() 
+            if k in ['temperature', 'top_p', 'max_tokens']
+        }
         self._session = None
+        logger.info(f"初始化 API 客户端: URL={self.api_url}, model={model}")
     
     async def _ensure_session(self):
         """确保aiohttp会话已创建"""
@@ -140,7 +152,7 @@ class APIClient:
                 {"role": "user", "content": prompt}
             ],
             "stream": True,  # 启用流式输出
-            **self.model_params
+            **self.model_params  # 只包含支持的参数
         }
     
     async def _process_stream(
@@ -154,7 +166,11 @@ class APIClient:
                 try:
                     data = json.loads(line[6:])
                     if data.get('choices'):
-                        content = data['choices'][0].get('delta', {}).get('content', '')
+                        # 支持两种格式：delta 和 text
+                        content = (
+                            data['choices'][0].get('delta', {}).get('content', '') or
+                            data['choices'][0].get('text', '')
+                        )
                         if content:
                             yield content
                 except json.JSONDecodeError:

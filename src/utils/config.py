@@ -41,8 +41,8 @@ DEFAULT_CONFIG = {
     "test": {
         "default_concurrency": 1,
         "max_concurrency": 10,
-        "timeout": 30,           # API请求超时时间（秒）
-        "retry_count": 3,        # 失败重试次数
+        "timeout": 15,           # API请求超时时间（秒）
+        "retry_count": 1,        # 失败重试次数
     },
     "models": {}  # 移除默认模型配置
 }

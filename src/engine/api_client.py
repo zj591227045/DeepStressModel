@@ -98,6 +98,16 @@ class APIResponse:
             # 如果没有流式统计，使用总字符数除以总时间
             return len(self.response_text) / self.duration
         return 0.0
+    
+    @property
+    def total_chars(self) -> int:
+        """获取总字符数"""
+        return len(self.response_text) if self.response_text else 0
+    
+    @property
+    def total_tokens(self) -> int:
+        """获取总token数"""
+        return self.tokens_generated
 
 class APIClient:
     """API客户端类"""
@@ -108,41 +118,33 @@ class APIClient:
         model: str,
         timeout: int = 30,
         max_retries: int = 3,
-        **model_params
+        max_tokens: int = 2048,
+        temperature: float = 0.7,
+        top_p: float = 0.9
     ):
-        # 确保 API URL 以 /v1/chat/completions 结尾
-        self.api_url = api_url.rstrip('/')
-        if not self.api_url.endswith('/v1/chat/completions'):
-            if self.api_url.endswith('/v1'):
-                self.api_url += '/chat/completions'
-            elif not self.api_url.endswith('/chat/completions'):
-                self.api_url += '/v1/chat/completions'
-        
-        self.headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}"
-        }
+        # 确保 API URL 格式正确
+        self.api_url = api_url.rstrip("/")
+        if not self.api_url.endswith("/v1"):
+            self.api_url += "/v1"
+        self.api_key = api_key
         self.model = model
         self.timeout = timeout
         self.max_retries = max_retries
-        # 只保留 OpenAI API 支持的参数
-        self.model_params = {
-            k: v for k, v in model_params.items() 
-            if k in ['temperature', 'top_p', 'max_tokens']
-        }
-        self._session = None
-        logger.info(f"初始化 API 客户端: URL={self.api_url}, model={model}")
-    
-    async def _ensure_session(self):
-        """确保aiohttp会话已创建"""
-        if self._session is None:
-            self._session = aiohttp.ClientSession()
+        self.max_tokens = max_tokens
+        self.temperature = temperature
+        self.top_p = top_p
+        
+        # 创建异步HTTP会话
+        self.session = aiohttp.ClientSession(
+            headers={"Authorization": f"Bearer {api_key}"}
+        )
+        logger.info(f"初始化 API 客户端: URL={api_url}, model={model}")
     
     async def close(self):
-        """关闭会话"""
-        if self._session:
-            await self._session.close()
-            self._session = None
+        """关闭客户端会话"""
+        if self.session and not self.session.closed:
+            await self.session.close()
+            logger.info("API客户端会话已关闭")
     
     def _prepare_request(self, prompt: str) -> dict:
         """准备请求数据"""
@@ -178,17 +180,22 @@ class APIClient:
     
     async def generate(self, prompt: str) -> APIResponse:
         """生成响应"""
-        await self._ensure_session()
         start_time = time.time()
         stream_stats = StreamStats(self.model)  # 传入模型名称
         full_response = []
         
         for attempt in range(self.max_retries):
             try:
-                async with self._session.post(
-                    self.api_url,
-                    json=self._prepare_request(prompt),
-                    headers=self.headers,
+                async with self.session.post(
+                    f"{self.api_url}/chat/completions",  # 修改 URL 路径
+                    json={
+                        "model": self.model,
+                        "messages": [{"role": "user", "content": prompt}],
+                        "stream": True,
+                        "max_tokens": self.max_tokens,
+                        "temperature": self.temperature,
+                        "top_p": self.top_p
+                    },
                     timeout=aiohttp.ClientTimeout(total=self.timeout)
                 ) as response:
                     if response.status == 200:
@@ -211,7 +218,7 @@ class APIClient:
                         )
                     else:
                         error_text = await response.text()
-                        logger.error(f"API请求失败 (尝试 {attempt + 1}/{self.max_retries}): {error_text}")
+                        logger.error(f"API请求失败 (尝试 {attempt + 1}/{self.max_retries}): {response.status} - {error_text}")
                         if attempt == self.max_retries - 1:
                             return APIResponse(
                                 success=False,

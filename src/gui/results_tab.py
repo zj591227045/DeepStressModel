@@ -1,250 +1,483 @@
 """
-结果显示组件，用于展示测试进度和结果
+测试结果显示标签页
 """
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QProgressBar, QTableWidget, QTableWidgetItem,
-    QHeaderView, QTextEdit
+    QHeaderView, QTextEdit, QPushButton, QFileDialog, QMessageBox,
+    QDialog
 )
 from PyQt6.QtCore import Qt, pyqtSlot
+from src.utils.logger import setup_logger
+from src.data.db_manager import db_manager
 from src.engine.api_client import APIResponse
 from src.engine.test_manager import TestProgress
-from src.utils.logger import setup_logger
 import time
+import os
+import csv
 
 logger = setup_logger("results_tab")
 
 class ResultsTab(QWidget):
-    """结果显示组件"""
+    """测试结果显示标签页"""
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.current_records = {}  # 当前测试会话的记录
         self._init_ui()
-        self._dataset_rows = {}  # 数据集行索引映射
-        self._dataset_start_times = {}  # 记录每个数据集的开始时间
     
     def _init_ui(self):
         """初始化UI"""
         layout = QVBoxLayout()
         
-        # 进度条区域
-        progress_layout = QHBoxLayout()
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setTextVisible(True)
-        progress_layout.addWidget(self.progress_bar)
-        self.progress_label = QLabel("总任务数: 0")
-        progress_layout.addWidget(self.progress_label)
-        layout.addLayout(progress_layout)
+        # 创建工具栏
+        toolbar = QHBoxLayout()
         
-        # 数据集结果表格
+        # 导出按钮
+        export_btn = QPushButton("导出记录")
+        export_btn.clicked.connect(self._export_records)
+        toolbar.addWidget(export_btn)
+        
+        # 清除日志按钮
+        clear_btn = QPushButton("清除日志")
+        clear_btn.clicked.connect(self._clear_logs)
+        toolbar.addWidget(clear_btn)
+        
+        toolbar.addStretch()
+        layout.addLayout(toolbar)
+        
+        # 创建结果表格
         self.result_table = QTableWidget()
-        self.result_table.setColumnCount(9)  # 增加到9列
+        self.result_table.setColumnCount(12)
         self.result_table.setHorizontalHeaderLabels([
-            "数据集", "完成/总数", "成功率", "平均响应时间", 
-            "平均生成速度", "当前速度", "总字符数", "平均TPS", "总耗时"
+            "会话名称",
+            "完成/总数",
+            "成功率",
+            "平均响应时间",
+            "平均生成速度",
+            "当前速度",
+            "总字符数",
+            "平均TPS",
+            "总耗时",
+            "模型名称",
+            "并发数",
+            "操作"
         ])
+        
+        # 设置表格属性
         header = self.result_table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        # 先设置所有列自适应内容
+        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        
+        # 设置特定列的宽度策略
+        min_widths = {
+            0: 200,  # 会话名称
+            1: 100,  # 完成/总数
+            2: 80,   # 成功率
+            3: 120,  # 平均响应时间
+            4: 120,  # 平均生成速度
+            5: 100,  # 当前速度
+            6: 100,  # 总字符数
+            7: 100,  # 平均TPS
+            8: 100,  # 总耗时
+            9: 150,  # 模型名称
+            10: 80,  # 并发数
+            11: 80   # 操作
+        }
+        
+        # 应用最小宽度
+        for col, width in min_widths.items():
+            self.result_table.setColumnWidth(col, width)
+        
+        # 设置会话名称列可以自动拉伸
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        
         layout.addWidget(self.result_table)
         
-        # 错误信息区域
+        # 错误信息显示区域
         self.error_text = QTextEdit()
-        self.error_text.setReadOnly(True)
+        self.error_text.setPlaceholderText("测试过程中的错误信息将在此显示...")
         self.error_text.setMaximumHeight(100)
-        self.error_text.setPlaceholderText("测试过程中的错误信息将在此显示...")  # 添加提示文本
-        self.error_text.hide()  # 初始时隐藏错误信息区域
+        self.error_text.setReadOnly(True)
         layout.addWidget(self.error_text)
         
         self.setLayout(layout)
+        
+        # 加载历史记录
+        self._load_history_records()
     
-    def _format_time(self, ms: float) -> str:
-        """格式化时间显示"""
-        if ms < 1000:
-            return f"{ms:.1f}ms"
-        elif ms < 60000:
-            return f"{ms/1000:.2f}s"
-        else:
-            minutes = int(ms / 60000)
-            seconds = (ms % 60000) / 1000
-            return f"{minutes}分{seconds:.1f}秒"
+    def _load_history_records(self):
+        """加载历史测试记录"""
+        try:
+            logger.debug("开始加载历史测试记录")
+            records = db_manager.get_test_records()
+            logger.debug(f"获取到 {len(records)} 条历史记录")
+            
+            # 清空现有记录
+            self.result_table.clearContents()
+            self.result_table.setRowCount(0)
+            
+            if not records:
+                logger.info("没有历史测试记录")
+                return
+            
+            # 设置表格行数
+            self.result_table.setRowCount(len(records))
+            
+            # 添加记录到表格
+            for row, record in enumerate(records):
+                try:
+                    self._add_record_to_table(row, record)
+                except Exception as e:
+                    logger.error(f"添加第 {row} 行记录失败: {e}", exc_info=True)
+                    continue
+            
+            logger.info(f"成功加载 {len(records)} 条历史记录")
+            
+        except Exception as e:
+            logger.error(f"加载历史记录失败: {e}", exc_info=True)
+            QMessageBox.warning(self, "错误", f"加载历史记录失败: {e}")
     
-    def _format_speed(self, chars_per_sec: float) -> str:
-        """格式化速度显示"""
-        return f"{chars_per_sec:.1f} 字符/秒"
+    def _add_record_to_table(self, row: int, record: dict):
+        """添加记录到表格"""
+        try:
+            # 设置会话名称
+            self.result_table.setItem(row, 0, QTableWidgetItem(record["session_name"]))
+            
+            # 设置完成/总数
+            completion = f"{record['successful_tasks']}/{record['total_tasks']}"
+            self.result_table.setItem(row, 1, QTableWidgetItem(completion))
+            
+            # 设置成功率
+            success_rate = (record['successful_tasks'] / record['total_tasks'] * 100) if record['total_tasks'] > 0 else 0
+            self.result_table.setItem(row, 2, QTableWidgetItem(f"{success_rate:.1f}%"))
+            
+            # 设置平均响应时间
+            self.result_table.setItem(row, 3, QTableWidgetItem(f"{record['avg_response_time']:.1f}s"))
+            
+            # 设置平均生成速度
+            self.result_table.setItem(row, 4, QTableWidgetItem(f"{record['avg_generation_speed']:.1f}字/秒"))
+            
+            # 设置当前速度
+            self.result_table.setItem(row, 5, QTableWidgetItem(f"{record['current_speed']:.1f}字/秒"))
+            
+            # 设置总字符数
+            self.result_table.setItem(row, 6, QTableWidgetItem(str(record['total_chars'])))
+            
+            # 设置平均TPS
+            self.result_table.setItem(row, 7, QTableWidgetItem(f"{record['avg_tps']:.1f}"))
+            
+            # 设置总耗时
+            self.result_table.setItem(row, 8, QTableWidgetItem(f"{record['total_time']:.1f}s"))
+            
+            # 设置模型名称
+            self.result_table.setItem(row, 9, QTableWidgetItem(record['model_name']))
+            
+            # 设置并发数
+            self.result_table.setItem(row, 10, QTableWidgetItem(str(record['concurrency'])))
+            
+            # 创建操作按钮容器
+            button_widget = QWidget()
+            button_layout = QHBoxLayout()
+            button_layout.setContentsMargins(2, 2, 2, 2)  # 设置较小的边距
+            button_layout.setSpacing(4)  # 设置按钮之间的间距
+            
+            # 添加日志按钮
+            log_btn = QPushButton("日志")
+            log_btn.setFixedWidth(40)  # 设置固定宽度
+            log_btn.clicked.connect(lambda: self._view_log(record.get('log_file', ''), record['session_name']))
+            button_layout.addWidget(log_btn)
+            
+            # 添加删除按钮
+            delete_btn = QPushButton("删除")
+            delete_btn.setFixedWidth(40)  # 设置固定宽度
+            delete_btn.clicked.connect(lambda: self._delete_record(record['session_name']))
+            button_layout.addWidget(delete_btn)
+            
+            button_widget.setLayout(button_layout)
+            self.result_table.setCellWidget(row, 11, button_widget)
+            
+            logger.debug(f"记录已添加到表格第 {row} 行")
+            
+        except Exception as e:
+            logger.error(f"添加记录到表格失败: {e}", exc_info=True)
     
-    def _update_dataset_row(self, dataset_name: str, response: APIResponse):
-        """更新数据集结果行"""
-        if dataset_name not in self._dataset_rows:
-            logger.error(f"找不到数据集 {dataset_name} 的记录")
+    def _view_log(self, log_file: str, session_name: str):
+        """查看日志文件"""
+        logger.debug(f"尝试查看日志文件，会话: {session_name}, 日志文件路径: {log_file}")
+        
+        if not log_file:
+            logger.warning(f"会话 {session_name} 的日志文件路径为空")
+            QMessageBox.warning(self, "提示", f"未找到会话 {session_name} 的日志文件")
+            return
+            
+        if not os.path.exists(log_file):
+            logger.warning(f"日志文件不存在: {log_file}")
+            QMessageBox.warning(self, "错误", f"日志文件不存在: {log_file}")
             return
         
-        # 如果有错误信息，显示错误信息区域
-        if not response.success:
-            self.error_text.show()
-            self.error_text.append(f"数据集 {dataset_name}: {response.error_msg}")
+        logger.debug(f"开始读取日志文件: {log_file}")
+        dialog = QDialog(self)
+        dialog.setWindowTitle(f"测试日志 - {session_name}")
+        dialog.resize(800, 600)
         
-        stats = self._dataset_rows[dataset_name]
-        row = stats["row"]
+        layout = QVBoxLayout()
         
-        logger.info(f"更新数据集 {dataset_name} 的统计信息:")
-        logger.info(f"  - 更新前状态: {stats}")
+        # 添加日志内容
+        log_text = QTextEdit()
+        log_text.setReadOnly(True)
         
-        # 更新完成数量
-        if response.success:
-            stats["successful"] += 1
-            stats["total_time"] += response.duration
-            stats["total_chars"] += len(response.response_text)
-            
-            # 统一使用token_counter计算token
-            from src.utils.token_counter import token_counter
-            tokens = token_counter.count_tokens(response.response_text, response.model_name)
-            stats["total_tokens"] += tokens
-            
-            # 计算当前token生成速度
-            stats["current_tps"] = tokens / (response.duration + 1e-6)
-            stats["current_speed"] = len(response.response_text) / (response.duration + 1e-6)
-            
-            logger.info(f"  - 成功任务统计:")
-            logger.info(f"    * 总字符数: {stats['total_chars']}")
-            logger.info(f"    * 总token数: {stats['total_tokens']}")
-            logger.info(f"    * 当前TPS: {stats['current_tps']:.1f}")
-            logger.info(f"    * 响应时间: {response.duration:.2f}s")
-        else:
-            stats["failed"] += 1
-            logger.error(f"任务失败: {response.error_msg}")
+        try:
+            with open(log_file, "r", encoding="utf-8") as f:
+                content = f.read()
+                log_text.setText(content)
+                logger.debug(f"成功读取日志文件，内容长度: {len(content)} 字符")
+        except Exception as e:
+            error_msg = f"读取日志文件失败: {e}"
+            logger.error(error_msg, exc_info=True)
+            log_text.setText(error_msg)
         
-        stats["completed"] = stats["successful"] + stats["failed"]
+        layout.addWidget(log_text)
         
-        logger.info(f"  - 更新后状态:")
-        logger.info(f"    * 完成数: {stats['completed']}")
-        logger.info(f"    * 成功数: {stats['successful']}")
-        logger.info(f"    * 失败数: {stats['failed']}")
-        logger.info(f"    * 总数: {stats['total']}")
+        # 添加关闭按钮
+        close_btn = QPushButton("关闭")
+        close_btn.clicked.connect(dialog.close)
+        layout.addWidget(close_btn)
         
-        # 更新统计信息
-        success_rate = (stats["successful"] / stats["completed"]) * 100 if stats["completed"] > 0 else 0
-        avg_time = stats["total_time"] / max(stats["successful"], 1)
-        avg_speed = (stats["total_chars"] / (stats["total_time"] + 1e-6)) if stats["total_time"] > 0 else 0
-        
-        # 计算平均TPS
-        avg_tps = (stats["total_tokens"] / (stats["total_time"] + 1e-6)) if stats["total_time"] > 0 else 0
-        logger.info(f"    * 平均TPS: {avg_tps:.1f}")
-        
-        total_elapsed = (time.time() - stats["start_time"]) * 1000
-        
-        # 更新表格显示
-        display_text = f"{stats['completed']}/{stats['total']} (失败: {stats['failed']})"
-        logger.info(f"  - 表格显示文本: {display_text}")
-        
-        self.result_table.setItem(row, 1, QTableWidgetItem(display_text))
-        self.result_table.setItem(row, 2,
-            QTableWidgetItem(f"{success_rate:.1f}%")
-        )
-        self.result_table.setItem(row, 3,
-            QTableWidgetItem(self._format_time(avg_time * 1000))  # 转换为毫秒
-        )
-        self.result_table.setItem(row, 4,
-            QTableWidgetItem(self._format_speed(avg_speed))
-        )
-        self.result_table.setItem(row, 5,
-            QTableWidgetItem(self._format_speed(stats["current_speed"]))
-        )
-        self.result_table.setItem(row, 6,
-            QTableWidgetItem(f"{stats['total_chars']:,}")  # 添加千位分隔符
-        )
-        self.result_table.setItem(row, 7,
-            QTableWidgetItem(f"{avg_tps:.1f}")
-        )
-        self.result_table.setItem(row, 8,
-            QTableWidgetItem(self._format_time(total_elapsed))
-        )
+        dialog.setLayout(layout)
+        dialog.exec()
     
-    @pyqtSlot(TestProgress)
-    def update_progress(self, progress: TestProgress):
-        """更新进度信息"""
-        # 更新进度条
-        self.progress_bar.setValue(int(progress.progress_percentage))
-        self.progress_label.setText(
-            f"总任务数: {progress.total_tasks}"
+    def _delete_record(self, session_name: str):
+        """删除测试记录"""
+        logger.debug(f"尝试删除测试记录，会话: {session_name}")
+        
+        reply = QMessageBox.question(
+            self,
+            "确认删除",
+            f"确定要删除会话 {session_name} 的测试记录吗？\n此操作不可恢复。",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
         )
         
-        # 更新错误信息
-        if progress.last_error:
-            self.error_text.show()
-            self.error_text.append(progress.last_error)
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                logger.debug(f"开始删除测试记录: {session_name}")
+                result = db_manager.delete_test_record(session_name)
+                logger.debug(f"删除测试记录结果: {result}")
+                
+                if result:
+                    # 重新加载记录
+                    logger.info(f"成功删除测试记录: {session_name}，准备重新加载记录")
+                    self._load_history_records()
+                    QMessageBox.information(self, "成功", "测试记录已删除")
+                else:
+                    error_msg = f"删除测试记录失败: {session_name}"
+                    logger.error(error_msg)
+                    QMessageBox.warning(self, "错误", error_msg)
+            except Exception as e:
+                error_msg = f"删除测试记录时发生错误: {e}"
+                logger.error(error_msg, exc_info=True)
+                QMessageBox.critical(self, "错误", error_msg)
     
-    @pyqtSlot(str, APIResponse)
-    def add_result(self, dataset_name: str, response: APIResponse):
-        """添加测试结果"""
-        self._update_dataset_row(dataset_name, response)
+    def _export_records(self):
+        """导出测试记录"""
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "导出记录",
+            "",
+            "CSV文件 (*.csv)"
+        )
+        
+        if not file_path:
+            return
+        
+        try:
+            records = db_manager.get_test_records()
+            with open(file_path, "w", encoding="utf-8", newline="") as f:
+                writer = csv.writer(f)
+                # 写入表头
+                writer.writerow([
+                    "测试时间", "模型名称", "并发数", "总任务数",
+                    "成功任务数", "失败任务数", "平均响应时间(ms)",
+                    "平均生成速度(字符/秒)", "总Token数",
+                    "平均TPS", "总耗时(ms)"
+                ])
+                
+                # 写入数据
+                for record in records:
+                    writer.writerow([
+                        record["test_time"],
+                        record["model_name"],
+                        record["concurrency"],
+                        record["total_tasks"],
+                        record["successful_tasks"],
+                        record["failed_tasks"],
+                        record["avg_response_time"],
+                        record["avg_generation_speed"],
+                        record["total_tokens"],
+                        record["avg_tps"],
+                        record["total_time"]
+                    ])
+            
+            QMessageBox.information(self, "成功", "记录导出成功")
+        except Exception as e:
+            QMessageBox.critical(self, "错误", f"导出记录失败: {e}")
     
-    def prepare_test(self, dataset_tasks: dict):
-        """准备开始新的测试
+    def _clear_logs(self):
+        """清除测试日志"""
+        reply = QMessageBox.question(
+            self,
+            "确认清除",
+            "确定要清除所有测试日志文件吗？\n注意：测试记录将被保留，只清除日志文件。",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
         
-        Args:
-            dataset_tasks: 数据集任务字典，格式为 {dataset_name: (prompts_list, concurrency)}
-        """
-        logger.info(f"开始准备测试...")
-        logger.info(f"接收到的dataset_tasks: {dataset_tasks}")
+        if reply == QMessageBox.StandardButton.Yes:
+            if db_manager.clear_test_logs():
+                QMessageBox.information(self, "成功", "日志文件已清除")
+            else:
+                QMessageBox.warning(self, "警告", "清除日志文件时发生错误")
+    
+    def prepare_test(self, model_config: dict, concurrency: int, test_task_id: str):
+        """准备新的测试会话"""
+        # 生成会话名称
+        session_name = time.strftime("test_%Y%m%d_%H%M%S")
         
-        # 清空现有数据
-        self.result_table.setRowCount(0)
-        self._dataset_rows.clear()
-        self.error_text.clear()
-        self.error_text.hide()
+        # 初始化会话记录
+        self.current_records = {
+            "session_name": session_name,
+            "model_name": model_config["name"],
+            "concurrency": concurrency,
+            "test_task_id": test_task_id,
+            "datasets": {}
+        }
         
-        total_tasks = 0
+        logger.info(f"准备测试会话: {session_name}")
         
-        # 初始化每个数据集的行
-        for dataset_name, (prompts, concurrency) in dataset_tasks.items():
-            logger.info(f"初始化数据集 {dataset_name}:")
-            logger.info(f"  - 原始任务数: {len(prompts)}")
-            logger.info(f"  - 并发数: {concurrency}")
-            logger.info(f"  - 设置的任务数: {concurrency}")
+    def _save_test_records(self):
+        """保存测试记录"""
+        try:
+            # 确保必要的字段存在
+            if not hasattr(self, 'current_records'):
+                logger.error("没有当前测试记录")
+                return
             
-            # 添加新行
-            row = self.result_table.rowCount()
-            self.result_table.insertRow(row)
+            # 确保model_name字段存在
+            if "model_name" not in self.current_records and "model_config" in self.current_records:
+                self.current_records["model_name"] = self.current_records["model_config"]["name"]
             
-            # 设置数据集名称
-            self.result_table.setItem(row, 0, QTableWidgetItem(dataset_name))
+            # 创建日志文件
+            log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "logs", "tests")
+            os.makedirs(log_dir, exist_ok=True)
             
-            # 初始化统计数据
-            stats = {
-                "row": row,
-                "total": concurrency,  # 使用并发数作为任务数
-                "completed": 0,
-                "successful": 0,
-                "failed": 0,
-                "total_time": 0,
-                "total_chars": 0,
-                "total_tokens": 0,
-                "current_speed": 0.0,
-                "current_tps": 0.0,
-                "start_time": time.time()
+            log_file = os.path.join(log_dir, f"{self.current_records.get('test_task_id', 'unknown')}.log")
+            logger.info(f"创建日志文件: {log_file}")
+            
+            with open(log_file, "w", encoding="utf-8") as f:
+                f.write(f"测试ID: {self.current_records.get('test_task_id', 'unknown')}\n")
+                f.write(f"会话名称: {self.current_records.get('session_name', 'unknown')}\n")
+                f.write(f"模型名称: {self.current_records.get('model_name', 'unknown')}\n")
+                f.write(f"并发数: {self.current_records.get('concurrency', 0)}\n")
+                f.write(f"开始时间: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.current_records.get('start_time', time.time())))}\n")
+                if 'end_time' in self.current_records and self.current_records['end_time']:
+                    f.write(f"结束时间: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.current_records['end_time']))}\n")
+                    duration = self.current_records['end_time'] - self.current_records.get('start_time', 0)
+                    f.write(f"总耗时: {duration:.2f}秒\n")
+                
+                f.write("\n数据集统计信息:\n")
+                for dataset_name, stats in self.current_records.get('datasets', {}).items():
+                    f.write(f"\n{dataset_name}:\n")
+                    f.write(f"  总任务数: {stats.get('total', 0)}\n")
+                    f.write(f"  成功数: {stats.get('successful', 0)}\n")
+                    f.write(f"  失败数: {stats.get('total', 0) - stats.get('successful', 0)}\n")
+                    if stats.get('successful', 0) > 0:
+                        success_rate = (stats['successful'] / stats['total']) * 100
+                        avg_time = stats.get('total_time', 0) / stats['successful']
+                        avg_speed = stats.get('total_chars', 0) / stats.get('total_time', 1)
+                        f.write(f"  成功率: {success_rate:.1f}%\n")
+                        f.write(f"  平均响应时间: {avg_time:.2f}秒\n")
+                        f.write(f"  平均生成速度: {avg_speed:.1f}字/秒\n")
+                        f.write(f"  总字符数: {stats.get('total_chars', 0)}\n")
+            
+            # 计算总体统计信息
+            total_tasks = 0
+            successful_tasks = 0
+            failed_tasks = 0
+            total_chars = 0
+            total_tokens = 0
+            total_time = 0
+            
+            for stats in self.current_records.get('datasets', {}).values():
+                total_tasks += stats.get('total', 0)
+                successful_tasks += stats.get('successful', 0)
+                failed_tasks += stats.get('total', 0) - stats.get('successful', 0)
+                total_chars += stats.get('total_chars', 0)
+                total_tokens += stats.get('total_tokens', 0)
+                total_time += stats.get('total_time', 0)
+            
+            # 计算平均值
+            avg_response_time = total_time / successful_tasks if successful_tasks > 0 else 0
+            avg_generation_speed = total_chars / total_time if total_time > 0 else 0
+            avg_tps = total_tokens / total_time if total_time > 0 else 0
+            
+            # 保存到数据库
+            db_record = {
+                "test_task_id": self.current_records.get('test_task_id', 'unknown'),
+                "session_name": self.current_records.get('session_name', 'unknown'),
+                "model_name": self.current_records.get('model_name', 'unknown'),
+                "concurrency": self.current_records.get('concurrency', 0),
+                "total_tasks": total_tasks,
+                "successful_tasks": successful_tasks,
+                "failed_tasks": failed_tasks,
+                "avg_response_time": avg_response_time,
+                "avg_generation_speed": avg_generation_speed,
+                "total_chars": total_chars,
+                "total_tokens": total_tokens,
+                "avg_tps": avg_tps,
+                "total_time": total_time,
+                "current_speed": avg_generation_speed,
+                "test_time": time.strftime('%Y-%m-%d %H:%M:%S'),
+                "log_file": log_file
             }
             
-            total_tasks += concurrency
-            self._dataset_rows[dataset_name] = stats
+            success = db_manager.save_test_record(db_record)
+            if success:
+                logger.info(f"测试记录已保存到数据库: {db_record['test_task_id']}")
+            else:
+                logger.error("保存测试记录到数据库失败")
             
-            # 更新进度显示
-            self.result_table.setItem(row, 1, QTableWidgetItem(f"0/{stats['total']}"))
-            self.result_table.setItem(row, 2, QTableWidgetItem("0%"))
-            self.result_table.setItem(row, 3, QTableWidgetItem("0ms"))
-            self.result_table.setItem(row, 4, QTableWidgetItem("0 字符/秒"))
-            self.result_table.setItem(row, 5, QTableWidgetItem("0 字符/秒"))
-            self.result_table.setItem(row, 6, QTableWidgetItem("0"))
-            self.result_table.setItem(row, 7, QTableWidgetItem("0 token/秒"))
-            self.result_table.setItem(row, 8, QTableWidgetItem("0秒"))
+        except Exception as e:
+            logger.error(f"保存测试记录失败: {e}", exc_info=True)
+            raise
+
+    def add_result(self, dataset_name: str, response: APIResponse):
+        """添加测试结果"""
+        try:
+            if dataset_name not in self.current_records["datasets"]:
+                self.current_records["datasets"][dataset_name] = {
+                    "total": 0,
+                    "successful": 0,
+                    "failed": 0,
+                    "total_time": 0.0,
+                    "total_tokens": 0,
+                    "total_chars": 0,
+                    "start_time": time.time()
+                }
             
-            logger.info(f"数据集 {dataset_name} 的初始状态:")
-            logger.info(f"  - _dataset_rows: {stats}")
+            stats = self.current_records["datasets"][dataset_name]
+            stats["total"] += 1
             
-            total_tasks = sum(stats["total"] for stats in self._dataset_rows.values())
-            logger.info(f"  - 当前总任务数: {total_tasks}")
-        
-        # 更新进度条最大值
-        self.progress_bar.setMaximum(total_tasks)
-        self.progress_bar.setValue(0)
-        self.progress_label.setText(f"进度: 0/{total_tasks}")
-        
-        logger.info(f"测试准备完成，最终总任务数: {total_tasks}")
+            if response.success:
+                stats["successful"] += 1
+                stats["total_time"] += response.duration
+                stats["total_tokens"] += response.total_tokens
+                stats["total_chars"] += response.total_chars
+            else:
+                stats["failed"] += 1
+                if response.error_msg:
+                    self.error_text.append(f"数据集 {dataset_name} 错误: {response.error_msg}")
+            
+            logger.debug(f"已添加数据集 {dataset_name} 的测试结果")
+            
+        except Exception as e:
+            logger.error(f"添加测试结果失败: {e}", exc_info=True)

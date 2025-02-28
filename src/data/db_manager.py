@@ -9,6 +9,7 @@ from typing import Dict, List, Any, Optional
 from pathlib import Path
 from src.utils.config import config
 from src.data.test_datasets import DATASETS  # 导入默认数据集
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +25,8 @@ class DatabaseManager:
         self.conn = None
         self.cursor = None
         self._connect()
+        self._init_version_table()
+        self._check_and_migrate()
         self._init_tables()
         self._init_default_data()
         
@@ -42,48 +45,144 @@ class DatabaseManager:
             logger.error(f"连接数据库失败: {str(e)}")
             raise
             
+    def _init_version_table(self):
+        """初始化版本表"""
+        try:
+            self.cursor.execute('''
+                CREATE TABLE IF NOT EXISTS db_version (
+                    version INTEGER PRIMARY KEY,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # 检查是否已有版本记录
+            self.cursor.execute("SELECT version FROM db_version ORDER BY version DESC LIMIT 1")
+            row = self.cursor.fetchone()
+            if not row:
+                # 插入初始版本
+                self.cursor.execute("INSERT INTO db_version (version) VALUES (1)")
+                self.conn.commit()
+                logger.info("数据库版本初始化为 1")
+        except Exception as e:
+            logger.error(f"初始化版本表失败: {e}", exc_info=True)
+            raise
+    
+    def _check_and_migrate(self):
+        """检查并执行数据库迁移"""
+        try:
+            self.cursor.execute("SELECT version FROM db_version ORDER BY version DESC LIMIT 1")
+            row = self.cursor.fetchone()
+            current_version = row[0] if row else 0
+            
+            if current_version < 1:
+                logger.info("执行数据库迁移: 版本 0 -> 1")
+                # 删除旧的测试记录表
+                self.cursor.execute("DROP TABLE IF EXISTS test_records")
+                self.conn.commit()
+                logger.info("已删除旧的测试记录表")
+            
+            if current_version < 2:
+                logger.info("执行数据库迁移: 版本 1 -> 2")
+                # 删除旧的测试记录表并创建新表
+                self.cursor.execute("DROP TABLE IF EXISTS test_records")
+                self.cursor.execute('''
+                    CREATE TABLE test_records (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        session_name TEXT NOT NULL,
+                        test_task_id TEXT NOT NULL UNIQUE,
+                        model_name TEXT NOT NULL,
+                        concurrency INTEGER NOT NULL,
+                        total_tasks INTEGER NOT NULL,
+                        successful_tasks INTEGER NOT NULL,
+                        failed_tasks INTEGER NOT NULL,
+                        avg_response_time REAL NOT NULL,
+                        avg_generation_speed REAL NOT NULL,
+                        total_chars INTEGER NOT NULL,
+                        total_tokens INTEGER NOT NULL,
+                        avg_tps REAL NOT NULL,
+                        total_time REAL NOT NULL,
+                        current_speed REAL NOT NULL,
+                        test_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        log_file TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                ''')
+                self.conn.commit()
+                logger.info("已更新测试记录表结构")
+            
+            # 更新数据库版本到 2
+            if current_version != 2:
+                self.cursor.execute("INSERT INTO db_version (version) VALUES (2)")
+                self.conn.commit()
+                logger.info("数据库版本已更新到 2")
+                
+        except Exception as e:
+            logger.error(f"数据库迁移失败: {e}", exc_info=True)
+            raise
+
     def _init_tables(self):
         """初始化数据库表"""
         try:
-            # 模型配置表
+            logger.info("开始初始化数据库表")
+            # 创建模型配置表
             self.cursor.execute('''
                 CREATE TABLE IF NOT EXISTS model_configs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL UNIQUE,
+                    name TEXT UNIQUE NOT NULL,
                     api_url TEXT NOT NULL,
-                    api_key TEXT,
+                    api_key TEXT NOT NULL,
                     model TEXT NOT NULL,
-                    max_tokens INTEGER DEFAULT 2000,
-                    temperature REAL DEFAULT 0.7,
-                    top_p REAL DEFAULT 0.9,
+                    max_tokens INTEGER,
+                    temperature REAL,
+                    top_p REAL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
             
-            # 数据集表
+            # 创建数据集表
             self.cursor.execute('''
                 CREATE TABLE IF NOT EXISTS datasets (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL UNIQUE,
-                    description TEXT,
-                    category TEXT,
-                    prompts TEXT NOT NULL,  -- JSON格式存储的提示列表
+                    name TEXT UNIQUE NOT NULL,
+                    prompts TEXT NOT NULL,
                     is_builtin BOOLEAN DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
             
-            # GPU服务器配置表
+            # 创建GPU服务器表
             self.cursor.execute('''
                 CREATE TABLE IF NOT EXISTS gpu_servers (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL UNIQUE,
+                    name TEXT UNIQUE NOT NULL,
                     host TEXT NOT NULL,
-                    port INTEGER DEFAULT 22,
                     username TEXT NOT NULL,
-                    password TEXT,
-                    ssh_key TEXT,
+                    password TEXT NOT NULL,
                     is_active BOOLEAN DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            # 创建测试记录表
+            self.cursor.execute('''
+                CREATE TABLE IF NOT EXISTS test_records (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    session_name TEXT NOT NULL,
+                    test_task_id TEXT NOT NULL UNIQUE,
+                    model_name TEXT NOT NULL,
+                    concurrency INTEGER NOT NULL,
+                    total_tasks INTEGER NOT NULL,
+                    successful_tasks INTEGER NOT NULL,
+                    failed_tasks INTEGER NOT NULL,
+                    avg_response_time REAL NOT NULL,
+                    avg_generation_speed REAL NOT NULL,
+                    total_chars INTEGER NOT NULL,
+                    total_tokens INTEGER NOT NULL,
+                    avg_tps REAL NOT NULL,
+                    total_time REAL NOT NULL,
+                    current_speed REAL NOT NULL,
+                    test_time TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    log_file TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
@@ -91,7 +190,7 @@ class DatabaseManager:
             self.conn.commit()
             logger.info("数据库表初始化完成")
         except Exception as e:
-            logger.error(f"初始化数据库表失败: {str(e)}")
+            logger.error(f"初始化数据库表失败: {e}", exc_info=True)
             raise
 
     def _init_default_data(self):
@@ -200,12 +299,10 @@ class DatabaseManager:
             
             self.cursor.execute('''
                 INSERT OR REPLACE INTO datasets 
-                (name, description, category, prompts, is_builtin)
-                VALUES (?, ?, ?, ?, ?)
+                (name, prompts, is_builtin)
+                VALUES (?, ?, ?)
             ''', (
                 dataset_data["name"],
-                dataset_data.get("description"),
-                dataset_data.get("category"),
                 prompts_json,
                 dataset_data.get("is_builtin", False)
             ))
@@ -240,15 +337,13 @@ class DatabaseManager:
         try:
             self.cursor.execute('''
                 INSERT OR REPLACE INTO gpu_servers 
-                (name, host, port, username, password, ssh_key, is_active)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                (name, host, username, password, is_active)
+                VALUES (?, ?, ?, ?, ?)
             ''', (
                 server_data["name"],
                 server_data["host"],
-                server_data.get("port", 22),
                 server_data["username"],
                 server_data.get("password"),
-                server_data.get("ssh_key"),
                 server_data.get("is_active", False)
             ))
             self.conn.commit()
@@ -297,6 +392,211 @@ class DatabaseManager:
     def __del__(self):
         """析构函数，确保关闭数据库连接"""
         self.close()
+
+    def get_test_records(self) -> List[Dict]:
+        """获取所有测试记录
+        
+        Returns:
+            List[Dict]: 测试记录列表
+        """
+        try:
+            logger.info("开始获取测试记录")
+            self.cursor.execute('''
+                SELECT 
+                    test_task_id, session_name, model_name, concurrency,
+                    total_tasks, successful_tasks, failed_tasks,
+                    avg_response_time, avg_generation_speed, total_chars,
+                    total_tokens, avg_tps, total_time, current_speed,
+                    test_time, log_file, created_at
+                FROM test_records 
+                ORDER BY created_at DESC
+            ''')
+            
+            records = []
+            for row in self.cursor.fetchall():
+                record = dict(row)
+                # 确保数值类型正确
+                record["concurrency"] = int(record["concurrency"])
+                record["total_tasks"] = int(record["total_tasks"])
+                record["successful_tasks"] = int(record["successful_tasks"])
+                record["failed_tasks"] = int(record["failed_tasks"])
+                record["total_chars"] = int(record["total_chars"])
+                record["total_tokens"] = int(record["total_tokens"])
+                record["avg_response_time"] = float(record["avg_response_time"])
+                record["avg_generation_speed"] = float(record["avg_generation_speed"])
+                record["current_speed"] = float(record["current_speed"])
+                record["avg_tps"] = float(record["avg_tps"])
+                record["total_time"] = float(record["total_time"])
+                records.append(record)
+            
+            logger.info(f"成功获取 {len(records)} 条测试记录")
+            return records
+            
+        except Exception as e:
+            logger.error(f"获取测试记录失败: {e}", exc_info=True)
+            return []
+
+    def clear_test_logs(self) -> bool:
+        """清除测试日志文件"""
+        try:
+            records = self.get_test_records()
+            for record in records:
+                if record["log_file"] and os.path.exists(record["log_file"]):
+                    os.remove(record["log_file"])
+            return True
+        except Exception as e:
+            logger.error(f"清除测试日志失败: {e}")
+            return False
+
+    def save_test_record(self, record: Dict) -> bool:
+        """保存测试记录
+        
+        Args:
+            record: 测试记录数据
+            
+        Returns:
+            bool: 是否保存成功
+        """
+        try:
+            logger.info(f"开始保存测试记录: {record.get('test_task_id', 'unknown')}")
+            logger.debug(f"原始记录数据: {record}")
+            
+            # 验证必要字段
+            required_fields = [
+                "test_task_id", "session_name", "model_name", "concurrency",
+                "total_tasks", "successful_tasks", "failed_tasks",
+                "avg_response_time", "avg_generation_speed", "total_chars",
+                "total_tokens", "avg_tps", "total_time", "current_speed"
+            ]
+            
+            for field in required_fields:
+                if field not in record or record[field] is None:
+                    logger.error(f"缺少必要字段: {field}")
+                    return False
+            
+            # 数据类型转换和验证
+            try:
+                record["concurrency"] = int(record["concurrency"])
+                record["total_tasks"] = int(record["total_tasks"])
+                record["successful_tasks"] = int(record["successful_tasks"])
+                record["failed_tasks"] = int(record["failed_tasks"])
+                record["total_chars"] = int(record["total_chars"])
+                record["total_tokens"] = int(record["total_tokens"])
+                record["avg_response_time"] = float(record["avg_response_time"])
+                record["avg_generation_speed"] = float(record["avg_generation_speed"])
+                record["current_speed"] = float(record["current_speed"])
+                record["avg_tps"] = float(record["avg_tps"])
+                record["total_time"] = float(record["total_time"])
+            except (ValueError, TypeError) as e:
+                logger.error(f"数据类型转换失败: {e}")
+                return False
+            
+            # 数据有效性验证
+            if record["concurrency"] <= 0:
+                logger.error("并发数必须大于0")
+                return False
+            
+            if record["total_tasks"] <= 0:
+                logger.error("总任务数必须大于0")
+                return False
+            
+            if record["successful_tasks"] + record["failed_tasks"] != record["total_tasks"]:
+                logger.error("成功任务数和失败任务数之和必须等于总任务数")
+                return False
+            
+            # 使用REPLACE INTO替代INSERT INTO
+            self.cursor.execute('''
+                REPLACE INTO test_records (
+                    test_task_id, session_name, model_name, concurrency,
+                    total_tasks, successful_tasks, failed_tasks,
+                    avg_response_time, avg_generation_speed, total_chars,
+                    total_tokens, avg_tps, total_time, current_speed,
+                    test_time, log_file
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                record["test_task_id"],
+                record["session_name"],
+                record["model_name"],
+                record["concurrency"],
+                record["total_tasks"],
+                record["successful_tasks"],
+                record["failed_tasks"],
+                record["avg_response_time"],
+                record["avg_generation_speed"],
+                record["total_chars"],
+                record["total_tokens"],
+                record["avg_tps"],
+                record["total_time"],
+                record["current_speed"],
+                record.get("test_time", time.strftime('%Y-%m-%d %H:%M:%S')),
+                record.get("log_file")
+            ))
+            
+            self.conn.commit()
+            logger.info(f"测试记录保存成功: {record['test_task_id']}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"保存测试记录失败: {e}", exc_info=True)
+            return False
+
+    def delete_test_record(self, session_name: str) -> bool:
+        """删除测试记录
+        
+        Args:
+            session_name: 会话名称
+            
+        Returns:
+            bool: 是否删除成功
+        """
+        try:
+            logger.debug(f"开始删除测试记录，会话名称: {session_name}")
+            
+            # 获取日志文件路径
+            self.cursor.execute(
+                "SELECT log_file FROM test_records WHERE session_name = ?",
+                (session_name,)  # 只根据会话名称匹配
+            )
+            result = self.cursor.fetchone()
+            
+            if result is None:
+                logger.warning(f"未找到会话记录: {session_name}")
+                return False
+                
+            logger.debug(f"查询到的记录: {dict(result) if result else None}")
+            
+            if result and result["log_file"]:
+                # 删除日志文件
+                log_file = result["log_file"]
+                logger.debug(f"尝试删除日志文件: {log_file}")
+                
+                if os.path.exists(log_file):
+                    try:
+                        os.remove(log_file)
+                        logger.info(f"成功删除日志文件: {log_file}")
+                    except Exception as e:
+                        logger.warning(f"删除日志文件失败: {e}", exc_info=True)
+                else:
+                    logger.warning(f"日志文件不存在: {log_file}")
+            
+            # 删除数据库记录
+            logger.debug(f"开始删除数据库记录: {session_name}")
+            self.cursor.execute(
+                "DELETE FROM test_records WHERE session_name = ?",
+                (session_name,)  # 只根据会话名称匹配
+            )
+            
+            if self.cursor.rowcount == 0:
+                logger.warning(f"没有记录被删除，会话名称: {session_name}")
+                return False
+                
+            self.conn.commit()
+            logger.info(f"成功删除测试记录，会话名称: {session_name}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"删除测试记录失败: {e}", exc_info=True)
+            return False
 
 # 创建全局数据库管理器实例
 db_manager = DatabaseManager()

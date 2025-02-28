@@ -19,6 +19,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.init_ui()
+        self.connect_signals()
     
     def init_ui(self):
         """初始化UI"""
@@ -51,6 +52,12 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(self.results_tab, "记录")
         
         logger.info("主窗口初始化完成")
+    
+    def connect_signals(self):
+        """连接信号"""
+        # 连接测试标签页的信号到记录标签页
+        self.test_tab.test_manager.result_received.connect(self.results_tab.add_result)
+        logger.info("信号连接完成")
     
     def closeEvent(self, event):
         """窗口关闭事件"""

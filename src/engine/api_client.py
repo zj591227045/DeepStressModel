@@ -8,6 +8,7 @@ import aiohttp
 from typing import Dict, Any, Optional, AsyncGenerator
 from src.utils.logger import setup_logger
 from src.utils.token_counter import token_counter  # 导入token计数器
+from src.data.db_manager import db_manager  # 导入数据库管理器
 
 logger = setup_logger("api_client")
 
@@ -116,8 +117,6 @@ class APIClient:
         api_url: str,
         api_key: str,
         model: str,
-        timeout: int = 30,
-        max_retries: int = 3,
         max_tokens: int = 2048,
         temperature: float = 0.7,
         top_p: float = 0.9
@@ -128,8 +127,12 @@ class APIClient:
             self.api_url += "/v1"
         self.api_key = api_key
         self.model = model
-        self.timeout = timeout
-        self.max_retries = max_retries
+        
+        # 从配置中获取超时和重试设置
+        self.connect_timeout = db_manager.get_config("test.timeout", 10)  # 连接超时10秒
+        self.max_retries = db_manager.get_config("test.retry_count", 1)
+        
+        # 其他参数
         self.max_tokens = max_tokens
         self.temperature = temperature
         self.top_p = top_p
@@ -138,7 +141,7 @@ class APIClient:
         self.session = aiohttp.ClientSession(
             headers={"Authorization": f"Bearer {api_key}"}
         )
-        logger.info(f"初始化 API 客户端: URL={api_url}, model={model}")
+        logger.info(f"初始化 API 客户端: URL={api_url}, model={model}, connect_timeout={self.connect_timeout}, max_retries={self.max_retries}")
     
     async def close(self):
         """关闭客户端会话"""
@@ -162,21 +165,25 @@ class APIClient:
         response: aiohttp.ClientResponse
     ) -> AsyncGenerator[str, None]:
         """处理流式响应"""
-        async for line in response.content:
-            line = line.decode('utf-8').strip()
-            if line.startswith('data: '):
-                try:
-                    data = json.loads(line[6:])
-                    if data.get('choices'):
-                        # 支持两种格式：delta 和 text
-                        content = (
-                            data['choices'][0].get('delta', {}).get('content', '') or
-                            data['choices'][0].get('text', '')
-                        )
-                        if content:
-                            yield content
-                except json.JSONDecodeError:
-                    continue
+        try:
+            async for line in response.content:
+                line = line.decode('utf-8').strip()
+                if line.startswith('data: '):
+                    try:
+                        data = json.loads(line[6:])
+                        if data.get('choices'):
+                            # 支持两种格式：delta 和 text
+                            content = (
+                                data['choices'][0].get('delta', {}).get('content', '') or
+                                data['choices'][0].get('text', '')
+                            )
+                            if content:
+                                yield content
+                    except json.JSONDecodeError:
+                        continue
+        except Exception as e:
+            logger.error(f"流式输出处理异常: {e}")
+            raise  # 向上传递异常，让generate方法处理
     
     async def generate(self, prompt: str) -> APIResponse:
         """生成响应"""
@@ -196,26 +203,48 @@ class APIClient:
                         "temperature": self.temperature,
                         "top_p": self.top_p
                     },
-                    timeout=aiohttp.ClientTimeout(total=self.timeout)
+                    timeout=aiohttp.ClientTimeout(
+                        connect=self.connect_timeout,
+                        sock_connect=self.connect_timeout,
+                        sock_read=None,  # 不限制读取超时
+                        total=None  # 不限制总体超时
+                    )
                 ) as response:
                     if response.status == 200:
-                        async for chunk in self._process_stream(response):
-                            full_response.append(chunk)
-                            stream_stats.update(chunk)
-                        
-                        end_time = time.time()
-                        response_text = ''.join(full_response)
-                        
-                        return APIResponse(
-                            success=True,
-                            response_text=response_text,
-                            tokens_generated=stream_stats.total_tokens,
-                            duration=end_time - start_time,
-                            start_time=start_time,
-                            end_time=end_time,
-                            model_name=self.model,
-                            stream_stats=stream_stats
-                        )
+                        try:
+                            async for chunk in self._process_stream(response):
+                                full_response.append(chunk)
+                                stream_stats.update(chunk)
+                            
+                            end_time = time.time()
+                            response_text = ''.join(full_response)
+                            
+                            return APIResponse(
+                                success=True,
+                                response_text=response_text,
+                                tokens_generated=stream_stats.total_tokens,
+                                duration=end_time - start_time,
+                                start_time=start_time,
+                                end_time=end_time,
+                                model_name=self.model,
+                                stream_stats=stream_stats
+                            )
+                        except Exception as e:
+                            logger.error(f"流式输出中断: {e}")
+                            # 返回已生成的部分内容，但标记为失败
+                            end_time = time.time()
+                            response_text = ''.join(full_response)
+                            return APIResponse(
+                                success=False,
+                                response_text=response_text,
+                                error_msg=f"流式输出中断: {str(e)}",
+                                tokens_generated=stream_stats.total_tokens,
+                                duration=end_time - start_time,
+                                start_time=start_time,
+                                end_time=end_time,
+                                model_name=self.model,
+                                stream_stats=stream_stats
+                            )
                     else:
                         error_text = await response.text()
                         logger.error(f"API请求失败 (尝试 {attempt + 1}/{self.max_retries}): {response.status} - {error_text}")
@@ -228,12 +257,13 @@ class APIClient:
                                 end_time=time.time()
                             )
             
-            except asyncio.TimeoutError:
-                logger.error(f"API请求超时 (尝试 {attempt + 1}/{self.max_retries})")
+            except asyncio.TimeoutError as e:
+                error_msg = "连接超时" if "connect" in str(e) else "请求超时"
+                logger.error(f"API{error_msg} (尝试 {attempt + 1}/{self.max_retries})")
                 if attempt == self.max_retries - 1:
                     return APIResponse(
                         success=False,
-                        error_msg="请求超时",
+                        error_msg=error_msg,
                         duration=time.time() - start_time,
                         start_time=start_time,
                         end_time=time.time()

@@ -70,6 +70,9 @@ class GPUMonitor:
         self.client = None
         self.max_retries = 3  # 最大重试次数
         self.retry_interval = 2  # 重试间隔（秒）
+        # 添加网络IO历史数据
+        self._last_net_stats = None
+        self._last_net_time = None
         self._connect()
     
     def _connect(self) -> bool:
@@ -124,6 +127,45 @@ class GPUMonitor:
                 return None
         return None
 
+    def _get_network_speed(self) -> Dict[str, float]:
+        """获取网络速度"""
+        try:
+            # 获取当前网络数据
+            net_command = "cat /proc/net/dev | grep -E 'eth0|ens|enp' | head -n1 | awk '{print $2,$10}'"
+            net_output = self._execute_command(net_command)
+            if not net_output:
+                return {'receive': 0, 'transmit': 0}
+            
+            current_time = time.time()
+            net_recv, net_send = map(float, net_output.split())
+            
+            # 如果是第一次获取数据
+            if self._last_net_stats is None:
+                self._last_net_stats = (net_recv, net_send)
+                self._last_net_time = current_time
+                return {'receive': 0, 'transmit': 0}
+            
+            # 计算时间差
+            time_diff = current_time - self._last_net_time
+            if time_diff <= 0:
+                return {'receive': 0, 'transmit': 0}
+            
+            # 计算速率（bytes/s）
+            recv_speed = (net_recv - self._last_net_stats[0]) / time_diff
+            send_speed = (net_send - self._last_net_stats[1]) / time_diff
+            
+            # 更新历史数据
+            self._last_net_stats = (net_recv, net_send)
+            self._last_net_time = current_time
+            
+            return {
+                'receive': max(0, recv_speed),  # 确保速度不为负
+                'transmit': max(0, send_speed)
+            }
+        except Exception as e:
+            logger.error(f"获取网络速度失败: {e}")
+            return {'receive': 0, 'transmit': 0}
+
     def get_stats(self) -> Optional[GPUStats]:
         """获取GPU统计信息"""
         for attempt in range(self.max_retries):
@@ -166,12 +208,8 @@ class GPUMonitor:
                     raise Exception("无法获取磁盘信息")
                 disk_util = float(disk_output)
                 
-                # 获取网络IO
-                net_command = "cat /proc/net/dev | grep -E 'eth0|ens|enp' | head -n1 | awk '{print $2,$10}'"
-                net_output = self._execute_command(net_command)
-                if not net_output:
-                    raise Exception("无法获取网络信息")
-                net_recv, net_send = map(float, net_output.split())
+                # 获取网络速度
+                network_io = self._get_network_speed()
                 
                 # 获取CPU信息
                 cpu_info_command = "cat /proc/cpuinfo | grep 'model name' | head -n1 | cut -d':' -f2"
@@ -203,7 +241,7 @@ class GPUMonitor:
                     cpu_util=cpu_util,
                     memory_util=memory_util,
                     disk_util=disk_util,
-                    network_io={'receive': net_recv, 'transmit': net_send},
+                    network_io=network_io,
                     cpu_info=cpu_info.strip(),
                     gpu_info=gpu_info,
                     gpu_count=gpu_count,

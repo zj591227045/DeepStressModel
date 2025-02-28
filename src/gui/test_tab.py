@@ -323,8 +323,13 @@ class GPUMonitorWidget(QGroupBox):
             server_data = self.server_selector.currentData()
             if server_data:
                 try:
+                    # 设置为活动服务器
                     db_manager.set_gpu_server_active(server_data["name"])
-                    # 立即检查 GPU 状态
+                    # 重置监控状态
+                    self._monitor_initialized = False
+                    # 立即更新服务器配置
+                    self._update_server_config()
+                    # 检查 GPU 状态
                     stats = gpu_monitor.get_stats()
                     if stats:
                         self.show_monitor_ui()
@@ -347,14 +352,14 @@ class GPUMonitorWidget(QGroupBox):
     
     def _format_network_speed(self, bytes_per_sec: float) -> str:
         """格式化网络速度显示"""
-        if bytes_per_sec >= 1024 * 1024 * 1024:
-            return f"{bytes_per_sec / (1024 * 1024 * 1024):.1f} GB/s"
-        elif bytes_per_sec >= 1024 * 1024:
-            return f"{bytes_per_sec / (1024 * 1024):.1f} MB/s"
-        elif bytes_per_sec >= 1024:
-            return f"{bytes_per_sec / 1024:.1f} KB/s"
-        else:
+        if bytes_per_sec < 1024:  # B/s
             return f"{bytes_per_sec:.1f} B/s"
+        elif bytes_per_sec < 1024 * 1024:  # KB/s
+            return f"{bytes_per_sec/1024:.1f} KB/s"
+        elif bytes_per_sec < 1024 * 1024 * 1024:  # MB/s
+            return f"{bytes_per_sec/(1024*1024):.1f} MB/s"
+        else:  # GB/s
+            return f"{bytes_per_sec/(1024*1024*1024):.1f} GB/s"
 
     def _on_stats_updated(self, stats):
         """处理监控数据更新"""
@@ -432,16 +437,21 @@ class TestProgressWidget(QGroupBox):
         """初始化UI"""
         layout = QVBoxLayout()
         
+        # 状态指示
+        self.status_label = QLabel("状态: 未开始")
+        self.status_label.setStyleSheet("font-weight: bold;")
+        layout.addWidget(self.status_label)
+        
         # 进度条
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
         layout.addWidget(self.progress_bar)
         
-        # 详细信息
+        # 进度信息显示区域
         self.detail_text = QTextEdit()
         self.detail_text.setReadOnly(True)
-        self.detail_text.setMaximumHeight(100)
-        self.detail_text.setPlaceholderText("测试运行时将在此显示详细进度信息...")  # 添加提示文本
+        self.detail_text.setMaximumHeight(60)  # 减小高度
+        self.detail_text.setPlaceholderText("测试进度将在这里显示...")
         layout.addWidget(self.detail_text)
         
         self.setLayout(layout)
@@ -617,14 +627,47 @@ class TestTab(QWidget):
         self.test_thread = None
         self.current_test_id = None
         self.current_test_records = None  # 添加记录缓存
+        
+        # 先初始化UI
         self.init_ui()
-        self.connect_settings_signals()
+        # 加载数据
         self.load_datasets()
         self.load_models()
+        # 最后连接信号
+        self.connect_settings_signals()
         
         # 连接测试管理器的信号
         self.test_manager.progress_updated.connect(self._on_progress_updated)
         logger.info("已连接进度更新信号")
+    
+    def _clear_test_state(self):
+        """清理测试状态"""
+        try:
+            logger.info("开始清理测试状态...")
+            
+            # 清理测试记录
+            self.current_test_records = None
+            self.current_test_id = None
+            
+            # 清理UI状态
+            self.status_label.setText("状态: 未开始")
+            self.status_label.setStyleSheet("font-weight: bold;")
+            self.progress_bar.setValue(0)
+            self.detail_text.clear()
+            self.detail_text.setPlaceholderText("测试进行中...")
+            
+            # 清理测试信息
+            self.test_info.clear()
+            
+            # 同步到 results_tab
+            results_tab = self._find_results_tab()
+            if results_tab:
+                results_tab.current_records = {}
+            
+            logger.info("测试状态清理完成")
+            
+        except Exception as e:
+            logger.error(f"清理测试状态时出错: {e}", exc_info=True)
     
     def _init_test_records(self, test_task_id: str, model_config: dict, selected_datasets: dict):
         """初始化测试记录"""
@@ -637,18 +680,21 @@ class TestTab(QWidget):
                 "test_task_id": test_task_id,
                 "session_name": test_task_id,
                 "model_name": model_config["name"],
+                "model_config": model_config,  # 保存完整的模型配置
                 "concurrency": self.concurrency_spin.value(),
                 "datasets": {},
-                "start_time": time.time(),
+                "start_time": time.time(),  # 记录开始时间
                 "successful_tasks": 0,
                 "failed_tasks": 0,
                 "total_tokens": 0,
                 "total_chars": 0,
-                "total_time": 0,
-                "avg_response_time": 0,
-                "avg_generation_speed": 0,
-                "avg_tps": 0,
-                "status": "running"
+                "total_time": 0.0,
+                "avg_response_time": 0.0,
+                "avg_generation_speed": 0.0,
+                "current_speed": 0.0,
+                "avg_tps": 0.0,
+                "status": "running",
+                "log_file": os.path.join("data", "logs", "tests", f"{test_task_id}.log")
             }
             
             # 计算总权重
@@ -666,14 +712,15 @@ class TestTab(QWidget):
                     "total": dataset_tasks,  # 使用实际任务数
                     "successful": 0,
                     "failed": 0,
-                    "total_time": 0,
+                    "total_time": 0.0,
                     "total_tokens": 0,
                     "total_chars": 0,
-                    "avg_response_time": 0,
-                    "avg_generation_speed": 0,
-                    "current_speed": 0,
+                    "avg_response_time": 0.0,
+                    "avg_generation_speed": 0.0,
+                    "current_speed": 0.0,
                     "weight": weight,
-                    "concurrency": dataset_concurrency
+                    "concurrency": dataset_concurrency,
+                    "start_time": time.time()
                 }
             
             # 设置总任务数
@@ -686,7 +733,9 @@ class TestTab(QWidget):
             # 同步到 results_tab
             results_tab = self._find_results_tab()
             if results_tab:
-                results_tab.current_records = records
+                results_tab.current_records = records.copy()
+                # 立即保存一次记录
+                results_tab._save_test_records()
                 logger.info(f"测试记录初始化完成: {test_task_id}")
             else:
                 logger.error("未找到 results_tab,无法保存初始测试记录")
@@ -703,12 +752,35 @@ class TestTab(QWidget):
                 logger.warning("没有当前测试记录可同步")
                 return
             
+            # 确保所有必要字段都存在
+            required_fields = {
+                "test_task_id": self.current_test_id,
+                "session_name": self.current_test_id,
+                "start_time": time.time(),
+                "status": "running",
+                "total_tasks": 0,
+                "successful_tasks": 0,
+                "failed_tasks": 0,
+                "total_tokens": 0,
+                "total_chars": 0,
+                "total_time": 0.0,
+                "avg_response_time": 0.0,
+                "avg_generation_speed": 0.0,
+                "current_speed": 0.0,
+                "avg_tps": 0.0
+            }
+            
+            for key, default_value in required_fields.items():
+                if key not in self.current_test_records:
+                    logger.warning(f"记录中缺少字段 {key}，使用默认值")
+                    self.current_test_records[key] = default_value
+            
             results_tab = self._find_results_tab()
             if results_tab:
                 # 确保数据一致性
                 if not hasattr(results_tab, 'current_records') or not results_tab.current_records:
                     logger.info("results_tab 中无记录,执行完整同步")
-                    results_tab.current_records = self.current_test_records
+                    results_tab.current_records = self.current_test_records.copy()
                 else:
                     # 更新关键字段
                     for key in [
@@ -720,12 +792,10 @@ class TestTab(QWidget):
                     ]:
                         if key in self.current_test_records:
                             results_tab.current_records[key] = self.current_test_records[key]
-                
-                # 保存记录
-                results_tab._save_test_records()
-                logger.debug("测试记录已同步到 results_tab")
-            else:
-                logger.warning("未找到 results_tab,无法同步测试记录")
+            
+            # 保存记录
+            results_tab._save_test_records()
+            logger.debug("测试记录已同步到 results_tab")
         except Exception as e:
             logger.error(f"同步测试记录时出错: {e}", exc_info=True)
     
@@ -741,9 +811,21 @@ class TestTab(QWidget):
         
         # 模型选择
         model_group = QGroupBox("模型选择")
-        model_layout = QFormLayout()
+        model_layout = QHBoxLayout()
+        
+        # 创建表单布局用于标签和下拉框
+        form_layout = QFormLayout()
         self.model_combo = QComboBox()
-        model_layout.addRow("选择模型:", self.model_combo)
+        form_layout.addRow("选择模型:", self.model_combo)
+        
+        # 添加刷新按钮
+        refresh_model_btn = QPushButton("刷新")
+        refresh_model_btn.clicked.connect(self.load_models)
+        
+        # 将表单布局和刷新按钮添加到水平布局中
+        model_layout.addLayout(form_layout)
+        model_layout.addWidget(refresh_model_btn)
+        
         model_group.setLayout(model_layout)
         left_panel.addWidget(model_group)
         
@@ -767,8 +849,10 @@ class TestTab(QWidget):
         concurrency_layout = QFormLayout()
         
         self.concurrency_spin = QSpinBox()
-        self.concurrency_spin.setRange(1, config.get("test.max_concurrency", 10))
+        self.concurrency_spin.setRange(1, 99999)  # 设置一个足够大的最大值
         self.concurrency_spin.setValue(config.get("test.default_concurrency", 1))
+        self.concurrency_spin.setMinimumWidth(150)  # 设置最小宽度
+        self.concurrency_spin.setFixedWidth(200)    # 设置固定宽度
         concurrency_layout.addRow("总并发数:", self.concurrency_spin)
         
         concurrency_group.setLayout(concurrency_layout)
@@ -799,6 +883,11 @@ class TestTab(QWidget):
         progress_group = QGroupBox("测试进度")
         progress_layout = QVBoxLayout()
         
+        # 状态指示
+        self.status_label = QLabel("状态: 未开始")
+        self.status_label.setStyleSheet("font-weight: bold;")
+        progress_layout.addWidget(self.status_label)
+        
         # 进度条
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
@@ -808,7 +897,7 @@ class TestTab(QWidget):
         self.detail_text = QTextEdit()
         self.detail_text.setReadOnly(True)
         self.detail_text.setMaximumHeight(60)  # 减小高度
-        self.detail_text.setPlaceholderText("测试进行中...")
+        self.detail_text.setPlaceholderText("测试进度将在这里显示...")
         progress_layout.addWidget(self.detail_text)
         
         progress_group.setLayout(progress_layout)
@@ -844,12 +933,31 @@ class TestTab(QWidget):
                         logger.info("成功连接模型更新信号")
                     else:
                         logger.warning("未找到模型设置组件")
+                    
+                    # 查找GPU设置组件
+                    gpu_settings = settings_tab.findChild(QWidget, "gpu_settings")
+                    if gpu_settings:
+                        gpu_settings.settings_updated.connect(self._on_gpu_settings_updated)
+                        logger.info("成功连接GPU设置更新信号")
+                    else:
+                        logger.warning("未找到GPU设置组件")
                 else:
                     logger.warning("未找到设置标签页")
             else:
                 logger.warning("未找到主窗口")
         except Exception as e:
             logger.error(f"连接设置信号失败: {e}")
+
+    def _on_gpu_settings_updated(self):
+        """处理GPU设置更新"""
+        try:
+            logger.info("GPU设置已更新，正在刷新监控...")
+            if hasattr(self, 'gpu_monitor'):
+                # 重新初始化GPU监控
+                self.gpu_monitor._monitor_initialized = False
+                self.gpu_monitor._update_server_config()
+        except Exception as e:
+            logger.error(f"更新GPU监控失败: {e}")
     
     def load_datasets(self):
         """加载数据集"""
@@ -941,6 +1049,13 @@ class TestTab(QWidget):
                 QMessageBox.warning(self, "警告", "测试已在运行中")
                 return
             
+            # 清理上一次测试的状态
+            self._clear_test_state()
+            
+            # 更新状态为开始测试
+            self.status_label.setText("状态: 开始测试")
+            self.status_label.setStyleSheet("font-weight: bold; color: blue;")
+            
             # 获取选中的模型配置
             model_config = self.get_selected_model()
             if not model_config:
@@ -1019,33 +1134,32 @@ class TestTab(QWidget):
             self.test_manager.stop_test()
     
     def _on_progress_updated(self, progress: TestProgress):
-        """处理进度更新"""
+        """更新进度信息"""
         try:
+            # 更新状态为测试中
+            self.status_label.setText("状态: 测试进行中")
+            self.status_label.setStyleSheet("font-weight: bold; color: green;")
+            
             # 更新进度条
-            self.progress_bar.setValue(int(progress.progress_percentage))
+            total_progress = (progress.completed_tasks / progress.total_tasks) * 100
+            self.progress_bar.setValue(int(total_progress))
             
-            # 更新详细信息文本
-            detail_text = (
-                f"测试进行中...\n"
-                f"当前进度: {progress.progress_percentage:.1f}%\n"
-                f"实时速度: {progress.avg_generation_speed:.1f} 字符/秒\n"
-                f"平均响应: {progress.avg_response_time:.2f}s"
+            # 更新详细信息
+            status_text = (
+                f"总进度: {progress.completed_tasks}/{progress.total_tasks} "
+                f"({total_progress:.1f}%)\n"
+                f"当前速度: {progress.current_speed:.1f} 字/秒\n"
+                f"平均速度: {progress.avg_speed:.1f} 字/秒"
             )
+            self.detail_text.setText(status_text)
             
-            self.detail_text.setText(detail_text)
-            
-            # 更新数据集统计信息
+            # 更新测试信息表格
             for dataset_name, stats in progress.dataset_stats.items():
                 self.test_info.update_dataset_info(dataset_name, stats)
                 
-            # 如果有错误信息，添加到错误显示区域
-            if progress.last_error:
-                self.test_info.add_error(progress.last_error)
-                
-            logger.debug(f"[DEBUG] 更新进度: {progress.progress_percentage:.1f}%, 错误: {progress.last_error}")
-            
         except Exception as e:
-            logger.error(f"[ERROR] 更新进度显示时发生错误: {e}", exc_info=True)
+            logger.error(f"更新进度信息失败: {e}")
+            self.detail_text.append(f"错误: {str(e)}")
 
     def _find_results_tab(self):
         """查找results_tab组件"""
@@ -1146,114 +1260,53 @@ class TestTab(QWidget):
             logger.error(f"处理测试结果时出错: {e}", exc_info=True)
 
     def _on_test_finished(self):
-        """处理测试完成"""
+        """测试完成处理"""
         try:
-            logger.info("测试完成回调被触发")
+            # 更新状态为完成
+            self.status_label.setText("状态: 测试完成")
+            self.status_label.setStyleSheet("font-weight: bold; color: #006400;")  # 深绿色
             
-            if self.current_test_records:
-                # 更新状态和结束时间
-                self.current_test_records["status"] = "completed"
-                self.current_test_records["end_time"] = time.time()
-                
-                # 更新总体统计
-                total_time = self.current_test_records["end_time"] - self.current_test_records["start_time"]
-                self.current_test_records["total_time"] = total_time
-                
-                # 计算各数据集的平均值
-                dataset_stats = self.current_test_records.get("datasets", {})
-                valid_datasets = [stats for stats in dataset_stats.values() if stats["successful"] > 0]
-                
-                if valid_datasets:
-                    # 计算所有数据集平均响应时间的平均值
-                    avg_response_times = [stats["avg_response_time"] for stats in valid_datasets]
-                    self.current_test_records["avg_response_time"] = sum(avg_response_times) / len(avg_response_times)
-                    
-                    # 计算所有数据集平均生成速度的平均值
-                    avg_generation_speeds = [stats["avg_generation_speed"] for stats in valid_datasets]
-                    self.current_test_records["avg_generation_speed"] = sum(avg_generation_speeds) / len(avg_generation_speeds)
-                    
-                    # 计算所有数据集平均TPS的平均值
-                    avg_tps_values = [
-                        stats["total_tokens"] / stats["total_time"] 
-                        for stats in valid_datasets 
-                        if stats["total_time"] > 0
-                    ]
-                    if avg_tps_values:
-                        self.current_test_records["avg_tps"] = sum(avg_tps_values) / len(avg_tps_values)
-                    else:
-                        self.current_test_records["avg_tps"] = 0
-                else:
-                    # 如果没有成功的数据集，所有平均值设为0
-                    self.current_test_records["avg_response_time"] = 0
-                    self.current_test_records["avg_generation_speed"] = 0
-                    self.current_test_records["avg_tps"] = 0
-                
-                # 最后一次同步并保存
-                results_tab = self._find_results_tab()
-                if results_tab:
-                    results_tab.current_records = self.current_test_records
-                    results_tab._save_test_records()
-                    # 刷新记录列表
-                    results_tab._load_history_records()
-                else:
-                    logger.error("未找到results_tab，无法保存最终测试记录")
-            
-            # 更新UI状态
+            # 更新按钮状态
             self.start_button.setEnabled(True)
             self.stop_button.setEnabled(False)
             
-            # 清理测试线程
-            if self.test_thread:
-                logger.info("正在清理测试线程...")
-                self.test_thread.quit()
-                if not self.test_thread.wait(5000):
-                    logger.warning("测试线程未能正常退出")
-                    self.test_thread.terminate()
-                else:
-                    logger.info("测试线程已正常退出")
-                self.test_thread = None
+            # 添加完成提示
+            self.detail_text.append("\n测试已完成！")
             
-            # 清理当前记录
-            self.current_test_records = None
-            logger.info("测试完成处理结束")
-            
-        except Exception as e:
-            logger.error(f"处理测试完成时出错: {e}", exc_info=True)
-
-    def _on_test_error(self, error_msg: str):
-        """处理测试错误"""
-        try:
-            logger.error(f"测试执行出错: {error_msg}")
-            
+            # 更新测试记录的状态和总耗时
             if self.current_test_records:
-                # 更新状态和错误信息
-                self.current_test_records["status"] = "error"
-                self.current_test_records["error_message"] = error_msg
-                self.current_test_records["end_time"] = time.time()
-                
-                # 保存错误状态
+                self.current_test_records["status"] = "completed"
+                # 计算实际总耗时
+                if "start_time" in self.current_test_records:
+                    self.current_test_records["total_time"] = time.time() - self.current_test_records["start_time"]
+                # 同步最终的测试记录
                 self._sync_test_records()
             
-            # 更新UI状态
+            # 显示完成对话框
+            QMessageBox.information(self, "完成", "测试已完成！")
+            
+        except Exception as e:
+            logger.error(f"处理测试完成事件失败: {e}")
+            QMessageBox.critical(self, "错误", f"处理测试完成事件失败: {e}")
+
+    def _on_test_error(self, error_msg: str):
+        """测试错误处理"""
+        try:
+            # 更新状态为错误
+            self.status_label.setText("状态: 测试出错")
+            self.status_label.setStyleSheet("font-weight: bold; color: red;")
+            
+            # 更新按钮状态
             self.start_button.setEnabled(True)
             self.stop_button.setEnabled(False)
             
             # 显示错误信息
-            QMessageBox.critical(self, "测试错误", f"测试执行出错: {error_msg}")
+            self.detail_text.append(f"\n错误: {error_msg}")
+            self.test_info.add_error(error_msg)
             
-            # 清理测试线程
-            if self.test_thread:
-                logger.info("正在清理测试线程...")
-                self.test_thread.quit()
-                if not self.test_thread.wait(5000):
-                    logger.warning("测试线程未能正常退出")
-                    self.test_thread.terminate()
-                else:
-                    logger.info("测试线程已正常退出")
-                self.test_thread = None
-            
-            # 清理当前记录
-            self.current_test_records = None
+            # 显示错误对话框
+            QMessageBox.critical(self, "错误", f"测试过程中出错: {error_msg}")
             
         except Exception as e:
-            logger.error(f"处理测试错误时出错: {e}", exc_info=True)
+            logger.error(f"处理测试错误事件失败: {e}")
+            QMessageBox.critical(self, "错误", f"处理测试错误事件失败: {e}")

@@ -149,6 +149,28 @@ class ModelSettingsWidget(QWidget):
         group.setLayout(group_layout)
         layout.addWidget(group)
         
+        # 添加通用配置组
+        common_group = QGroupBox("通用配置")
+        common_layout = QFormLayout()
+        common_layout.setSpacing(10)
+        
+        # 超时设置
+        self.timeout_spin = QSpinBox()
+        self.timeout_spin.setRange(1, 300)  # 1-300秒
+        self.timeout_spin.setValue(db_manager.get_config("test.timeout", 15))
+        self.timeout_spin.valueChanged.connect(self.save_common_settings)
+        common_layout.addRow("请求超时时间(秒):", self.timeout_spin)
+        
+        # 重试次数设置
+        self.retry_spin = QSpinBox()
+        self.retry_spin.setRange(0, 10)  # 0-10次
+        self.retry_spin.setValue(db_manager.get_config("test.retry_count", 1))
+        self.retry_spin.valueChanged.connect(self.save_common_settings)
+        common_layout.addRow("失败重试次数:", self.retry_spin)
+        
+        common_group.setLayout(common_layout)
+        layout.addWidget(common_group)
+        
         self.setLayout(layout)
         
         # 加载模型列表
@@ -218,12 +240,22 @@ class ModelSettingsWidget(QWidget):
             dialog = ModelEditDialog(model_data, parent=self)
             if dialog.exec():
                 new_data = dialog.get_model_data()
-                if db_manager.add_model_config(new_data):
-                    self.load_models()
-                    self.model_updated.emit()
-                    logger.info(f"更新模型配置成功: {new_data['name']}")
+                if new_data["name"] != model_name:
+                    # 如果名称改变了，删除旧配置并添加新配置
+                    if db_manager.delete_model_config(model_name) and db_manager.add_model_config(new_data):
+                        self.load_models()
+                        self.model_updated.emit()
+                        logger.info(f"更新模型配置成功: {new_data['name']}")
+                    else:
+                        QMessageBox.critical(self, "错误", "更新模型配置失败")
                 else:
-                    QMessageBox.critical(self, "错误", "更新模型配置失败")
+                    # 如果名称没变，直接更新配置
+                    if db_manager.update_model_config(new_data):
+                        self.load_models()
+                        self.model_updated.emit()
+                        logger.info(f"更新模型配置成功: {new_data['name']}")
+                    else:
+                        QMessageBox.critical(self, "错误", "更新模型配置失败")
     
     def delete_model(self):
         """删除模型"""
@@ -257,4 +289,14 @@ class ModelSettingsWidget(QWidget):
             logger.info("重置模型配置成功")
         except Exception as e:
             logger.error(f"重置模型配置失败: {e}")
-            raise 
+            raise
+
+    def save_common_settings(self):
+        """保存通用配置"""
+        try:
+            db_manager.set_config("test.timeout", self.timeout_spin.value())
+            db_manager.set_config("test.retry_count", self.retry_spin.value())
+            logger.info("保存通用配置成功")
+        except Exception as e:
+            logger.error(f"保存通用配置失败: {e}")
+            QMessageBox.critical(self, "错误", f"保存通用配置失败：{e}") 

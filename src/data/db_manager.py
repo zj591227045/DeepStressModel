@@ -139,6 +139,15 @@ class DatabaseManager:
                 )
             ''')
             
+            # 创建通用配置表
+            self.cursor.execute('''
+                CREATE TABLE IF NOT EXISTS configs (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
             # 创建数据集表
             self.cursor.execute('''
                 CREATE TABLE IF NOT EXISTS datasets (
@@ -228,8 +237,14 @@ class DatabaseManager:
     def add_model_config(self, config_data: Dict) -> bool:
         """添加模型配置"""
         try:
+            # 检查是否已存在同名配置
+            self.cursor.execute("SELECT name FROM model_configs WHERE name = ?", (config_data["name"],))
+            if self.cursor.fetchone():
+                logger.error(f"模型配置已存在: {config_data['name']}")
+                return False
+                
             self.cursor.execute('''
-                INSERT OR REPLACE INTO model_configs 
+                INSERT INTO model_configs 
                 (name, api_url, api_key, model, max_tokens, temperature, top_p)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', (
@@ -245,6 +260,28 @@ class DatabaseManager:
             return True
         except Exception as e:
             logger.error(f"添加模型配置失败: {e}")
+            return False
+
+    def update_model_config(self, config_data: Dict) -> bool:
+        """更新模型配置"""
+        try:
+            self.cursor.execute('''
+                UPDATE model_configs 
+                SET api_url = ?, api_key = ?, model = ?, max_tokens = ?, temperature = ?, top_p = ?
+                WHERE name = ?
+            ''', (
+                config_data["api_url"],
+                config_data.get("api_key"),
+                config_data["model"],
+                config_data.get("max_tokens", 2000),
+                config_data.get("temperature", 0.7),
+                config_data.get("top_p", 0.9),
+                config_data["name"]
+            ))
+            self.conn.commit()
+            return True
+        except Exception as e:
+            logger.error(f"更新模型配置失败: {e}")
             return False
 
     def delete_model_config(self, name: str) -> bool:
@@ -596,6 +633,55 @@ class DatabaseManager:
             
         except Exception as e:
             logger.error(f"删除测试记录失败: {e}", exc_info=True)
+            return False
+
+    def get_config(self, key: str, default: Any = None) -> Any:
+        """获取配置值
+        
+        Args:
+            key: 配置键
+            default: 默认值
+            
+        Returns:
+            配置值
+        """
+        try:
+            self.cursor.execute("SELECT value FROM configs WHERE key = ?", (key,))
+            row = self.cursor.fetchone()
+            if row:
+                try:
+                    return json.loads(row[0])
+                except json.JSONDecodeError:
+                    return row[0]
+            return default
+        except Exception as e:
+            logger.error(f"获取配置失败: {e}")
+            return default
+
+    def set_config(self, key: str, value: Any) -> bool:
+        """设置配置值
+        
+        Args:
+            key: 配置键
+            value: 配置值
+            
+        Returns:
+            是否成功
+        """
+        try:
+            # 将值转换为JSON字符串
+            if not isinstance(value, str):
+                value = json.dumps(value)
+            
+            self.cursor.execute('''
+                INSERT OR REPLACE INTO configs (key, value, updated_at)
+                VALUES (?, ?, CURRENT_TIMESTAMP)
+            ''', (key, value))
+            self.conn.commit()
+            logger.info(f"保存配置成功: {key}={value}")
+            return True
+        except Exception as e:
+            logger.error(f"保存配置失败: {e}")
             return False
 
 # 创建全局数据库管理器实例

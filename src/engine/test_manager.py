@@ -37,10 +37,16 @@ class TestProgress:
     avg_tps: float = 0.0  # 添加平均TPS属性
     last_error: str = ""
     dataset_stats: Dict[str, Dict] = None
+    current_speed: float = 0.0  # 添加当前速度属性
     
     def __post_init__(self):
         if self.dataset_stats is None:
             self.dataset_stats = {}
+    
+    @property
+    def avg_speed(self) -> float:
+        """获取平均生成速度"""
+        return self.avg_generation_speed
     
     @property
     def progress_percentage(self) -> float:
@@ -82,6 +88,7 @@ class TestProgress:
                 stats["avg_generation_speed"] = stats["total_chars"] / stats["total_time"] if stats["total_time"] > 0 else 0
                 stats["avg_tps"] = stats["total_tokens"] / stats["total_time"] if stats["total_time"] > 0 else 0
                 stats["current_speed"] = response.generation_speed
+                self.current_speed = response.generation_speed  # 更新当前速度
             
             # 更新总体平均值
             total_time = sum(s["total_time"] for s in self.dataset_stats.values() if s["successful"] > 0)
@@ -116,8 +123,6 @@ class TestManager(QObject):
             api_url=model_config["api_url"],
             api_key=model_config["api_key"],
             model=model_config["model"],
-            timeout=config.get("test.timeout", 30),
-            max_retries=config.get("test.retry_count", 3),
             max_tokens=model_config.get("max_tokens", 2048),
             temperature=model_config.get("temperature", 0.7),
             top_p=model_config.get("top_p", 0.9)

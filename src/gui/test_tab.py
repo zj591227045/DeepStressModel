@@ -629,16 +629,17 @@ class TestTab(QWidget):
     def _init_test_records(self, test_task_id: str, model_config: dict, selected_datasets: dict):
         """初始化测试记录"""
         try:
+            # 计算实际任务数量 - 使用每个数据集的实际并发数
+            total_tasks = 0
+            logger.info(f"初始化测试记录，计算总任务数...")
+
             records = {
                 "test_task_id": test_task_id,
                 "session_name": test_task_id,
-                "model_config": model_config,
                 "model_name": model_config["name"],
                 "concurrency": self.concurrency_spin.value(),
                 "datasets": {},
                 "start_time": time.time(),
-                "end_time": None,
-                "total_tasks": sum(len(prompts) for prompts, _ in selected_datasets.values()),
                 "successful_tasks": 0,
                 "failed_tasks": 0,
                 "total_tokens": 0,
@@ -646,15 +647,23 @@ class TestTab(QWidget):
                 "total_time": 0,
                 "avg_response_time": 0,
                 "avg_generation_speed": 0,
-                "current_speed": 0,
                 "avg_tps": 0,
                 "status": "running"
             }
             
+            # 计算总权重
+            total_weight = sum(weight for _, weight in selected_datasets.values())
+            
             # 初始化每个数据集的统计信息
             for dataset_name, (prompts, weight) in selected_datasets.items():
+                # 计算每个数据集的实际并发数
+                dataset_concurrency = max(1, int((weight / total_weight) * self.concurrency_spin.value()))
+                dataset_tasks = dataset_concurrency  # 每个并发对应一个任务
+                total_tasks += dataset_tasks
+                
+                logger.info(f"初始化数据集 {dataset_name} 的统计信息，并发数: {dataset_concurrency}，任务数: {dataset_tasks}")
                 records["datasets"][dataset_name] = {
-                    "total": len(prompts),
+                    "total": dataset_tasks,  # 使用实际任务数
                     "successful": 0,
                     "failed": 0,
                     "total_time": 0,
@@ -663,8 +672,13 @@ class TestTab(QWidget):
                     "avg_response_time": 0,
                     "avg_generation_speed": 0,
                     "current_speed": 0,
-                    "weight": weight
+                    "weight": weight,
+                    "concurrency": dataset_concurrency
                 }
+            
+            # 设置总任务数
+            records["total_tasks"] = total_tasks
+            logger.info(f"总任务数设置为: {total_tasks}")
             
             # 保存到本地缓存
             self.current_test_records = records
@@ -1071,7 +1085,7 @@ class TestTab(QWidget):
             if dataset_name not in self.current_test_records["datasets"]:
                 logger.warning(f"数据集 {dataset_name} 不存在于记录中,正在初始化...")
                 self.current_test_records["datasets"][dataset_name] = {
-                    "total": 0,
+                    "total": 1,  # 初始化为1，因为这是第一个任务
                     "successful": 0,
                     "failed": 0,
                     "total_time": 0,
@@ -1084,7 +1098,6 @@ class TestTab(QWidget):
                 }
             
             dataset_stats = self.current_test_records["datasets"][dataset_name]
-            dataset_stats["total"] += 1
             
             # 更新统计数据
             if response.success:

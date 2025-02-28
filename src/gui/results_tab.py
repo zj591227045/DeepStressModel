@@ -367,58 +367,56 @@ class ResultsTab(QWidget):
                 self.current_records["model_name"] = self.current_records["model_config"]["name"]
             
             # 创建日志文件
-            log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "data", "logs", "tests")
+            log_dir = os.path.join("data", "logs", "tests")
             os.makedirs(log_dir, exist_ok=True)
+            logger.debug(f"创建日志目录: {log_dir}")
             
             log_file = os.path.join(log_dir, f"{self.current_records.get('test_task_id', 'unknown')}.log")
-            logger.info(f"创建日志文件: {log_file}")
+            logger.info(f"生成日志文件路径: {log_file}")
             
-            with open(log_file, "w", encoding="utf-8") as f:
+            # 计算统计数据
+            total_tasks = self.current_records.get('total_tasks', 0)
+            successful_tasks = self.current_records.get('successful_tasks', 0)
+            failed_tasks = self.current_records.get('failed_tasks', 0)
+            avg_response_time = self.current_records.get('avg_response_time', 0)
+            avg_generation_speed = self.current_records.get('avg_generation_speed', 0)
+            total_chars = self.current_records.get('total_chars', 0)
+            total_tokens = self.current_records.get('total_tokens', 0)
+            avg_tps = self.current_records.get('avg_tps', 0)
+            total_time = self.current_records.get('total_time', 0)
+            current_speed = self.current_records.get('current_speed', avg_generation_speed)
+            
+            # 写入日志文件（使用追加模式）
+            with open(log_file, 'a', encoding='utf-8') as f:
+                # 写入测试完成信息
+                f.write("\n" + "="*50 + "\n")
+                f.write("测试完成统计信息:\n")
                 f.write(f"测试ID: {self.current_records.get('test_task_id', 'unknown')}\n")
                 f.write(f"会话名称: {self.current_records.get('session_name', 'unknown')}\n")
                 f.write(f"模型名称: {self.current_records.get('model_name', 'unknown')}\n")
                 f.write(f"并发数: {self.current_records.get('concurrency', 0)}\n")
-                f.write(f"开始时间: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.current_records.get('start_time', time.time())))}\n")
-                if 'end_time' in self.current_records and self.current_records['end_time']:
-                    f.write(f"结束时间: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.current_records['end_time']))}\n")
-                    duration = self.current_records['end_time'] - self.current_records.get('start_time', 0)
-                    f.write(f"总耗时: {duration:.2f}秒\n")
+                f.write(f"开始时间: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.current_records.get('start_time', 0)))}\n")
+                f.write(f"结束时间: {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(self.current_records.get('end_time', time.time())))}\n")
+                f.write(f"总耗时: {total_time:.2f}秒\n\n")
                 
-                f.write("\n数据集统计信息:\n")
+                # 写入数据集统计信息
+                f.write("数据集统计信息:\n")
                 for dataset_name, stats in self.current_records.get('datasets', {}).items():
                     f.write(f"\n{dataset_name}:\n")
                     f.write(f"  总任务数: {stats.get('total', 0)}\n")
                     f.write(f"  成功数: {stats.get('successful', 0)}\n")
-                    f.write(f"  失败数: {stats.get('total', 0) - stats.get('successful', 0)}\n")
-                    if stats.get('successful', 0) > 0:
-                        success_rate = (stats['successful'] / stats['total']) * 100
-                        avg_time = stats.get('total_time', 0) / stats['successful']
-                        avg_speed = stats.get('total_chars', 0) / stats.get('total_time', 1)
-                        f.write(f"  成功率: {success_rate:.1f}%\n")
-                        f.write(f"  平均响应时间: {avg_time:.2f}秒\n")
-                        f.write(f"  平均生成速度: {avg_speed:.1f}字/秒\n")
-                        f.write(f"  总字符数: {stats.get('total_chars', 0)}\n")
-            
-            # 计算总体统计信息
-            total_tasks = 0
-            successful_tasks = 0
-            failed_tasks = 0
-            total_chars = 0
-            total_tokens = 0
-            total_time = 0
-            
-            for stats in self.current_records.get('datasets', {}).values():
-                total_tasks += stats.get('total', 0)
-                successful_tasks += stats.get('successful', 0)
-                failed_tasks += stats.get('total', 0) - stats.get('successful', 0)
-                total_chars += stats.get('total_chars', 0)
-                total_tokens += stats.get('total_tokens', 0)
-                total_time += stats.get('total_time', 0)
-            
-            # 计算平均值
-            avg_response_time = total_time / successful_tasks if successful_tasks > 0 else 0
-            avg_generation_speed = total_chars / total_time if total_time > 0 else 0
-            avg_tps = total_tokens / total_time if total_time > 0 else 0
+                    f.write(f"  失败数: {stats.get('failed', 0)}\n")
+                    f.write(f"  成功率: {(stats.get('successful', 0) / stats.get('total', 1) * 100):.1f}%\n")
+                    f.write(f"  平均响应时间: {stats.get('avg_response_time', 0):.2f}秒\n")
+                    f.write(f"  平均生成速度: {stats.get('avg_generation_speed', 0):.1f}字/秒\n")
+                    f.write(f"  总字符数: {stats.get('total_chars', 0)}\n")
+                
+                # 写入错误信息（如果有）
+                if 'error_message' in self.current_records:
+                    f.write("\n错误信息:\n")
+                    f.write(f"{self.current_records['error_message']}\n")
+                
+                f.write("\n" + "="*50 + "\n")
             
             # 保存到数据库
             db_record = {
@@ -435,7 +433,7 @@ class ResultsTab(QWidget):
                 "total_tokens": total_tokens,
                 "avg_tps": avg_tps,
                 "total_time": total_time,
-                "current_speed": avg_generation_speed,
+                "current_speed": current_speed,
                 "test_time": time.strftime('%Y-%m-%d %H:%M:%S'),
                 "log_file": log_file
             }
@@ -443,6 +441,8 @@ class ResultsTab(QWidget):
             success = db_manager.save_test_record(db_record)
             if success:
                 logger.info(f"测试记录已保存到数据库: {db_record['test_task_id']}")
+                # 重新加载记录列表
+                self._load_history_records()
             else:
                 logger.error("保存测试记录到数据库失败")
             

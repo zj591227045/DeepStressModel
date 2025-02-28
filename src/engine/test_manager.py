@@ -206,7 +206,7 @@ class TestManager(QObject):
                     logger.info(f"工作协程 {worker_id} 收到停止信号")
                     # 记录工作协程停止日志
                     with open(log_file, 'a', encoding='utf-8') as f:
-                        f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] 工作协程 {worker_id} 收到停止信号\n")
+                        f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {worker_id} 收到停止信号\n")
                     task_queue.task_done()
                     break
                 

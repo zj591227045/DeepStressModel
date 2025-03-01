@@ -12,6 +12,7 @@ from src.utils.logger import setup_logger
 from src.data.db_manager import db_manager
 from src.engine.api_client import APIResponse
 from src.engine.test_manager import TestProgress
+from src.gui.i18n.language_manager import LanguageManager
 import time
 import os
 import csv
@@ -22,6 +23,7 @@ class ResultsTab(QWidget):
     """测试结果显示标签页"""
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.language_manager = LanguageManager()
         self.current_records = {}  # 当前测试会话的记录
         self._init_ui()
     
@@ -33,12 +35,12 @@ class ResultsTab(QWidget):
         toolbar = QHBoxLayout()
         
         # 导出按钮
-        export_btn = QPushButton("导出记录")
+        export_btn = QPushButton(self.tr('export_records'))
         export_btn.clicked.connect(self._export_records)
         toolbar.addWidget(export_btn)
         
         # 清除日志按钮
-        clear_btn = QPushButton("清除日志")
+        clear_btn = QPushButton(self.tr('clear_logs'))
         clear_btn.clicked.connect(self._clear_logs)
         toolbar.addWidget(clear_btn)
         
@@ -95,7 +97,7 @@ class ResultsTab(QWidget):
         
         # 错误信息显示区域
         self.error_text = QTextEdit()
-        self.error_text.setPlaceholderText("测试过程中的错误信息将在此显示...")
+        self.error_text.setPlaceholderText(self.tr('error_info_placeholder'))
         self.error_text.setMaximumHeight(100)
         self.error_text.setReadOnly(True)
         layout.addWidget(self.error_text)
@@ -182,13 +184,13 @@ class ResultsTab(QWidget):
             button_layout.setSpacing(4)  # 设置按钮之间的间距
             
             # 添加日志按钮
-            log_btn = QPushButton("日志")
+            log_btn = QPushButton(self.tr('view_log'))
             log_btn.setFixedWidth(40)  # 设置固定宽度
             log_btn.clicked.connect(lambda: self._view_log(record.get('log_file', ''), record['session_name']))
             button_layout.addWidget(log_btn)
             
             # 添加删除按钮
-            delete_btn = QPushButton("删除")
+            delete_btn = QPushButton(self.tr('delete'))
             delete_btn.setFixedWidth(40)  # 设置固定宽度
             delete_btn.clicked.connect(lambda: self._delete_record(record['session_name']))
             button_layout.addWidget(delete_btn)
@@ -207,17 +209,17 @@ class ResultsTab(QWidget):
         
         if not log_file:
             logger.warning(f"会话 {session_name} 的日志文件路径为空")
-            QMessageBox.warning(self, "提示", f"未找到会话 {session_name} 的日志文件")
+            QMessageBox.warning(self, self.tr('warning'), f"未找到会话 {session_name} 的日志文件")
             return
             
         if not os.path.exists(log_file):
             logger.warning(f"日志文件不存在: {log_file}")
-            QMessageBox.warning(self, "错误", f"日志文件不存在: {log_file}")
+            QMessageBox.warning(self, self.tr('error'), f"日志文件不存在: {log_file}")
             return
         
         logger.debug(f"开始读取日志文件: {log_file}")
         dialog = QDialog(self)
-        dialog.setWindowTitle(f"测试日志 - {session_name}")
+        dialog.setWindowTitle(self.tr('test_log_title').format(session_name=session_name))
         dialog.resize(800, 600)
         
         layout = QVBoxLayout()
@@ -239,7 +241,7 @@ class ResultsTab(QWidget):
         layout.addWidget(log_text)
         
         # 添加关闭按钮
-        close_btn = QPushButton("关闭")
+        close_btn = QPushButton(self.tr('close'))
         close_btn.clicked.connect(dialog.close)
         layout.addWidget(close_btn)
         
@@ -252,8 +254,8 @@ class ResultsTab(QWidget):
         
         reply = QMessageBox.question(
             self,
-            "确认删除",
-            f"确定要删除会话 {session_name} 的测试记录吗？\n此操作不可恢复。",
+            self.tr('confirm_delete'),
+            self.tr('confirm_delete_msg').format(session_name=session_name),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
@@ -268,21 +270,21 @@ class ResultsTab(QWidget):
                     # 重新加载记录
                     logger.info(f"成功删除测试记录: {session_name}，准备重新加载记录")
                     self._load_history_records()
-                    QMessageBox.information(self, "成功", "测试记录已删除")
+                    QMessageBox.information(self, self.tr('success'), self.tr('record_deleted'))
                 else:
                     error_msg = f"删除测试记录失败: {session_name}"
                     logger.error(error_msg)
-                    QMessageBox.warning(self, "错误", error_msg)
+                    QMessageBox.warning(self, self.tr('error'), error_msg)
             except Exception as e:
                 error_msg = f"删除测试记录时发生错误: {e}"
                 logger.error(error_msg, exc_info=True)
-                QMessageBox.critical(self, "错误", error_msg)
+                QMessageBox.critical(self, self.tr('error'), error_msg)
     
     def _export_records(self):
         """导出测试记录"""
         file_path, _ = QFileDialog.getSaveFileName(
             self,
-            "导出记录",
+            self.tr('export_title'),
             "",
             "CSV文件 (*.csv)"
         )
@@ -292,7 +294,7 @@ class ResultsTab(QWidget):
         
         try:
             records = db_manager.get_test_records()
-            with open(file_path, "w", encoding="utf-8", newline="") as f:
+            with open(file_path, "w", encoding="utf-8-sig", newline="") as f:
                 writer = csv.writer(f)
                 # 写入表头
                 writer.writerow([
@@ -318,25 +320,29 @@ class ResultsTab(QWidget):
                         record["total_time"]
                     ])
             
-            QMessageBox.information(self, "成功", "记录导出成功")
+            QMessageBox.information(self, self.tr('success'), self.tr('export_success'))
         except Exception as e:
-            QMessageBox.critical(self, "错误", f"导出记录失败: {e}")
+            QMessageBox.critical(self, self.tr('error'), f"导出记录失败: {e}")
     
     def _clear_logs(self):
         """清除测试日志"""
         reply = QMessageBox.question(
             self,
-            "确认清除",
-            "确定要清除所有测试日志文件吗？\n注意：测试记录将被保留，只清除日志文件。",
+            self.tr('confirm_clear'),
+            self.tr('confirm_clear_logs'),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
         
         if reply == QMessageBox.StandardButton.Yes:
             if db_manager.clear_test_logs():
-                QMessageBox.information(self, "成功", "日志文件已清除")
+                QMessageBox.information(self, self.tr('success'), self.tr('logs_cleared'))
             else:
-                QMessageBox.warning(self, "警告", "清除日志文件时发生错误")
+                QMessageBox.warning(self, self.tr('warning'), "清除日志文件时发生错误")
+    
+    def tr(self, key):
+        """翻译文本"""
+        return self.language_manager.get_text(key)
     
     def prepare_test(self, model_config: dict, concurrency: int, test_task_id: str):
         """准备新的测试会话"""

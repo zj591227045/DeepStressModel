@@ -40,7 +40,7 @@ DEFAULT_CONFIG = {
     },
     "test": {
         "default_concurrency": 1,
-        "max_concurrency": 10,
+        "max_concurrency": 9999,
         "timeout": 60,           # API请求超时时间（秒）
         "retry_count": 1,        # 失败重试次数
     },

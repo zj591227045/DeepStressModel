@@ -119,13 +119,19 @@ class TestManager(QObject):
     
     def _create_api_client(self, model_config: dict) -> APIClient:
         """创建API客户端"""
+        # 从配置中获取超时和重试次数
+        timeout = config.get("test.timeout", 10)
+        retry_count = config.get("test.retry_count", 1)
+        
         return APIClient(
             api_url=model_config["api_url"],
             api_key=model_config["api_key"],
             model=model_config["model"],
             max_tokens=model_config.get("max_tokens", 2048),
             temperature=model_config.get("temperature", 0.7),
-            top_p=model_config.get("top_p", 0.9)
+            top_p=model_config.get("top_p", 0.9),
+            timeout=timeout,
+            retry_count=retry_count
         )
     
     def _update_progress(self, dataset_name: str, response: APIResponse, error_msg: str = ""):

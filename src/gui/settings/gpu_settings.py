@@ -13,6 +13,7 @@ from src.utils.config import config
 from src.monitor.gpu_monitor import GPUMonitorManager
 from src.data.db_manager import db_manager
 from src.monitor.gpu_monitor import gpu_monitor
+from src.gui.i18n.language_manager import LanguageManager
 
 logger = setup_logger("gpu_settings")
 
@@ -21,7 +22,8 @@ class ServerEditDialog(QDialog):
     def __init__(self, server_data=None, parent=None):
         super().__init__(parent)
         self.server_data = server_data
-        self.setWindowTitle("编辑服务器" if server_data else "添加服务器")
+        self.language_manager = LanguageManager()
+        self.setWindowTitle(self.tr('edit') if server_data else self.tr('add'))
         self.init_ui()
         if server_data:
             self.load_server_data()
@@ -33,26 +35,26 @@ class ServerEditDialog(QDialog):
         
         # 名称输入
         self.name_input = QLineEdit()
-        layout.addRow("配置名称:", self.name_input)
+        layout.addRow(self.tr('name') + ":", self.name_input)
         
         # 主机地址输入
         self.host_input = QLineEdit()
-        layout.addRow("主机地址:", self.host_input)
+        layout.addRow("Host:", self.host_input)
         
         # 用户名输入
         self.username_input = QLineEdit()
-        layout.addRow("用户名:", self.username_input)
+        layout.addRow("Username:", self.username_input)
         
         # 密码输入
         self.password_input = QLineEdit()
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
-        layout.addRow("密码:", self.password_input)
+        layout.addRow("Password:", self.password_input)
         
         # 按钮
         button_box = QHBoxLayout()
-        save_btn = QPushButton("保存")
+        save_btn = QPushButton(self.tr('save'))
         save_btn.clicked.connect(self.accept)
-        cancel_btn = QPushButton("取消")
+        cancel_btn = QPushButton(self.tr('cancel'))
         cancel_btn.clicked.connect(self.reject)
         button_box.addWidget(save_btn)
         button_box.addWidget(cancel_btn)
@@ -76,6 +78,10 @@ class ServerEditDialog(QDialog):
             "password": self.password_input.text().strip()
         }
     
+    def tr(self, key):
+        """翻译文本"""
+        return self.language_manager.get_text(key)
+    
     def test_connection(self):
         """测试服务器连接"""
         try:
@@ -87,23 +93,23 @@ class ServerEditDialog(QDialog):
             if stats:
                 QMessageBox.information(
                     self,
-                    "成功",
-                    "连接测试成功！已成功获取GPU信息。"
+                    self.tr('success'),
+                    self.tr('test_connection_success')
                 )
                 logger.info(f"服务器连接测试成功: {data['host']}")
             else:
                 QMessageBox.warning(
                     self,
-                    "警告",
-                    "连接成功但无法获取GPU信息，请检查服务器是否安装NVIDIA驱动。"
+                    self.tr('warning'),
+                    self.tr('test_connection_no_gpu')
                 )
                 logger.warning(f"服务器GPU信息获取失败: {data['host']}")
         except Exception as e:
             logger.error(f"服务器连接测试失败: {e}")
             QMessageBox.critical(
                 self,
-                "错误",
-                f"连接测试失败：{e}"
+                self.tr('error'),
+                f"{self.tr('test_connection_failed')}: {e}"
             )
     
     def accept(self):
@@ -117,15 +123,15 @@ class ServerEditDialog(QDialog):
             else:
                 QMessageBox.critical(
                     self,
-                    "错误",
-                    "保存服务器配置失败"
+                    self.tr('error'),
+                    self.tr('save_server_failed')
                 )
         except Exception as e:
             logger.error(f"保存服务器配置失败: {e}")
             QMessageBox.critical(
                 self,
-                "错误",
-                f"保存服务器配置失败：{e}"
+                self.tr('error'),
+                f"{self.tr('save_server_failed')}: {e}"
             )
 
 class GPUSettingsWidget(QWidget):
@@ -134,7 +140,12 @@ class GPUSettingsWidget(QWidget):
     
     def __init__(self):
         super().__init__()
+        self.language_manager = LanguageManager()
         self.init_ui()
+        self.update_ui_text()
+        
+        # 连接语言改变信号
+        self.language_manager.language_changed.connect(self.update_ui_text)
     
     def init_ui(self):
         """初始化UI"""
@@ -142,28 +153,28 @@ class GPUSettingsWidget(QWidget):
         layout.setContentsMargins(5, 5, 5, 5)  # 减小边距
         
         # 创建服务器列表组
-        group = QGroupBox("GPU服务器")
+        self.server_group = QGroupBox()
         group_layout = QVBoxLayout()
         group_layout.setSpacing(5)  # 减小间距
         
         # 添加按钮栏
         button_layout = QHBoxLayout()
         
-        add_btn = QPushButton("添加")
-        add_btn.clicked.connect(self.add_server)
-        button_layout.addWidget(add_btn)
+        self.add_btn = QPushButton()
+        self.add_btn.clicked.connect(self.add_server)
+        button_layout.addWidget(self.add_btn)
         
-        edit_btn = QPushButton("编辑")
-        edit_btn.clicked.connect(self.edit_server)
-        button_layout.addWidget(edit_btn)
+        self.edit_btn = QPushButton()
+        self.edit_btn.clicked.connect(self.edit_server)
+        button_layout.addWidget(self.edit_btn)
         
-        delete_btn = QPushButton("删除")
-        delete_btn.clicked.connect(self.delete_server)
-        button_layout.addWidget(delete_btn)
+        self.delete_btn = QPushButton()
+        self.delete_btn.clicked.connect(self.delete_server)
+        button_layout.addWidget(self.delete_btn)
         
-        test_btn = QPushButton("测试")
-        test_btn.clicked.connect(self.test_server)
-        button_layout.addWidget(test_btn)
+        self.test_btn = QPushButton()
+        self.test_btn.clicked.connect(self.test_server)
+        button_layout.addWidget(self.test_btn)
         
         group_layout.addLayout(button_layout)
         
@@ -179,13 +190,25 @@ class GPUSettingsWidget(QWidget):
         self.details_label.setStyleSheet("QLabel { background-color: #f0f0f0; padding: 5px; border-radius: 3px; }")
         group_layout.addWidget(self.details_label)
         
-        group.setLayout(group_layout)
-        layout.addWidget(group)
+        self.server_group.setLayout(group_layout)
+        layout.addWidget(self.server_group)
         
         self.setLayout(layout)
         
         # 加载服务器列表
         self.load_settings()
+    
+    def update_ui_text(self):
+        """更新UI文本"""
+        self.server_group.setTitle(self.tr('gpu_server'))
+        self.add_btn.setText(self.tr('add'))
+        self.edit_btn.setText(self.tr('edit'))
+        self.delete_btn.setText(self.tr('delete'))
+        self.test_btn.setText(self.tr('test_connection'))
+    
+    def tr(self, key):
+        """翻译文本"""
+        return self.language_manager.get_text(key)
     
     def load_settings(self):
         """加载设置"""

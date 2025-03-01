@@ -11,6 +11,7 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from src.utils.logger import setup_logger
 from src.data.db_manager import db_manager
 from src.data.test_datasets import DATASETS  # 导入内置数据集
+from src.gui.i18n.language_manager import LanguageManager
 
 logger = setup_logger("dataset_settings")
 
@@ -88,7 +89,12 @@ class DatasetSettingsWidget(QWidget):
     
     def __init__(self):
         super().__init__()
+        self.language_manager = LanguageManager()
         self.init_ui()
+        self.update_ui_text()
+        
+        # 连接语言改变信号
+        self.language_manager.language_changed.connect(self.update_ui_text)
     
     def init_ui(self):
         """初始化UI"""
@@ -96,32 +102,32 @@ class DatasetSettingsWidget(QWidget):
         layout.setContentsMargins(5, 5, 5, 5)  # 减小边距
         
         # 创建数据集列表组
-        group = QGroupBox("数据集配置")
+        self.dataset_group = QGroupBox()
         group_layout = QVBoxLayout()
         group_layout.setSpacing(5)  # 减小间距
         
         # 添加按钮栏
         button_layout = QHBoxLayout()
         
-        add_btn = QPushButton("添加")
-        add_btn.clicked.connect(self.add_dataset)
-        button_layout.addWidget(add_btn)
+        self.add_btn = QPushButton()
+        self.add_btn.clicked.connect(self.add_dataset)
+        button_layout.addWidget(self.add_btn)
         
-        edit_btn = QPushButton("编辑")
-        edit_btn.clicked.connect(self.edit_dataset)
-        button_layout.addWidget(edit_btn)
+        self.edit_btn = QPushButton()
+        self.edit_btn.clicked.connect(self.edit_dataset)
+        button_layout.addWidget(self.edit_btn)
         
-        delete_btn = QPushButton("删除")
-        delete_btn.clicked.connect(self.delete_dataset)
-        button_layout.addWidget(delete_btn)
+        self.delete_btn = QPushButton()
+        self.delete_btn.clicked.connect(self.delete_dataset)
+        button_layout.addWidget(self.delete_btn)
         
-        import_btn = QPushButton("导入")
-        import_btn.clicked.connect(self.import_dataset)
-        button_layout.addWidget(import_btn)
+        self.import_btn = QPushButton()
+        self.import_btn.clicked.connect(self.import_dataset)
+        button_layout.addWidget(self.import_btn)
         
-        export_btn = QPushButton("导出")
-        export_btn.clicked.connect(self.export_dataset)
-        button_layout.addWidget(export_btn)
+        self.export_btn = QPushButton()
+        self.export_btn.clicked.connect(self.export_dataset)
+        button_layout.addWidget(self.export_btn)
         
         group_layout.addLayout(button_layout)
         
@@ -137,13 +143,30 @@ class DatasetSettingsWidget(QWidget):
         self.details_label.setStyleSheet("QLabel { background-color: #f0f0f0; padding: 5px; border-radius: 3px; }")
         group_layout.addWidget(self.details_label)
         
-        group.setLayout(group_layout)
-        layout.addWidget(group)
+        self.dataset_group.setLayout(group_layout)
+        layout.addWidget(self.dataset_group)
         
         self.setLayout(layout)
         
         # 加载数据集列表
         self.load_datasets()
+    
+    def update_ui_text(self):
+        """更新UI文本"""
+        self.dataset_group.setTitle(self.tr('dataset_config'))
+        self.add_btn.setText(self.tr('add'))
+        self.edit_btn.setText(self.tr('edit'))
+        self.delete_btn.setText(self.tr('delete'))
+        self.import_btn.setText(self.tr('import'))
+        self.export_btn.setText(self.tr('export'))
+        
+        # 如果没有数据集，更新提示文本
+        if self.dataset_list.count() == 0:
+            self.details_label.setText(self.tr('no_datasets'))
+    
+    def tr(self, key):
+        """翻译文本"""
+        return self.language_manager.get_text(key)
     
     def load_datasets(self):
         """加载数据集列表"""
@@ -156,10 +179,10 @@ class DatasetSettingsWidget(QWidget):
             if self.dataset_list.count() > 0:
                 self.dataset_list.setCurrentRow(0)
             else:
-                self.details_label.setText("暂无数据集")
+                self.details_label.setText(self.tr('no_datasets'))
         except Exception as e:
             logger.error(f"加载数据集列表失败: {e}")
-            QMessageBox.critical(self, "错误", f"加载数据集列表失败：{e}")
+            QMessageBox.critical(self, self.tr('error'), f"{self.tr('error')}: {e}")
     
     def on_dataset_selected(self, row: int):
         """数据集选择变更处理"""
@@ -176,9 +199,9 @@ class DatasetSettingsWidget(QWidget):
         """显示数据集详情"""
         prompts = dataset.get("prompts", [])
         details = f"""
-        <b>数据集名称：</b> {dataset.get('name', 'N/A')}<br>
-        <b>提示数量：</b> {len(prompts)}<br>
-        <b>示例提示：</b><br>
+        <b>{self.tr('dataset_name')}</b> {dataset.get('name', 'N/A')}<br>
+        <b>{self.tr('prompt_count')}</b> {len(prompts)}<br>
+        <b>{self.tr('example_prompts')}</b><br>
         {prompts[0] if prompts else 'N/A'}<br>
         {prompts[1] if len(prompts) > 1 else ''}
         """

@@ -8,7 +8,6 @@ import aiohttp
 from typing import Dict, Any, Optional, AsyncGenerator
 from src.utils.logger import setup_logger
 from src.utils.token_counter import token_counter  # 导入token计数器
-from src.data.db_manager import db_manager  # 导入数据库管理器
 
 logger = setup_logger("api_client")
 
@@ -119,7 +118,9 @@ class APIClient:
         model: str,
         max_tokens: int = 2048,
         temperature: float = 0.7,
-        top_p: float = 0.9
+        top_p: float = 0.9,
+        timeout: int = 10,  # 添加超时参数
+        retry_count: int = 1  # 添加重试次数参数
     ):
         # 确保 API URL 格式正确
         self.api_url = api_url.rstrip("/")
@@ -128,9 +129,9 @@ class APIClient:
         self.api_key = api_key
         self.model = model
         
-        # 从配置中获取超时和重试设置
-        self.connect_timeout = db_manager.get_config("test.timeout", 10)  # 连接超时10秒
-        self.max_retries = db_manager.get_config("test.retry_count", 1)
+        # 使用传入的超时和重试设置
+        self.connect_timeout = timeout
+        self.max_retries = retry_count
         
         # 其他参数
         self.max_tokens = max_tokens

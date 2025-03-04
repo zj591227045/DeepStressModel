@@ -38,10 +38,11 @@ env/
 Thumbs.db
 
 # 项目特定
-/data/           # 只排除根目录下的 data 目录
-deepstress.db    # 具体指定数据库文件
-*.log
-logs/
+/data/**          # 排除 data 目录及其所有内容
+data/             # 确保 data 目录在任何位置都被排除
+*.db              # 排除所有数据库文件
+*.log             # 排除所有日志文件
+logs/             # 排除日志目录
 
 # 其他
 *.bak

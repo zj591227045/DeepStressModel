@@ -602,11 +602,20 @@ class GPUMonitorWidget(QGroupBox):
     def add_server(self):
         """添加服务器处理"""
         try:
-            from src.gui.components.dialog import show_server_dialog
-            if show_server_dialog():
-                self.refresh_servers()
+            from src.gui.settings.gpu_settings import ServerEditDialog
+            dialog = ServerEditDialog(parent=self)
+            if dialog.exec():
+                try:
+                    server_data = dialog.get_server_data()
+                    if db_manager.add_gpu_server(server_data):
+                        self.refresh_servers()
+                        logger.info("添加GPU服务器成功: " + server_data['name'])
+                except Exception as e:
+                    logger.error("添加GPU服务器失败: " + str(e))
+                    QMessageBox.critical(self, self.tr('error'), "添加GPU服务器失败：" + str(e))
         except Exception as e:
-            logger.error(f"打开添加服务器对话框失败: {e}")
+            logger.error("打开添加服务器对话框失败: " + str(e))
+            QMessageBox.critical(self, self.tr('error'), "打开添加服务器对话框失败：" + str(e))
     
     def show_no_servers_hint(self):
         """显示无服务器提示"""
@@ -881,10 +890,14 @@ class GPUMonitorWidget(QGroupBox):
             # 更新功率使用
         if gpu['power_limit'] > 0:
                 self.power_label.setText(
-                f"{gpu['power_usage']:.1f}W/{gpu['power_limit']:.1f}W ({(gpu['power_usage'] / gpu['power_limit']) * 100:.1f}%)"
+                "{:.1f}W/{:.1f}W ({:.1f}%)".format(
+                    gpu['power_usage'],
+                    gpu['power_limit'],
+                    (gpu['power_usage'] / gpu['power_limit']) * 100
                 )
+            )
         else:
-            self.power_label.setText(f"{gpu['power_usage']:.1f}W")
+            self.power_label.setText("{:.1f}W".format(gpu['power_usage']))
 
     def _on_stats_updated(self, stats):
         """处理监控数据更新"""
@@ -1715,19 +1728,14 @@ class TestTab(QWidget):
             # 加载数据集
             datasets = db_manager.get_datasets()
             for dataset in datasets:
-                logger.info(
-                    f"数据集 {
-                        dataset['name']} 初始化完成，默认权重: {
-                        dataset.get(
-                            'weight',
-                            1)}")
+                logger.info("数据集 " + dataset['name'] + " 初始化完成，默认权重: " + str(dataset.get('weight', 1)))
                 
                 # 创建列表项
                 list_item = QListWidgetItem(self.dataset_list)
                 self.dataset_list.addItem(list_item)
                 
                 # 创建数据集列表项
-                logger.info(f"创建数据集列表项: {dataset['name']}")
+                logger.info("创建数据集列表项: " + dataset['name'])
                 list_widget = DatasetListItem(dataset['name'])
                 list_item.setSizeHint(list_widget.sizeHint())  # 设置合适的大小
                 self.dataset_list.setItemWidget(list_item, list_widget)
@@ -1796,11 +1804,9 @@ class TestTab(QWidget):
                 if weight > 0 and dataset_name in all_datasets:
                     prompts = all_datasets[dataset_name]
                     selected_datasets[dataset_name] = (prompts, weight)
-                    logger.info(
-                        f"添加数据集: {dataset_name}, prompts数量: {
-                            len(prompts)}, 权重: {weight}")
+                    logger.info("添加数据集: " + dataset_name + ", prompts数量: " + str(len(prompts)) + ", 权重: " + str(weight))
             
-            logger.info(f"最终选中的数据集: {list(selected_datasets.keys())}")
+            logger.info("最终选中的数据集: " + str(list(selected_datasets.keys())))
             return selected_datasets
             
         except Exception as e:
@@ -1923,7 +1929,7 @@ class TestTab(QWidget):
                 self.progress_widget.progress_bar.setValue(percentage)
             
             # 更新状态标签
-            status_text = f"{self.tr('completed')}: {completed}/{total}"
+            status_text = self.tr('completed') + ": " + str(completed) + "/" + str(total)
             self.progress_widget.status_label.setText(status_text)
             
             # 更新统计信息

@@ -23,7 +23,7 @@ class ServerEditDialog(QDialog):
         super().__init__(parent)
         self.server_data = server_data
         self.language_manager = LanguageManager()
-        self.setWindowTitle(self.tr('edit') if server_data else self.tr('add'))
+        self.setWindowTitle(self.tr('edit_server') if server_data else self.tr('add_server'))
         self.init_ui()
         if server_data:
             self.load_server_data()
@@ -33,22 +33,22 @@ class ServerEditDialog(QDialog):
         layout = QFormLayout()
         layout.setSpacing(10)
         
-        # 名称输入
+        # 服务器名称
         self.name_input = QLineEdit()
-        layout.addRow(self.tr('name') + ":", self.name_input)
+        layout.addRow(self.tr('server_name') + ":", self.name_input)
         
-        # 主机地址输入
+        # 主机地址
         self.host_input = QLineEdit()
-        layout.addRow("Host:", self.host_input)
+        layout.addRow(self.tr('host') + ":", self.host_input)
         
-        # 用户名输入
+        # 用户名
         self.username_input = QLineEdit()
-        layout.addRow("Username:", self.username_input)
+        layout.addRow(self.tr('username') + ":", self.username_input)
         
-        # 密码输入
+        # 密码
         self.password_input = QLineEdit()
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
-        layout.addRow("Password:", self.password_input)
+        layout.addRow(self.tr('password') + ":", self.password_input)
         
         # 按钮
         button_box = QHBoxLayout()
@@ -226,10 +226,10 @@ class GPUSettingsWidget(QWidget):
             if self.server_list.count() > 0:
                 self.server_list.setCurrentRow(0)
             else:
-                self.details_label.setText("暂无服务器配置")
+                self.details_label.setText(self.tr('no_servers_hint'))
         except Exception as e:
             logger.error(f"加载GPU服务器设置失败: {e}")
-            QMessageBox.critical(self, "错误", f"加载GPU服务器设置失败：{e}")
+            QMessageBox.critical(self, self.tr('error'), f"{self.tr('error')}: {e}")
     
     def on_server_selected(self, row: int):
         """服务器选择变更处理"""
@@ -246,9 +246,9 @@ class GPUSettingsWidget(QWidget):
     def show_server_details(self, server: dict):
         """显示服务器详情"""
         details = f"""
-        <b>主机地址：</b> {server.get('host', 'N/A')}<br>
-        <b>用户名：</b> {server.get('username', 'N/A')}<br>
-        <b>状态：</b> {'活动' if server.get('active', False) else '未激活'}
+        <b>{self.tr('host')}：</b> {server.get('host', 'N/A')}<br>
+        <b>{self.tr('username')}：</b> {server.get('username', 'N/A')}<br>
+        <b>{self.tr('server_status')}：</b> {self.tr('status_connected') if server.get('active', False) else self.tr('status_not_configured')}
         """
         self.details_label.setText(details)
     
@@ -335,20 +335,20 @@ class GPUSettingsWidget(QWidget):
                     if stats:
                         QMessageBox.information(
                             self,
-                            "连接成功",
-                            f"成功连接到GPU服务器\n\n"
-                            f"GPU型号: {stats.gpu_info}\n"
-                            f"GPU数量: {stats.gpu_count}\n"
-                            f"显存大小: {stats.memory_total/1024:.1f}GB"
+                            self.tr('test_connection_success'),
+                            f"{self.tr('test_connection_success')}\n\n"
+                            f"{self.tr('gpu_model')}: {stats.gpu_info}\n"
+                            f"{self.tr('gpu_count')}: {stats.gpu_count}\n"
+                            f"{self.tr('memory_usage')}: {stats.memory_total/1024:.1f}GB"
                         )
                         self.load_settings()
                         self.settings_updated.emit()
                         logger.info(f"GPU服务器连接测试成功: {server['name']}")
                     else:
-                        raise Exception("无法获取GPU状态")
+                        raise Exception(self.tr('test_connection_no_gpu'))
         except Exception as e:
             logger.error(f"GPU服务器连接测试失败: {e}")
-            QMessageBox.critical(self, "错误", f"连接失败：{e}")
+            QMessageBox.critical(self, self.tr('error'), f"{self.tr('test_connection_failed')}: {e}")
     
     def reset_settings(self):
         """重置设置"""
@@ -358,4 +358,5 @@ class GPUSettingsWidget(QWidget):
             self.settings_updated.emit()
             logger.info("重置GPU服务器设置成功")
         except Exception as e:
-            logger.error(f"重置GPU服务器设置失败: {e}") 
+            logger.error(f"重置GPU服务器设置失败: {e}")
+            QMessageBox.critical(self, self.tr('error'), f"{self.tr('error')}: {e}") 

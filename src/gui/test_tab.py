@@ -6,13 +6,37 @@ import time
 import uuid
 import os
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QGroupBox,
-    QLabel, QComboBox, QSpinBox, QPushButton,
-    QProgressBar, QTextEdit, QListWidget, QAbstractItemView,
-    QListWidgetItem, QSlider, QMessageBox, QGridLayout, QSizePolicy, QFormLayout,
-    QTableWidget, QTableWidgetItem, QHeaderView, QTabWidget, QMainWindow
-)
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QGroupBox,
+    QLabel,
+    QComboBox,
+    QSpinBox,
+    QPushButton,
+    QProgressBar,
+    QTextEdit,
+    QListWidget,
+    QAbstractItemView,
+    QListWidgetItem,
+    QSlider,
+    QMessageBox,
+    QGridLayout,
+    QSizePolicy,
+    QFormLayout,
+    QTableWidget,
+    QTableWidgetItem,
+    QHeaderView,
+    QTabWidget,
+    QMainWindow,
+    QStackedWidget,
+    QSplitter,
+    QLineEdit,
+    QCheckBox,
+    QFileDialog,
+    QMenu)
 from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal
+from PyQt6.QtGui import QFont, QAction
 from src.utils.config import config
 from src.utils.logger import setup_logger
 from src.monitor.gpu_monitor import gpu_monitor
@@ -26,8 +50,19 @@ from typing import List, Dict
 
 logger = setup_logger("test_tab")
 
+
 class DatasetListItem(QWidget):
     """数据集列表项"""
+
+    # 数据集名称映射字典，将中文名映射到翻译键
+    DATASET_NAME_MAP = {
+        "数学问题": "math_qa",
+        "逻辑问题": "logic_qa",
+        "基础问答": "basic_qa",
+        "代码生成": "code_gen",
+        "文本生成": "text_gen"
+    }
+
     def __init__(self, dataset_name: str, parent=None):
         super().__init__(parent)
         self.dataset_name = dataset_name
@@ -45,7 +80,7 @@ class DatasetListItem(QWidget):
         layout.setSpacing(10)  # 增加组件之间的间距
         
         # 数据集名称标签
-        self.name_label = QLabel(self.tr(self.dataset_name))
+        self.name_label = QLabel(self.get_translated_name())
         self.name_label.setMinimumWidth(100)  # 设置最小宽度确保名称显示完整
         layout.addWidget(self.name_label)
         
@@ -54,15 +89,19 @@ class DatasetListItem(QWidget):
         self.weight_slider.setRange(1, 10)  # 设置权重范围1-10
         self.weight_slider.setValue(1)  # 默认权重为1
         self.weight_slider.setMinimumWidth(200)  # 设置最小宽度
-        self.weight_slider.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)  # 水平方向自适应
-        self.weight_slider.setTickPosition(QSlider.TickPosition.TicksBelow)  # 在下方显示刻度
+        self.weight_slider.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed)  # 水平方向自适应
+        self.weight_slider.setTickPosition(
+            QSlider.TickPosition.TicksBelow)  # 在下方显示刻度
         self.weight_slider.setTickInterval(1)  # 主刻度间隔为1
         self.weight_slider.valueChanged.connect(self._on_weight_changed)
         
         # 权重值显示标签
         self.weight_label = QLabel(f"{self.tr('weight')}: 1")
         self.weight_label.setFixedWidth(80)  # 设置固定宽度
-        self.weight_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)  # 右对齐
+        self.weight_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)  # 右对齐
         
         layout.addWidget(self.weight_slider, 1)  # 设置stretch factor为1，允许滑块拉伸
         layout.addWidget(self.weight_label)
@@ -74,10 +113,19 @@ class DatasetListItem(QWidget):
         """翻译文本"""
         return self.language_manager.get_text(key)
     
+    def get_translated_name(self):
+        """获取翻译后的数据集名称"""
+        # 如果数据集名称在映射字典中，使用对应的翻译键
+        if self.dataset_name in self.DATASET_NAME_MAP:
+            return self.tr(self.DATASET_NAME_MAP[self.dataset_name])
+        # 否则直接使用原名称
+        return self.dataset_name
+    
     def update_ui_text(self):
         """更新UI文本"""
-        self.name_label.setText(self.tr(self.dataset_name))
-        self.weight_label.setText(f"{self.tr('weight')}: {self.weight_slider.value()}")
+        self.name_label.setText(self.get_translated_name())
+        self.weight_label.setText(
+            f"{self.tr('weight')}: {self.weight_slider.value()}")
     
     def _on_weight_changed(self, value):
         """权重值变更处理"""
@@ -86,6 +134,7 @@ class DatasetListItem(QWidget):
     def get_weight(self) -> int:
         """获取权重值"""
         return self.weight_slider.value()
+
 
 class MonitorThread(QThread):
     """GPU监控线程"""
@@ -110,6 +159,10 @@ class MonitorThread(QThread):
             else:
                 logger.info("监控线程收到空服务器配置")
     
+    def get_last_stats(self):
+        """获取最近一次的统计数据"""
+        return self._last_stats
+    
     def run(self):
         """运行监控循环"""
         self.running = True
@@ -127,60 +180,352 @@ class MonitorThread(QThread):
                 else:
                     self.stats_updated.emit(None)
             except Exception as e:
-                logger.debug(f"监控数据获取失败: {e}")
-                self.stats_updated.emit(None)
-            
+                logger.error(f"监控线程错误: {e}")
             time.sleep(self.update_interval)
     
     def stop(self):
-        """停止监控"""
+        """停止线程"""
         self.running = False
+
 
 class GPUMonitorWidget(QGroupBox):
     """GPU监控组件"""
+
     def __init__(self):
         super().__init__()
         self.language_manager = LanguageManager()
         self.monitor_thread = MonitorThread(update_interval=0.5)
         self.monitor_thread.stats_updated.connect(self._on_stats_updated)
-        self.monitor_thread.server_config_needed.connect(self._update_server_config)
+        self.monitor_thread.server_config_needed.connect(
+            self._update_server_config)
         self._monitor_initialized = False
+        self.current_gpu_index = 0  # 当前选中的GPU索引
+        self.display_mode = "single"  # 显示模式：single或multi
+        self.gpu_cards = []  # 存储GPU卡片组件
         self.init_ui()
         self.update_ui_text()
         
         # 连接语言改变信号
         self.language_manager.language_changed.connect(self.update_ui_text)
     
+    def init_ui(self):
+        """初始化UI"""
+        main_layout = QVBoxLayout()
+        main_layout.setSpacing(5)  # 减小组件间的间距
+        main_layout.setContentsMargins(5, 5, 5, 5)  # 减小边距
+
+        # 创建顶部控制区（服务器选择和模式切换）
+        top_controls = QHBoxLayout()
+        top_controls.setSpacing(5)
+        
+        # 服务器选择区域
+        server_layout = QHBoxLayout()
+        server_layout.setSpacing(2)
+        self.server_label = QLabel()
+        self.server_selector = QComboBox()
+        self.server_selector.setMinimumWidth(150)  # 设置最小宽度，避免过窄
+        self.server_selector.currentIndexChanged.connect(
+            self.on_server_changed)
+        self.refresh_button = QPushButton()
+        self.refresh_button.setMaximumWidth(60)  # 限制按钮宽度
+        self.refresh_button.clicked.connect(self.refresh_servers)
+        self.add_button = QPushButton()
+        self.add_button.setMaximumWidth(60)  # 限制按钮宽度
+        self.add_button.clicked.connect(self.add_server)
+        
+        server_layout.addWidget(self.server_label)
+        server_layout.addWidget(self.server_selector)
+        server_layout.addWidget(self.refresh_button)
+        server_layout.addWidget(self.add_button)
+        top_controls.addLayout(server_layout, 3)  # 分配比例为3
+
+        # 显示模式切换区域
+        mode_layout = QHBoxLayout()
+        mode_layout.setSpacing(2)
+        self.mode_label = QLabel()
+        self.mode_combo = QComboBox()
+        self.mode_combo.addItem("", "single")  # 占位，将在update_ui_text中填充
+        self.mode_combo.addItem("", "multi")
+        self.mode_combo.currentIndexChanged.connect(self._on_mode_changed)
+
+        # GPU选择下拉框（单GPU模式使用）
+        self.gpu_selector_label = QLabel()
+        self.gpu_selector = QComboBox()
+        self.gpu_selector.currentIndexChanged.connect(self._on_gpu_changed)
+
+        mode_layout.addWidget(self.mode_label)
+        mode_layout.addWidget(self.mode_combo)
+        mode_layout.addWidget(self.gpu_selector_label)
+        mode_layout.addWidget(self.gpu_selector)
+        top_controls.addLayout(mode_layout, 2)  # 分配比例为2
+
+        main_layout.addLayout(top_controls)
+        
+        # 提示标签
+        self.hint_label = QLabel()
+        self.hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.hint_label.setStyleSheet("color: #666666;")
+        self.hint_label.setWordWrap(True)  # 允许文本换行
+        self.hint_label.setMaximumHeight(40)  # 限制高度
+        main_layout.addWidget(self.hint_label)
+
+        # 创建堆叠布局，用于切换单GPU和多GPU视图
+        self.stacked_layout = QStackedWidget()
+
+        # 单GPU视图
+        self.single_gpu_widget = QWidget()
+        single_gpu_layout = QVBoxLayout(self.single_gpu_widget)
+        single_gpu_layout.setSpacing(5)
+        single_gpu_layout.setContentsMargins(0, 0, 0, 0)  # 移除内边距
+        
+        # 监控信息显示区域（分为左右两栏）
+        info_layout = QHBoxLayout()
+        info_layout.setSpacing(10)
+        
+        # 左侧 GPU 信息
+        self.gpu_group = QGroupBox()
+        gpu_layout = QFormLayout()
+        gpu_layout.setSpacing(8)  # 增加行距
+        gpu_layout.setContentsMargins(8, 10, 8, 10)  # 增加内边距
+
+        # 统一标签样式的函数
+        def setup_label_style(label):
+            label.setMinimumWidth(60)  # 设置最小宽度
+            font = label.font()
+            font.setPointSize(13)  # 增加字体大小为20pt
+            label.setFont(font)
+        
+        # GPU型号信息
+        self.gpu_info_label = QLabel()
+        setup_label_style(self.gpu_info_label)
+        self.gpu_model_row = QLabel()
+        setup_label_style(self.gpu_model_row)
+        gpu_layout.addRow(self.gpu_model_row, self.gpu_info_label)
+        
+        # GPU利用率
+        self.gpu_util_label = QLabel("0%")
+        setup_label_style(self.gpu_util_label)
+        self.gpu_util_row = QLabel()
+        setup_label_style(self.gpu_util_row)
+        gpu_layout.addRow(self.gpu_util_row, self.gpu_util_label)
+        
+        # 显存使用率
+        self.memory_util_label = QLabel("0%")
+        setup_label_style(self.memory_util_label)
+        self.memory_util_row = QLabel()
+        setup_label_style(self.memory_util_row)
+        gpu_layout.addRow(self.memory_util_row, self.memory_util_label)
+        
+        # 温度
+        self.temp_label = QLabel("0°C")
+        setup_label_style(self.temp_label)
+        self.temp_row = QLabel()
+        setup_label_style(self.temp_row)
+        gpu_layout.addRow(self.temp_row, self.temp_label)
+        
+        # 功率使用
+        self.power_label = QLabel("0W")
+        setup_label_style(self.power_label)
+        self.power_row = QLabel()
+        setup_label_style(self.power_row)
+        gpu_layout.addRow(self.power_row, self.power_label)
+        
+        self.gpu_group.setLayout(gpu_layout)
+        info_layout.addWidget(self.gpu_group)
+        
+        # 右侧系统信息
+        self.system_group = QGroupBox()
+        system_layout = QFormLayout()
+        system_layout.setSpacing(8)  # 保持与GPU信息相同的行距
+        system_layout.setContentsMargins(8, 10, 8, 10)  # 保持与GPU信息相同的内边距
+        
+        # CPU使用率
+        self.cpu_util_label = QLabel("0%")
+        setup_label_style(self.cpu_util_label)
+        self.cpu_util_row = QLabel()
+        setup_label_style(self.cpu_util_row)
+        system_layout.addRow(self.cpu_util_row, self.cpu_util_label)
+        
+        # 系统内存使用率
+        self.memory_util_sys_label = QLabel("0%")
+        setup_label_style(self.memory_util_sys_label)
+        self.memory_util_sys_row = QLabel()
+        setup_label_style(self.memory_util_sys_row)
+        system_layout.addRow(
+            self.memory_util_sys_row,
+            self.memory_util_sys_label)
+        
+        # 磁盘使用率
+        self.disk_util_label = QLabel("0%")
+        setup_label_style(self.disk_util_label)
+        self.disk_util_row = QLabel()
+        setup_label_style(self.disk_util_row)
+        system_layout.addRow(self.disk_util_row, self.disk_util_label)
+
+        # 磁盘IO延时
+        self.disk_io_label = QLabel("0ms")
+        setup_label_style(self.disk_io_label)
+        self.disk_io_row = QLabel()
+        setup_label_style(self.disk_io_row)
+        system_layout.addRow(self.disk_io_row, self.disk_io_label)
+        
+        # 网络使用率
+        self.network_recv_label = QLabel("0 B/s")
+        setup_label_style(self.network_recv_label)
+        self.network_recv_row = QLabel()
+        setup_label_style(self.network_recv_row)
+        system_layout.addRow(self.network_recv_row, self.network_recv_label)
+        
+        self.network_send_label = QLabel("0 B/s")
+        setup_label_style(self.network_send_label)
+        self.network_send_row = QLabel()
+        setup_label_style(self.network_send_row)
+        system_layout.addRow(self.network_send_row, self.network_send_label)
+        
+        self.system_group.setLayout(system_layout)
+        info_layout.addWidget(self.system_group)
+        
+        single_gpu_layout.addLayout(info_layout)
+
+        # 多GPU视图
+        self.multi_gpu_widget = QWidget()
+        multi_gpu_layout = QVBoxLayout(self.multi_gpu_widget)
+        multi_gpu_layout.setSpacing(5)
+        multi_gpu_layout.setContentsMargins(0, 0, 0, 0)  # 移除内边距
+
+        # GPU卡片容器（使用网格布局）
+        self.gpu_cards_container = QWidget()
+        self.gpu_cards_grid = QGridLayout(self.gpu_cards_container)
+        self.gpu_cards_grid.setSpacing(5)
+        self.gpu_cards_grid.setContentsMargins(0, 0, 0, 0)
+        multi_gpu_layout.addWidget(self.gpu_cards_container, 2)  # 2倍比例
+
+        # 系统信息（多GPU视图）
+        self.system_group_multi = QGroupBox()
+        system_layout_multi = QFormLayout()
+        system_layout_multi.setSpacing(3)
+        system_layout_multi.setContentsMargins(5, 5, 5, 5)
+
+        # 使用两列布局来节省空间
+        sys_grid = QGridLayout()
+        sys_grid.setHorizontalSpacing(15)  # 水平间距
+        sys_grid.setVerticalSpacing(3)     # 垂直间距
+
+        # CPU使用率
+        self.cpu_util_label_multi = QLabel("0%")
+        sys_grid.addWidget(QLabel(self.tr('cpu_usage')), 0, 0)
+        sys_grid.addWidget(self.cpu_util_label_multi, 0, 1)
+
+        # 内存使用率
+        self.memory_util_label_multi = QLabel("0%")
+        sys_grid.addWidget(QLabel(self.tr('memory_usage_sys')), 0, 2)
+        sys_grid.addWidget(self.memory_util_label_multi, 0, 3)
+
+        # 磁盘使用率
+        self.disk_util_label_multi = QLabel("0%")
+        sys_grid.addWidget(QLabel(self.tr('disk_usage')), 1, 0)
+        sys_grid.addWidget(self.disk_util_label_multi, 1, 1)
+
+        # 磁盘IO延时
+        self.disk_io_label_multi = QLabel("0ms")
+        sys_grid.addWidget(QLabel(self.tr('disk_io_latency')), 1, 2)
+        sys_grid.addWidget(self.disk_io_label_multi, 1, 3)
+
+        # 网络接收
+        self.network_recv_label_multi = QLabel("0 B/s")
+        sys_grid.addWidget(QLabel(self.tr('network_receive')), 2, 0)
+        sys_grid.addWidget(self.network_recv_label_multi, 2, 1)
+
+        # 网络发送
+        self.network_send_label_multi = QLabel("0 B/s")
+        sys_grid.addWidget(QLabel(self.tr('network_send')), 2, 2)
+        sys_grid.addWidget(self.network_send_label_multi, 2, 3)
+
+        system_layout_multi.addRow(sys_grid)
+        self.system_group_multi.setLayout(system_layout_multi)
+        multi_gpu_layout.addWidget(self.system_group_multi, 1)  # 1倍比例
+
+        self.stacked_layout.addWidget(self.single_gpu_widget)
+        self.stacked_layout.addWidget(self.multi_gpu_widget)
+
+        main_layout.addWidget(self.stacked_layout)
+        
+        # 状态信息
+        self.status_label = QLabel()
+        main_layout.addWidget(self.status_label)
+
+        self.setLayout(main_layout)
+
+        # 默认显示单GPU模式
+        self.stacked_layout.setCurrentIndex(0)
+        self.gpu_selector_label.setVisible(True)
+        self.gpu_selector.setVisible(True)
+
     def update_ui_text(self):
         """更新UI文本"""
+        # 设置组标题
         self.setTitle(self.tr('gpu_monitor'))
-        
-        # 更新服务器选择区域
-        self.server_label.setText(self.tr('select_server') + ':')
+
+        # 服务器选择区域
+        self.server_label.setText(self.tr('select_server'))
         self.refresh_button.setText(self.tr('refresh'))
         self.add_button.setText(self.tr('add'))
-        
-        # 更新GPU信息区域
+
+        # 显示模式区域
+        self.mode_label.setText(self.tr('display_mode'))
+
+        # 更新显示模式下拉框内容
+        current_mode_index = self.mode_combo.currentIndex()
+        self.mode_combo.setItemText(0, self.tr('single_gpu'))
+        self.mode_combo.setItemText(1, self.tr('multi_gpu'))
+        if current_mode_index >= 0:
+            self.mode_combo.setCurrentIndex(current_mode_index)
+
+        # GPU选择区域
+        self.gpu_selector_label.setText(self.tr('select_gpu'))
+
+        # GPU信息组
         self.gpu_group.setTitle(self.tr('gpu_info'))
-        self.gpu_info_label.setText(self.tr('not_connected'))
-        self.gpu_model_row.setText(self.tr('gpu_model') + ':')
-        self.gpu_util_row.setText(self.tr('gpu_utilization') + ':')
-        self.memory_util_row.setText(self.tr('memory_usage') + ':')
-        self.temp_row.setText(self.tr('temperature') + ':')
-        self.power_row.setText(self.tr('power_usage') + ':')
-        
-        # 更新系统信息区域
+        self.gpu_model_row.setText(self.tr('gpu_model'))
+        self.gpu_util_row.setText(self.tr('gpu_utilization'))
+        self.memory_util_row.setText(self.tr('memory_usage'))
+        self.temp_row.setText(self.tr('temperature'))
+        self.power_row.setText(self.tr('power_usage'))
+
+        # 系统信息组
         self.system_group.setTitle(self.tr('system_info'))
-        self.cpu_util_row.setText(self.tr('cpu_usage') + ':')
-        self.memory_util_sys_row.setText(self.tr('memory_usage_sys') + ':')
-        self.disk_util_row.setText(self.tr('disk_usage') + ':')
-        self.network_recv_row.setText(self.tr('network_receive') + ':')
-        self.network_send_row.setText(self.tr('network_send') + ':')
-    
+        self.cpu_util_row.setText(self.tr('cpu_usage'))
+        self.memory_util_sys_row.setText(self.tr('memory_usage_sys'))
+        self.disk_util_row.setText(self.tr('disk_usage'))
+        self.disk_io_row.setText(self.tr('disk_io_latency'))
+        self.network_recv_row.setText(self.tr('network_receive'))
+        self.network_send_row.setText(self.tr('network_send'))
+
+        # 多GPU视图的系统信息组
+        self.system_group_multi.setTitle(self.tr('system_info'))
+        
+        # 更新GPU卡片的文本
+        for card in self.gpu_cards:
+            if isinstance(card, dict) and 'widget' in card:
+                card['util_row'].setText(self.tr('gpu_utilization') + ":")
+                card['mem_row'].setText(self.tr('memory_usage') + ":")
+                card['temp_row'].setText(self.tr('temperature') + ":")
+                card['power_row'].setText(self.tr('power_usage') + ":")
+        
+        # 更新提示文本
+        if not self._monitor_initialized:
+            self.hint_label.setText(self.tr('please_add_gpu_server'))
+            
+        # 更新状态文本
+        if hasattr(self, 'status_label'):
+            current_text = self.status_label.text()
+            if current_text.startswith('状态:'):
+                self.status_label.setText(self.tr('status_normal'))
+
     def tr(self, key):
         """翻译文本"""
         return self.language_manager.get_text(key)
-    
+
     def _update_server_config(self):
         """响应监控线程的服务器配置请求"""
         try:
@@ -192,112 +537,32 @@ class GPUMonitorWidget(QGroupBox):
         except Exception as e:
             logger.error(f"获取活动服务器配置失败: {e}")
             self.monitor_thread.set_active_server(None)
-    
-    def init_ui(self):
-        """初始化UI"""
-        layout = QVBoxLayout()
-        
-        # 服务器选择区域
-        server_layout = QHBoxLayout()
-        self.server_label = QLabel()
-        self.server_selector = QComboBox()
-        self.server_selector.currentIndexChanged.connect(self.on_server_changed)
-        self.refresh_button = QPushButton()
-        self.refresh_button.clicked.connect(self.refresh_servers)
-        self.add_button = QPushButton()
-        self.add_button.clicked.connect(self.add_server)
-        
-        server_layout.addWidget(self.server_label)
-        server_layout.addWidget(self.server_selector)
-        server_layout.addWidget(self.refresh_button)
-        server_layout.addWidget(self.add_button)
-        layout.addLayout(server_layout)
-        
-        # 提示标签
-        self.hint_label = QLabel()
-        self.hint_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.hint_label.setStyleSheet("color: #666666;")
-        layout.addWidget(self.hint_label)
-        
-        # 监控信息显示区域（分为左右两栏）
-        info_layout = QHBoxLayout()
-        
-        # 左侧 GPU 信息
-        self.gpu_group = QGroupBox()
-        gpu_layout = QFormLayout()
-        
-        # GPU型号信息
-        self.gpu_info_label = QLabel()
-        self.gpu_model_row = QLabel()
-        gpu_layout.addRow(self.gpu_model_row, self.gpu_info_label)
-        
-        # GPU利用率
-        self.gpu_util_label = QLabel("0%")
-        self.gpu_util_row = QLabel()
-        gpu_layout.addRow(self.gpu_util_row, self.gpu_util_label)
-        
-        # 显存使用率
-        self.memory_util_label = QLabel("0%")
-        self.memory_util_row = QLabel()
-        gpu_layout.addRow(self.memory_util_row, self.memory_util_label)
-        
-        # 温度
-        self.temp_label = QLabel("0°C")
-        self.temp_row = QLabel()
-        gpu_layout.addRow(self.temp_row, self.temp_label)
-        
-        # 功率使用
-        self.power_label = QLabel("0W")
-        self.power_row = QLabel()
-        gpu_layout.addRow(self.power_row, self.power_label)
-        
-        self.gpu_group.setLayout(gpu_layout)
-        info_layout.addWidget(self.gpu_group)
-        
-        # 右侧系统信息
-        self.system_group = QGroupBox()
-        system_layout = QFormLayout()
-        
-        # CPU使用率
-        self.cpu_util_label = QLabel("0%")
-        self.cpu_util_row = QLabel()
-        system_layout.addRow(self.cpu_util_row, self.cpu_util_label)
-        
-        # 系统内存使用率
-        self.memory_util_sys_label = QLabel("0%")
-        self.memory_util_sys_row = QLabel()
-        system_layout.addRow(self.memory_util_sys_row, self.memory_util_sys_label)
-        
-        # 磁盘使用率
-        self.disk_util_label = QLabel("0%")
-        self.disk_util_row = QLabel()
-        system_layout.addRow(self.disk_util_row, self.disk_util_label)
-        
-        # 网络使用率
-        self.network_recv_label = QLabel("0 B/s")
-        self.network_recv_row = QLabel()
-        system_layout.addRow(self.network_recv_row, self.network_recv_label)
-        
-        self.network_send_label = QLabel("0 B/s")
-        self.network_send_row = QLabel()
-        system_layout.addRow(self.network_send_row, self.network_send_label)
-        
-        self.system_group.setLayout(system_layout)
-        info_layout.addWidget(self.system_group)
-        
-        layout.addLayout(info_layout)
-        
-        # 状态信息
-        self.status_label = QLabel()
-        layout.addWidget(self.status_label)
-        
-        self.setLayout(layout)
-        
-        # 更新所有文本
-        self.update_ui_text()
-        
-        # 加载服务器列表
-        self.refresh_servers()
+
+    def on_server_changed(self, index):
+        """服务器改变处理"""
+        if index < 0:
+            return
+
+        server_id = self.server_selector.itemData(index)
+        if server_id:
+            try:
+                # 获取服务器名称然后设置为活跃
+                servers = db_manager.get_gpu_servers()
+                for server in servers:
+                    if server.get('id') == server_id:
+                        db_manager.set_gpu_server_active(
+                            server.get('name', ''))
+                        break
+
+                self._monitor_initialized = False
+                self._update_server_config()
+
+                # 开始监控
+                if not self.monitor_thread.isRunning():
+                    self.monitor_thread.start()
+            except Exception as e:
+                logger.error(f"设置活动服务器失败: {e}")
+                self.hint_label.setText(f"错误: {str(e)}")
     
     def refresh_servers(self):
         """刷新服务器列表"""
@@ -305,189 +570,426 @@ class GPUMonitorWidget(QGroupBox):
             self.server_selector.clear()
             servers = db_manager.get_gpu_servers()
             
-            if not servers:
-                self.show_no_servers_hint()
-                return
-            
-            for server in servers:
-                self.server_selector.addItem(
-                    f"{server['name']} ({server['host']})", 
-                    server
-                )
-                
-            # 选择激活的服务器
             active_server = db_manager.get_active_gpu_server()
-            if active_server:
-                index = self.server_selector.findText(
-                    f"{active_server['name']} ({active_server['host']})"
-                )
-                if index >= 0:
-                    self.server_selector.setCurrentIndex(index)
-                    # 启动监控
-                    self.start_monitoring()
-                else:
+            active_index = -1
+
+            for i, server in enumerate(servers):
+                # 安全地获取名称，如果alias不存在则使用name或host
+                display_name = server.get('host', '')
+                if 'name' in server:
+                    display_name = f"{display_name} ({server['name']})"
+                self.server_selector.addItem(display_name, server.get('id'))
+                if active_server and server.get(
+                        'id') == active_server.get('id'):
+                    active_index = i
+
+            if active_index >= 0:
+                self.server_selector.setCurrentIndex(active_index)
+            elif servers:
+                # 如果没有活动服务器但有服务器列表，选择第一个
+                self.server_selector.setCurrentIndex(0)
+
+            if not servers:
                     self.show_no_servers_hint()
-            else:
-                self.show_no_servers_hint()
+
         except Exception as e:
             logger.error(f"刷新服务器列表失败: {e}")
-            self.show_no_servers_hint()
+            self.hint_label.setText(self.tr('refresh_error') + f": {str(e)}")
+
+    def add_server(self):
+        """添加服务器处理"""
+        try:
+            from src.gui.components.dialog import show_server_dialog
+            if show_server_dialog():
+                self.refresh_servers()
+        except Exception as e:
+            logger.error(f"打开添加服务器对话框失败: {e}")
     
     def show_no_servers_hint(self):
-        """显示无服务器配置的提示"""
-        self.hint_label.setText(self.tr('please_add_gpu_server'))
-        self.hint_label.show()  # 确保提示标签可见
-        
-        # 隐藏监控界面
-        self.gpu_info_label.hide()
-        self.gpu_util_label.hide()
-        self.memory_util_label.hide()
-        self.temp_label.hide()
-        self.power_label.hide()
-        self.cpu_util_label.hide()
-        self.memory_util_sys_label.hide()
-        self.disk_util_label.hide()
-        self.network_recv_label.hide()
-        self.network_send_label.hide()
-        
-        self.status_label.setText(self.tr('status_not_configured'))
-        self.status_label.setStyleSheet("color: #666666")  # 使用灰色表示未配置状态
-    
+        """显示无服务器提示"""
+        self.hint_label.setText(self.tr('no_servers_hint'))
+        self.stacked_layout.setVisible(False)
+        self.status_label.setVisible(False)
+        self.hint_label.setVisible(True)
+
     def show_monitor_ui(self):
-        """显示监控界面"""
-        self.hint_label.hide()
-        self.gpu_info_label.show()
-        self.gpu_util_label.show()
-        self.memory_util_label.show()
-        self.temp_label.show()
-        self.power_label.show()
-        self.cpu_util_label.show()
-        self.memory_util_sys_label.show()
-        self.disk_util_label.show()
-        self.network_recv_label.show()
-        self.network_send_label.show()
-        self.status_label.setText(self.tr('status_connected'))
-        self.status_label.setStyleSheet("color: green")
-    
-    def add_server(self):
-        """添加服务器配置"""
-        from src.gui.settings.gpu_settings import ServerEditDialog
-        dialog = ServerEditDialog(parent=self)
-        if dialog.exec():
-            self.refresh_servers()
-    
-    def on_server_changed(self, index: int):
-        """服务器选择改变时的处理"""
+        """显示监控UI"""
+        self.hint_label.setVisible(False)
+        self.stacked_layout.setVisible(True)
+        self.status_label.setVisible(True)
+
+    def _on_mode_changed(self, index):
+        """显示模式改变处理"""
+        mode = self.mode_combo.itemData(index)
+        self.display_mode = mode
+
+        if mode == "single":
+            self.stacked_layout.setCurrentIndex(0)
+            self.gpu_selector_label.setVisible(True)
+            self.gpu_selector.setVisible(True)
+
+            # 如果有GPU列表且未选中任何GPU，则默认选择GPU0
+            if self.gpu_selector.count() > 0:
+                if self.gpu_selector.currentIndex() < 0:
+                    self.gpu_selector.setCurrentIndex(0)
+                # 强制更新单GPU视图
+                self._update_single_gpu_view()
+        else:
+            self.stacked_layout.setCurrentIndex(1)
+            self.gpu_selector_label.setVisible(False)
+            self.gpu_selector.setVisible(False)
+
+    def _on_gpu_changed(self, index):
+        """选择的GPU改变处理"""
         if index >= 0:
-            server_data = self.server_selector.currentData()
-            if server_data:
-                try:
-                    # 设置为活动服务器
-                    db_manager.set_gpu_server_active(server_data["name"])
-                    # 重置监控状态
-                    self._monitor_initialized = False
-                    # 立即更新服务器配置
-                    self._update_server_config()
-                    # 检查 GPU 状态
-                    stats = gpu_monitor.get_stats()
-                    if stats:
-                        self.show_monitor_ui()
-                        self.error_count = 0  # 重置错误计数
-                    else:
-                        self.show_no_servers_hint()
-                except Exception as e:
-                    logger.error(f"设置活动服务器失败: {e}")
-                    self.show_no_servers_hint()
-    
-    def start_monitoring(self):
-        """开始监控"""
-        self.monitor_thread.start()
-    
-    def _format_size(self, size_mb: float) -> str:
-        """格式化显存大小显示"""
-        if size_mb >= 1024:
-            return f"{size_mb/1024:.1f} GB"
-        return f"{size_mb:.0f} MB"
-    
-    def _format_network_speed(self, bytes_per_sec: float) -> str:
-        """格式化网络速度显示"""
-        if bytes_per_sec < 1024:  # B/s
-            return f"{bytes_per_sec:.1f} B/s"
-        elif bytes_per_sec < 1024 * 1024:  # KB/s
-            return f"{bytes_per_sec/1024:.1f} KB/s"
-        elif bytes_per_sec < 1024 * 1024 * 1024:  # MB/s
-            return f"{bytes_per_sec/(1024*1024):.1f} MB/s"
-        else:  # GB/s
-            return f"{bytes_per_sec/(1024*1024*1024):.1f} GB/s"
+            self.current_gpu_index = index
+            # 更新单GPU视图显示
+            self._update_single_gpu_view()
+
+    def _create_gpu_card(self, index):
+        """创建GPU卡片组件"""
+        card = QGroupBox(f"GPU {index}")
+        # 设置大小策略，允许卡片在水平方向自适应调整
+        card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        layout = QVBoxLayout()
+        layout.setContentsMargins(5, 10, 5, 10)  # 减小内边距提高空间利用率
+
+        # GPU型号
+        info_label = QLabel()
+        info_label.setWordWrap(True)
+        layout.addWidget(info_label)
+
+        # GPU利用率 - 使用进度条替代文本标签
+        util_layout = QHBoxLayout()
+        util_row = QLabel(self.tr('gpu_utilization') + ":")
+        util_row.setMinimumWidth(70)  # 设置最小宽度保证标签文字显示完整
+        util_progress = QProgressBar()
+        util_progress.setRange(0, 100)
+        util_progress.setTextVisible(True)  # 显示百分比文本
+        util_progress.setFormat("%v%")  # 设置显示格式
+        util_progress.setMinimumWidth(120)  # 设置最小宽度
+        util_progress.setMaximumHeight(20)  # 设置最大高度
+        # 设置进度条的大小策略，允许在水平方向自适应调整
+        util_progress.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        util_layout.addWidget(util_row)
+        util_layout.addWidget(util_progress)
+        layout.addLayout(util_layout)
+
+        # 显存使用率 - 使用进度条替代文本标签
+        mem_layout = QHBoxLayout()
+        mem_row = QLabel(self.tr('memory_usage') + ":")
+        mem_row.setMinimumWidth(70)  # 设置最小宽度保证标签文字显示完整
+        mem_progress = QProgressBar()
+        mem_progress.setRange(0, 100)
+        mem_progress.setTextVisible(True)
+        mem_progress.setFormat("%v%")
+        mem_progress.setMinimumWidth(120)
+        mem_progress.setMaximumHeight(20)
+        # 设置进度条的大小策略，允许在水平方向自适应调整
+        mem_progress.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        mem_layout.addWidget(mem_row)
+        mem_layout.addWidget(mem_progress)
+        # 移除mem_info标签，仅在进度条内显示百分比
+        layout.addLayout(mem_layout)
+
+        # 温度
+        temp_layout = QHBoxLayout()
+        temp_row = QLabel(self.tr('temperature') + ":")
+        temp_row.setMinimumWidth(70)  # 设置最小宽度保证标签文字显示完整
+        temp_value = QLabel("0°C")
+        temp_layout.addWidget(temp_row)
+        temp_layout.addWidget(temp_value)
+        layout.addLayout(temp_layout)
+
+        # 功率使用 - 使用进度条替代文本标签
+        power_layout = QHBoxLayout()
+        power_row = QLabel(self.tr('power_usage') + ":")
+        power_row.setMinimumWidth(70)  # 设置最小宽度保证标签文字显示完整
+        power_progress = QProgressBar()
+        power_progress.setRange(0, 100)  # 初始范围设为0-100，后面会根据实际功率上限调整
+        power_progress.setTextVisible(True)
+        # 不设置格式，将在更新时动态设置
+        power_progress.setMinimumWidth(120)
+        power_progress.setMaximumHeight(20)
+        # 设置进度条的大小策略，允许在水平方向自适应调整
+        power_progress.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        power_layout.addWidget(power_row)
+        power_layout.addWidget(power_progress)
+        # 移除power_info标签，功率值和百分比都将在进度条内显示
+        layout.addLayout(power_layout)
+
+        card.setLayout(layout)
+
+        # 存储组件引用
+        card_data = {
+            'widget': card,
+            'info_label': info_label,
+            'util_row': util_row,
+            'util_progress': util_progress,  # 新的进度条引用
+            'mem_row': mem_row,
+            'mem_progress': mem_progress,  # 新的进度条引用
+            'temp_row': temp_row,
+            'temp_value': temp_value,
+            'power_row': power_row,
+            'power_progress': power_progress  # 新的进度条引用
+        }
+
+        return card_data
+
+    def _update_gpu_cards(self, stats):
+        """更新GPU卡片显示"""
+        if not stats or not stats.gpus:
+            # 如果没有GPU数据，隐藏所有卡片
+            for card in self.gpu_cards:
+                card['widget'].setVisible(False)
+            return
+
+        # 首先隐藏所有卡片
+        for card in self.gpu_cards:
+            card['widget'].setVisible(False)
+
+        # 确保有足够的GPU卡片
+        while len(self.gpu_cards) < len(stats.gpus):
+            card_data = self._create_gpu_card(len(self.gpu_cards))
+            self.gpu_cards.append(card_data)
+
+            # 添加到网格布局
+            row = len(self.gpu_cards) // 4  # 每行最多4个
+            col = len(self.gpu_cards) % 4
+            self.gpu_cards_grid.addWidget(card_data['widget'], row, col)
+
+        # 更新GPU卡片数据
+        for i, gpu in enumerate(stats.gpus):
+            if i >= len(self.gpu_cards):
+                break
+
+            card = self.gpu_cards[i]
+            
+            # 更新GPU信息
+            card['info_label'].setText(gpu['info'])
+
+            # 更新GPU利用率 - 使用进度条
+            util = gpu['util']
+            card['util_progress'].setValue(int(util))
+            # 根据利用率设置进度条颜色
+            self._set_progress_bar_color(card['util_progress'], util)
+
+            # 更新显存使用率 - 使用进度条
+            memory_util = (gpu['memory_used'] / gpu['memory_total']) * 100 if gpu['memory_total'] > 0 else 0
+            card['mem_progress'].setValue(int(memory_util))
+            # 根据内存使用率设置进度条颜色
+            self._set_progress_bar_color(card['mem_progress'], memory_util)
+
+            # 更新温度
+            temp = gpu['temperature']
+            card['temp_value'].setText(f"{temp:.1f}°C")
+            if temp >= 80:
+                card['temp_value'].setStyleSheet("color: red;")
+            elif temp >= 70:
+                card['temp_value'].setStyleSheet("color: orange;")
+            else:
+                card['temp_value'].setStyleSheet("color: green;")
+
+            # 更新功率使用 - 使用进度条
+            if gpu['power_limit'] > 0:
+                # 调整进度条的最大值为功率上限
+                card['power_progress'].setMaximum(int(gpu['power_limit']))
+                card['power_progress'].setValue(int(gpu['power_usage']))
+                # 在进度条内同时显示功率值和百分比
+                power_percent = (gpu['power_usage'] / gpu['power_limit']) * 100
+                card['power_progress'].setFormat(f"{int(gpu['power_usage'])}W ({power_percent:.1f}%)")
+                # 根据功率使用百分比设置进度条颜色
+                self._set_progress_bar_color(card['power_progress'], power_percent)
+            else:
+                card['power_progress'].setMaximum(100)  # 如果没有功率上限，使用默认的100
+                card['power_progress'].setValue(int(gpu['power_usage']))
+                card['power_progress'].setFormat(f"{int(gpu['power_usage'])}W")
+
+            # 显示当前卡片
+            card['widget'].setVisible(True)
+
+        # 隐藏多余的卡片（虽然在开始时已经全部隐藏，这里为了代码清晰再次确认）
+        for i in range(len(stats.gpus), len(self.gpu_cards)):
+            self.gpu_cards[i]['widget'].setVisible(False)
+
+    def _set_progress_bar_color(self, progress_bar, value):
+        """设置进度条颜色"""
+        base_style = """
+        QProgressBar {
+            border: 1px solid #AAAAAA;
+            border-radius: 3px;
+            text-align: center;
+            background: #F0F0F0;
+        }
+        """
+        
+        if value >= 90:
+            style = base_style + """
+            QProgressBar::chunk {
+                background-color: #FF5252; /* 红色 - 危险 */
+                border-radius: 2px;
+            }
+            """
+            progress_bar.setStyleSheet(style)
+        elif value >= 70:
+            style = base_style + """
+            QProgressBar::chunk {
+                background-color: #FFA726; /* 橙色 - 警告 */
+                border-radius: 2px;
+            }
+            """
+            progress_bar.setStyleSheet(style)
+        else:
+            style = base_style + """
+            QProgressBar::chunk {
+                background-color: #66BB6A; /* 绿色 - 正常 */
+                border-radius: 2px;
+            }
+            """
+            progress_bar.setStyleSheet(style)
+
+    def _update_single_gpu_view(self):
+        """更新单GPU视图"""
+        stats = self.monitor_thread.get_last_stats()
+        if not stats or not stats.gpus or self.current_gpu_index >= len(
+                stats.gpus):
+            return
+        
+        gpu = stats.gpus[self.current_gpu_index]
+
+            # 更新GPU信息
+        self.gpu_info_label.setText(gpu['info'])
+            
+            # 更新GPU利用率
+        util = gpu['util']
+        self.gpu_util_label.setText(f"{util:.1f}%")
+            
+            # 更新显存使用率
+        memory_util = (gpu['memory_used'] / gpu['memory_total']
+                       ) * 100 if gpu['memory_total'] > 0 else 0
+        self.memory_util_label.setText(
+            f"{memory_util:.1f}% ({self._format_size(gpu['memory_used'])}/{self._format_size(gpu['memory_total'])})"
+            )
+            
+            # 更新温度
+        temp = gpu['temperature']
+        self.temp_label.setText(f"{temp:.1f}°C")
+            
+            # 更新功率使用
+        if gpu['power_limit'] > 0:
+                self.power_label.setText(
+                f"{gpu['power_usage']:.1f}W/{gpu['power_limit']:.1f}W ({(gpu['power_usage'] / gpu['power_limit']) * 100:.1f}%)"
+                )
+        else:
+            self.power_label.setText(f"{gpu['power_usage']:.1f}W")
 
     def _on_stats_updated(self, stats):
         """处理监控数据更新"""
         if not stats:
             self.show_no_servers_hint()
             return
-        
+
         try:
-            # 更新GPU信息
-            self.gpu_info_label.setText(stats.gpu_info or "未知型号")
-            
-            # 更新GPU利用率
-            self.gpu_util_label.setText(f"{stats.gpu_util:.1f}%")
-            
-            # 更新显存使用率
-            memory_util = stats.gpu_memory_util
-            self.memory_util_label.setText(
-                f"{memory_util:.1f}% ({self._format_size(stats.memory_used)}/{self._format_size(stats.memory_total)})"
-            )
-            
-            # 更新温度
-            self.temp_label.setText(f"{stats.temperature:.1f}°C")
-            
-            # 更新功率使用
-            if stats.power_limit > 0:
-                self.power_label.setText(
-                    f"{stats.power_usage:.1f}W/{stats.power_limit:.1f}W ({(stats.power_usage / stats.power_limit) * 100:.1f}%)"
-                )
+            # 更新GPU选择器
+            if self.gpu_selector.count() != stats.gpu_count:
+                self.gpu_selector.clear()
+                for i in range(stats.gpu_count):
+                    gpu_name = stats.gpus[i]['info'] if i < len(
+                        stats.gpus) else f"GPU {i}"
+                    self.gpu_selector.addItem(f"GPU {i}: {gpu_name}", i)
+
+                # 确保current_gpu_index在有效范围内
+                if self.current_gpu_index >= stats.gpu_count:
+                    self.current_gpu_index = 0
+
+                # 设置当前选中的GPU
+                self.gpu_selector.setCurrentIndex(self.current_gpu_index)
+
+            # 根据显示模式更新UI
+            if self.display_mode == "single":
+                self._update_single_gpu_view()
             else:
-                self.power_label.setText("N/A")
+                self._update_gpu_cards(stats)
             
-            # 更新CPU使用率
-            self.cpu_util_label.setText(f"{stats.cpu_util:.1f}%")
-            
-            # 更新系统内存使用率
-            self.memory_util_sys_label.setText(f"{stats.memory_util:.1f}%")
-            
-            # 更新磁盘使用率
-            self.disk_util_label.setText(f"{stats.disk_util:.1f}%")
-            
-            # 更新网络使用率
-            if stats.network_io:
-                recv_speed = stats.network_io.get('receive', 0)
-                send_speed = stats.network_io.get('transmit', 0)
-                self.network_recv_label.setText(self._format_network_speed(recv_speed))
-                self.network_send_label.setText(self._format_network_speed(send_speed))
-            else:
-                self.network_recv_label.setText("N/A")
-                self.network_send_label.setText("N/A")
-            
-            self.status_label.setText("状态: 正常")
+            # 更新系统信息（同时更新单GPU和多GPU模式下的系统信息）
+            self._update_system_info(stats)
+
+            self.status_label.setText(self.tr('status_normal'))
             self.status_label.setStyleSheet("color: green")
-            self.error_count = 0
             
             # 显示监控UI
             self.show_monitor_ui()
             
         except Exception as e:
             logger.error(f"更新UI失败: {e}")
-            self.show_no_servers_hint()
-    
-    def closeEvent(self, event):
-        """窗口关闭事件"""
-        self.monitor_thread.stop()
+            self.status_label.setText(f"{self.tr('status_error')} - {str(e)}")
+            self.status_label.setStyleSheet("color: red")
+
+    def _update_system_info(self, stats):
+        """更新系统信息"""
+        # 单GPU模式下的系统信息
+        self.cpu_util_label.setText(f"{stats.cpu_util:.1f}%")
+        self.memory_util_sys_label.setText(f"{stats.memory_util:.1f}%")
+        self.disk_util_label.setText(f"{stats.disk_util:.1f}%")
+        self.disk_io_label.setText(f"{stats.disk_io_latency:.1f}ms")
+            
+        if stats.network_io:
+            recv_speed = stats.network_io.get('receive_rate', 0.1)  # 默认至少0.1KB/s
+            send_speed = stats.network_io.get('send_rate', 0.1)  # 默认至少0.1KB/s
+            self.network_recv_label.setText(self._format_network_speed(recv_speed))
+            self.network_send_label.setText(self._format_network_speed(send_speed))
+        else:
+            self.network_recv_label.setText("N/A")
+            self.network_send_label.setText("N/A")
+            
+        # 多GPU模式下的系统信息
+        self.cpu_util_label_multi.setText(f"{stats.cpu_util:.1f}%")
+        self.memory_util_label_multi.setText(f"{stats.memory_util:.1f}%")
+        self.disk_util_label_multi.setText(f"{stats.disk_util:.1f}%")
+        self.disk_io_label_multi.setText(f"{stats.disk_io_latency:.1f}ms")
+
+        if stats.network_io:
+            self.network_recv_label_multi.setText(self._format_network_speed(recv_speed))
+            self.network_send_label_multi.setText(self._format_network_speed(send_speed))
+        else:
+            self.network_recv_label_multi.setText("N/A")
+            self.network_send_label_multi.setText("N/A")
+
+    def _format_size(self, size_mb):
+        """格式化显存大小显示"""
+        if size_mb < 1024:
+            return f"{size_mb:.0f}MB"
+        else:
+            return f"{size_mb / 1024:.1f}GB"
+
+    def _format_network_speed(self, speed_kbs):
+        """格式化网络速度显示
+
+        Args:
+            speed_kbs: 速度，单位为KB/s
+        """
+        if speed_kbs < 1.0:  # 小于1KB/s
+            return f"{speed_kbs * 1000:.1f}B/s"
+        elif speed_kbs < 1000.0:  # 小于1000KB/s，显示为KB/s
+            return f"{speed_kbs:.1f}KB/s"
+        else:  # 大于等于1000KB/s，显示为MB/s
+            return f"{speed_kbs / 1000:.2f}MB/s"
+
+    def start_monitoring(self):
+        """启动监控"""
+        if not self.monitor_thread.isRunning():
+            self.monitor_thread.start()
+
+    def stop_monitoring(self):
+        """停止监控"""
+        if self.monitor_thread.isRunning():
+            self.monitor_thread.stop()
         self.monitor_thread.wait()
-        super().closeEvent(event)
+
 
 class TestProgressWidget(QGroupBox):
     """测试进度显示组件"""
+
     def __init__(self):
         super().__init__()
         self.language_manager = LanguageManager()
@@ -525,10 +1027,12 @@ class TestProgressWidget(QGroupBox):
         self.detail_text = QTextEdit()
         self.detail_text.setReadOnly(True)
         self.detail_text.setMaximumHeight(60)  # 减小高度
-        self.detail_text.setPlaceholderText(self.tr('test_progress_placeholder'))
+        self.detail_text.setPlaceholderText(
+            self.tr('test_progress_placeholder'))
         layout.addWidget(self.detail_text)
         
         self.setLayout(layout)
+
 
 class TestThread(QThread):
     """测试线程"""
@@ -537,12 +1041,17 @@ class TestThread(QThread):
     test_finished = pyqtSignal()
     test_error = pyqtSignal(str)
     
-    def __init__(self, model_name: str, tasks: List[TestTask], test_task_id: str):
+    def __init__(
+            self,
+            model_name: str,
+            tasks: List[TestTask],
+            test_task_id: str):
         super().__init__()
         # 在主线程中获取模型配置
         try:
             models = db_manager.get_model_configs()
-            self.model_config = next((m for m in models if m["name"] == model_name), None)
+            self.model_config = next(
+                (m for m in models if m["name"] == model_name), None)
             if not self.model_config:
                 raise ValueError(f"找不到模型配置: {model_name}")
         except Exception as e:
@@ -594,8 +1103,10 @@ class TestThread(QThread):
         """进度回调函数"""
         self.progress_updated.emit(progress)
 
+
 class TestInfoWidget(QWidget):
     """实时测试信息显示组件"""
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.language_manager = LanguageManager()
@@ -646,7 +1157,8 @@ class TestInfoWidget(QWidget):
         header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         
         # 设置特定列的宽度策略
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)  # 数据集名称列自适应剩余空间
+        header.setSectionResizeMode(
+            0, QHeaderView.ResizeMode.Stretch)  # 数据集名称列自适应剩余空间
         # 为其他列设置最小宽度，确保数据显示完整
         min_widths = {
             1: 100,  # 完成/总数
@@ -700,21 +1212,31 @@ class TestInfoWidget(QWidget):
         completion = f"{stats['successful']}/{stats['total']}"
         self.info_table.setItem(row, 1, QTableWidgetItem(completion))
         
-        success_rate = (stats['successful'] / stats['total'] * 100) if stats['total'] > 0 else 0
-        self.info_table.setItem(row, 2, QTableWidgetItem(f"{success_rate:.1f}%"))
-        
-        avg_time = stats['total_time'] / stats['successful'] if stats['successful'] > 0 else 0
+        success_rate = (
+            stats['successful'] /
+            stats['total'] *
+            100) if stats['total'] > 0 else 0
+        self.info_table.setItem(
+            row, 2, QTableWidgetItem(f"{success_rate:.1f}%"))
+
+        avg_time = stats['total_time'] / \
+            stats['successful'] if stats['successful'] > 0 else 0
         self.info_table.setItem(row, 3, QTableWidgetItem(f"{avg_time:.1f}s"))
         
-        avg_speed = stats['total_chars'] / stats['total_time'] if stats['total_time'] > 0 else 0
-        self.info_table.setItem(row, 4, QTableWidgetItem(f"{avg_speed:.1f}字/秒"))
+        avg_speed = stats['total_chars'] / \
+            stats['total_time'] if stats['total_time'] > 0 else 0
+        self.info_table.setItem(
+            row, 4, QTableWidgetItem(f"{avg_speed:.1f}字/秒"))
         
         current_speed = stats.get('current_speed', 0)
-        self.info_table.setItem(row, 5, QTableWidgetItem(f"{current_speed:.1f}字/秒"))
+        self.info_table.setItem(
+            row, 5, QTableWidgetItem(f"{current_speed:.1f}字/秒"))
         
-        self.info_table.setItem(row, 6, QTableWidgetItem(str(stats['total_chars'])))
+        self.info_table.setItem(
+            row, 6, QTableWidgetItem(str(stats['total_chars'])))
         
-        avg_tps = stats['total_tokens'] / stats['total_time'] if stats['total_time'] > 0 else 0
+        # 获取平均TPS值，如果不存在则使用0
+        avg_tps = stats.get('avg_tps', 0)
         self.info_table.setItem(row, 7, QTableWidgetItem(f"{avg_tps:.1f}"))
     
     def add_error(self, error_msg: str):
@@ -726,8 +1248,10 @@ class TestInfoWidget(QWidget):
         self.info_table.setRowCount(0)
         self.error_text.clear()
 
+
 class TestTab(QWidget):
     """测试标签页"""
+
     def __init__(self):
         super().__init__()
         
@@ -758,12 +1282,12 @@ class TestTab(QWidget):
     def update_ui_text(self):
         """更新所有UI文本"""
         # 更新标题文本
-        self.model_group.setTitle(self.tr('model_group'))
-        self.dataset_group.setTitle(self.tr('dataset_group'))
-        self.concurrency_group.setTitle(self.tr('concurrency_group'))
+        self.model_group.setTitle(self.tr('model_selection'))
+        self.dataset_group.setTitle(self.tr('dataset_selection'))
+        self.concurrency_group.setTitle(self.tr('concurrency_settings'))
         
         # 更新按钮文本
-        self.refresh_btn.setText(self.tr('refresh_btn'))
+        self.refresh_btn.setText(self.tr('refresh_model'))
         self.start_btn.setText(self.tr('start_test'))
         self.stop_btn.setText(self.tr('stop_test'))
         
@@ -774,6 +1298,14 @@ class TestTab(QWidget):
         self.gpu_monitor.update_ui_text()
         self.progress_widget.update_ui_text()
         self.info_widget.update_ui_text()
+        
+        # 更新数据集列表项的文本
+        for i in range(self.dataset_list.count()):
+            item = self.dataset_list.item(i)
+            if item:
+                dataset_widget = self.dataset_list.itemWidget(item)
+                if dataset_widget:
+                    dataset_widget.update_ui_text()
     
     def tr(self, key):
         """翻译文本"""
@@ -783,11 +1315,14 @@ class TestTab(QWidget):
         """清除测试状态"""
         try:
             # 清理UI状态
-            self.progress_widget.status_label.setText(self.tr('status_not_started'))
-            self.progress_widget.status_label.setStyleSheet("font-weight: bold;")
+            self.progress_widget.status_label.setText(
+                self.tr('status_not_started'))
+            self.progress_widget.status_label.setStyleSheet(
+                "font-weight: bold;")
             self.progress_widget.progress_bar.setValue(0)
             self.progress_widget.detail_text.clear()
-            self.progress_widget.detail_text.setPlaceholderText(self.tr('test_progress_placeholder'))
+            self.progress_widget.detail_text.setPlaceholderText(
+                self.tr('test_progress_placeholder'))
             
             # 清理测试信息
             self.info_widget.clear()
@@ -804,13 +1339,20 @@ class TestTab(QWidget):
         except Exception as e:
             logger.error(f"清除测试状态失败: {e}", exc_info=True)
     
-    def _init_test_records(self, test_task_id: str, model_config: dict, selected_datasets: dict):
+    def _init_test_records(
+            self,
+            test_task_id: str,
+            model_config: dict,
+            selected_datasets: dict):
         """初始化测试记录"""
         try:
             # 计算总权重
-            total_weight = sum(weight for _, weight in selected_datasets.values())
+            total_weight = sum(
+                weight for _,
+                weight in selected_datasets.values())
             total_concurrency = self.concurrency_spinbox.value()
-            logger.info(f"初始化测试记录: 总权重={total_weight}, 总并发数={total_concurrency}")
+            logger.info(
+                f"初始化测试记录: 总权重={total_weight}, 总并发数={total_concurrency}")
 
             records = {
                 "test_task_id": test_task_id,
@@ -830,19 +1372,24 @@ class TestTab(QWidget):
                 "current_speed": 0.0,
                 "avg_tps": 0.0,
                 "status": "running",
-                "log_file": os.path.join("data", "logs", "tests", f"{test_task_id}.log")
-            }
+                "log_file": os.path.join(
+                    "data",
+                    "logs",
+                    "tests",
+                    f"{test_task_id}.log")}
             
             # 初始化每个数据集的统计信息
             total_tasks = 0  # 重置总任务数
             for dataset_name, (prompts, weight) in selected_datasets.items():
                 # 计算每个数据集的实际并发数
-                dataset_concurrency = max(1, int((weight / total_weight) * total_concurrency))
+                dataset_concurrency = max(
+                    1, int((weight / total_weight) * total_concurrency))
                 # 使用并发数作为该数据集的任务数
                 dataset_tasks = dataset_concurrency
                 total_tasks += dataset_tasks
                 
-                logger.info(f"数据集 {dataset_name} 配置: 权重={weight}, 并发数={dataset_concurrency}, 任务数={dataset_tasks}")
+                logger.info(
+                    f"数据集 {dataset_name} 配置: 权重={weight}, 并发数={dataset_concurrency}, 任务数={dataset_tasks}")
                 records["datasets"][dataset_name] = {
                     "total": dataset_tasks,  # 使用并发数作为任务数
                     "successful": 0,
@@ -907,17 +1454,32 @@ class TestTab(QWidget):
             results_tab = self._find_results_tab()
             if results_tab:
                 # 确保数据一致性
-                if not hasattr(results_tab, 'current_records') or not results_tab.current_records:
+                if not hasattr(
+                        results_tab,
+                        'current_records') or not results_tab.current_records:
                     results_tab.current_records = self.current_test_records.copy()
                 else:
                     # 更新关键字段
                     for key in [
-                        "test_task_id", "session_name", "model_name", "model_config",
-                        "concurrency", "total_tasks", "successful_tasks", "failed_tasks",
-                        "total_tokens", "total_chars", "total_time", "datasets",
-                        "status", "avg_response_time", "avg_generation_speed",
-                        "current_speed", "avg_tps", "start_time", "end_time"
-                    ]:
+                        "test_task_id",
+                        "session_name",
+                        "model_name",
+                        "model_config",
+                        "concurrency",
+                        "total_tasks",
+                        "successful_tasks",
+                        "failed_tasks",
+                        "total_tokens",
+                        "total_chars",
+                        "total_time",
+                        "datasets",
+                        "status",
+                        "avg_response_time",
+                        "avg_generation_speed",
+                        "current_speed",
+                        "avg_tps",
+                        "start_time",
+                            "end_time"]:
                         if key in self.current_test_records:
                             results_tab.current_records[key] = self.current_test_records[key]
                 
@@ -943,7 +1505,7 @@ class TestTab(QWidget):
         left_layout.setContentsMargins(0, 0, 0, 0)
         
         # 创建模型选择组
-        self.model_group = QGroupBox(self.tr('model_group'))
+        self.model_group = QGroupBox()
         model_layout = QHBoxLayout()
         
         # 添加模型选择下拉框
@@ -951,7 +1513,8 @@ class TestTab(QWidget):
         model_layout.addWidget(self.model_combo)
         
         # 添加刷新按钮
-        self.refresh_btn = QPushButton(self.tr('refresh_btn'))
+        self.refresh_btn = QPushButton()
+        self.refresh_btn.setText(self.tr('refresh_model'))
         self.refresh_btn.clicked.connect(self.load_models)
         model_layout.addWidget(self.refresh_btn)
         
@@ -959,23 +1522,25 @@ class TestTab(QWidget):
         left_layout.addWidget(self.model_group)
         
         # 创建数据集选择组
-        self.dataset_group = QGroupBox(self.tr('dataset_group'))
+        self.dataset_group = QGroupBox()
         dataset_layout = QVBoxLayout()
         
         # 数据集列表
         self.dataset_list = QListWidget()
         # 设置多选模式
-        self.dataset_list.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+        self.dataset_list.setSelectionMode(
+            QAbstractItemView.SelectionMode.MultiSelection)
         dataset_layout.addWidget(self.dataset_list)
         
         self.dataset_group.setLayout(dataset_layout)
         left_layout.addWidget(self.dataset_group)
         
         # 创建并发设置组
-        self.concurrency_group = QGroupBox(self.tr('concurrency_group'))
+        self.concurrency_group = QGroupBox()
         concurrency_layout = QHBoxLayout()
         
-        self.total_concurrency_label = QLabel(self.tr('total_concurrency'))
+        self.total_concurrency_label = QLabel()
+        self.total_concurrency_label.setText(self.tr('total_concurrency'))
         concurrency_layout.addWidget(self.total_concurrency_label)
         
         self.concurrency_spinbox = QSpinBox()
@@ -988,11 +1553,13 @@ class TestTab(QWidget):
         
         # 添加开始/停止按钮
         button_layout = QHBoxLayout()
-        self.start_btn = QPushButton(self.tr('start_test'))
+        self.start_btn = QPushButton()
+        self.start_btn.setText(self.tr('start_test'))
         self.start_btn.clicked.connect(self.start_test)
         button_layout.addWidget(self.start_btn)
         
-        self.stop_btn = QPushButton(self.tr('stop_test'))
+        self.stop_btn = QPushButton()
+        self.stop_btn.setText(self.tr('stop_test'))
         self.stop_btn.clicked.connect(self.stop_test)
         self.stop_btn.setEnabled(False)
         button_layout.addWidget(self.stop_btn)
@@ -1030,8 +1597,11 @@ class TestTab(QWidget):
         self.load_models()
         
         # 更新状态
-        self.progress_widget.status_label.setText(self.tr('status_not_started'))
-        self.progress_widget.detail_text.setPlaceholderText(self.tr('test_progress_placeholder'))
+        self.progress_widget.status_label.setText(
+            self.tr('status_not_started'))
+        self.progress_widget.detail_text.setPlaceholderText(
+            self.tr('test_progress_placeholder'))
+        
         
         # 清除测试状态
         self._clear_test_state()
@@ -1046,7 +1616,8 @@ class TestTab(QWidget):
                 settings_tab = main_window.findChild(QWidget, "settings_tab")
                 if settings_tab:
                     # 查找模型设置组件
-                    model_settings = settings_tab.findChild(QWidget, "model_settings")
+                    model_settings = settings_tab.findChild(
+                        QWidget, "model_settings")
                     if model_settings:
                         model_settings.model_updated.connect(self.load_models)
                         logger.info("成功连接模型更新信号")
@@ -1054,9 +1625,11 @@ class TestTab(QWidget):
                         logger.warning("未找到模型设置组件")
                     
                     # 查找GPU设置组件
-                    gpu_settings = settings_tab.findChild(QWidget, "gpu_settings")
+                    gpu_settings = settings_tab.findChild(
+                        QWidget, "gpu_settings")
                     if gpu_settings:
-                        gpu_settings.settings_updated.connect(self._on_gpu_settings_updated)
+                        gpu_settings.settings_updated.connect(
+                            self._on_gpu_settings_updated)
                         logger.info("成功连接GPU设置更新信号")
                     else:
                         logger.warning("未找到GPU设置组件")
@@ -1087,7 +1660,12 @@ class TestTab(QWidget):
             # 加载数据集
             datasets = db_manager.get_datasets()
             for dataset in datasets:
-                logger.info(f"数据集 {dataset['name']} 初始化完成，默认权重: {dataset.get('weight', 1)}")
+                logger.info(
+                    f"数据集 {
+                        dataset['name']} 初始化完成，默认权重: {
+                        dataset.get(
+                            'weight',
+                            1)}")
                 
                 # 创建列表项
                 list_item = QListWidgetItem(self.dataset_list)
@@ -1139,7 +1717,8 @@ class TestTab(QWidget):
         
         try:
             # 获取所有数据集
-            all_datasets = {d["name"]: d["prompts"] for d in db_manager.get_datasets()}
+            all_datasets = {d["name"]: d["prompts"]
+                            for d in db_manager.get_datasets()}
             
             # 遍历所有列表项
             for i in range(self.dataset_list.count()):
@@ -1162,7 +1741,9 @@ class TestTab(QWidget):
                 if weight > 0 and dataset_name in all_datasets:
                     prompts = all_datasets[dataset_name]
                     selected_datasets[dataset_name] = (prompts, weight)
-                    logger.info(f"添加数据集: {dataset_name}, prompts数量: {len(prompts)}, 权重: {weight}")
+                    logger.info(
+                        f"添加数据集: {dataset_name}, prompts数量: {
+                            len(prompts)}, 权重: {weight}")
             
             logger.info(f"最终选中的数据集: {list(selected_datasets.keys())}")
             return selected_datasets
@@ -1185,7 +1766,8 @@ class TestTab(QWidget):
             
             # 更新状态为开始测试
             self.progress_widget.status_label.setText("状态: 开始测试")
-            self.progress_widget.status_label.setStyleSheet("font-weight: bold; color: blue;")
+            self.progress_widget.status_label.setStyleSheet(
+                "font-weight: bold; color: blue;")
             
             # 获取选中的模型配置
             model_config = self.get_selected_model()
@@ -1208,18 +1790,23 @@ class TestTab(QWidget):
             logger.info(f"设置的总并发数: {total_concurrency}")
             
             # 计算总权重
-            total_weight = sum(weight for _, weight in selected_datasets.values())
+            total_weight = sum(
+                weight for _,
+                weight in selected_datasets.values())
             logger.info(f"总权重: {total_weight}")
             
             # 初始化测试记录
-            self._init_test_records(test_task_id, model_config, selected_datasets)
+            self._init_test_records(
+                test_task_id, model_config, selected_datasets)
             
             # 根据权重分配并发数并创建测试任务
             tasks = []
             for dataset_name, (prompts, weight) in selected_datasets.items():
                 # 计算分配的并发数
-                dataset_concurrency = max(1, int((weight / total_weight) * total_concurrency))
-                logger.info(f"数据集 {dataset_name} 配置: 权重={weight}, 并发数={dataset_concurrency}")
+                dataset_concurrency = max(
+                    1, int((weight / total_weight) * total_concurrency))
+                logger.info(
+                    f"数据集 {dataset_name} 配置: 权重={weight}, 并发数={dataset_concurrency}")
                 
                 # 创建测试任务 - 使用并发数作为任务数
                 task = TestTask(
@@ -1229,7 +1816,8 @@ class TestTab(QWidget):
                     concurrency=dataset_concurrency
                 )
                 tasks.append(task)
-                logger.info(f"创建测试任务: dataset={dataset_name}, 并发数={dataset_concurrency}")
+                logger.info(
+                    f"创建测试任务: dataset={dataset_name}, 并发数={dataset_concurrency}")
             
             # 创建测试线程
             self.test_thread = TestThread(
@@ -1239,7 +1827,8 @@ class TestTab(QWidget):
             )
             
             # 连接信号
-            self.test_thread.progress_updated.connect(self._on_progress_updated)
+            self.test_thread.progress_updated.connect(
+                self._on_progress_updated)
             self.test_thread.result_received.connect(self._on_result_received)
             self.test_thread.test_finished.connect(self._on_test_finished)
             self.test_thread.test_error.connect(self._on_test_error)
@@ -1251,18 +1840,10 @@ class TestTab(QWidget):
             self.info_widget.clear()
             
             # 初始化每个数据集的显示状态
-            for dataset_name, dataset_stats in self.current_test_records["datasets"].items():
-                self.info_widget.update_dataset_info(dataset_name, {
-                    "total": dataset_stats["total"],
-                    "successful": 0,
-                    "failed": 0,
-                    "total_time": 0.0,
-                    "total_tokens": 0,
-                    "total_chars": 0,
-                    "avg_response_time": 0.0,
-                    "avg_generation_speed": 0.0,
-                    "current_speed": 0.0
-                })
+            for dataset_name, dataset_stats in self.current_test_records["datasets"].items(
+            ):
+                self.info_widget.update_dataset_info(
+                    dataset_name, dataset_stats)
             
             # 启动测试线程
             self.test_thread.start()
@@ -1270,7 +1851,6 @@ class TestTab(QWidget):
             
         except Exception as e:
             logger.error(f"启动测试失败: {e}", exc_info=True)
-            QMessageBox.critical(self, "错误", f"启动测试失败: {e}")
     
     def stop_test(self):
         """停止测试"""
@@ -1371,7 +1951,8 @@ class TestTab(QWidget):
             if not self.current_test_records:
                 return
             
-            dataset_stats = self.current_test_records["datasets"].get(dataset_name)
+            dataset_stats = self.current_test_records["datasets"].get(
+                dataset_name)
             if not dataset_stats:
                 return
                 
@@ -1384,7 +1965,8 @@ class TestTab(QWidget):
                 if dataset_stats["successful"] > 0:
                     # 计算实际耗时
                     current_time = time.time()
-                    dataset_stats["total_time"] = current_time - dataset_stats["start_time"]
+                    dataset_stats["total_time"] = current_time - \
+                        dataset_stats["start_time"]
                     
                     if dataset_stats["total_time"] > 0:
                         # 考虑并发数计算平均生成速度
@@ -1410,7 +1992,8 @@ class TestTab(QWidget):
                 
                 # 计算总体实际耗时和平均值
                 current_time = time.time()
-                self.current_test_records["total_time"] = current_time - self.current_test_records["start_time"]
+                self.current_test_records["total_time"] = current_time - \
+                    self.current_test_records["start_time"]
                 
                 if self.current_test_records["successful_tasks"] > 0:
                     if self.current_test_records["total_time"] > 0:

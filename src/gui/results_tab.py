@@ -26,6 +26,9 @@ class ResultsTab(QWidget):
         self.language_manager = LanguageManager()
         self.current_records = {}  # 当前测试会话的记录
         self._init_ui()
+        
+        # 连接语言改变信号
+        self.language_manager.language_changed.connect(self.update_ui_text)
     
     def _init_ui(self):
         """初始化UI"""
@@ -487,3 +490,35 @@ class ResultsTab(QWidget):
             
         except Exception as e:
             logger.error(f"添加测试结果失败: {e}", exc_info=True)
+
+    def update_ui_text(self):
+        """更新UI文本"""
+        # 更新工具栏按钮文本
+        for child in self.findChildren(QPushButton):
+            if child.text() == self.tr('export_records') or child.text().startswith('导出'):
+                child.setText(self.tr('export_records'))
+            elif child.text() == self.tr('clear_logs') or child.text().startswith('清除'):
+                child.setText(self.tr('clear_logs'))
+            elif child.text() == self.tr('view_log') or child.text().startswith('查看'):
+                child.setText(self.tr('view_log'))
+            elif child.text() == self.tr('delete') or child.text().startswith('删除'):
+                child.setText(self.tr('delete'))
+        
+        # 更新表格头
+        self.result_table.setHorizontalHeaderLabels([
+            self.tr('session_name'),
+            self.tr('completion_total'),
+            self.tr('success_rate'),
+            self.tr('avg_response_time'),
+            self.tr('avg_generation_speed'),
+            self.tr('current_speed'),
+            self.tr('total_chars'),
+            self.tr('avg_tps'),
+            self.tr('total_time'),
+            self.tr('model_name'),
+            self.tr('concurrency'),
+            self.tr('operations')
+        ])
+        
+        # 更新错误文本框占位符
+        self.error_text.setPlaceholderText(self.tr('error_info_placeholder'))

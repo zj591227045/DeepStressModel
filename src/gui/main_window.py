@@ -63,13 +63,16 @@ class MainWindow(QMainWindow):
         
         # 创建语言选择下拉框
         self.lang_combo = QComboBox()
-        for lang_code, lang_name in self.language_manager.available_languages.items():
+        supported_languages = self.language_manager.get_supported_languages()
+        for lang_code, lang_name in supported_languages.items():
             self.lang_combo.addItem(lang_name, lang_code)
+        
         # 设置当前语言
-        current_lang = self.language_manager.current_language
+        current_lang = self.language_manager.get_current_language()
         index = self.lang_combo.findData(current_lang)
         if index >= 0:
             self.lang_combo.setCurrentIndex(index)
+        
         self.lang_combo.currentIndexChanged.connect(self._on_language_changed)
         lang_layout.addWidget(self.lang_combo)
         
@@ -86,12 +89,9 @@ class MainWindow(QMainWindow):
         self.results_tab = ResultsTab()
         
         # 将标签页添加到tab_widget
-        self.tab_widget.addTab(self.test_tab, "")
-        self.tab_widget.addTab(self.settings_tab, "")
-        self.tab_widget.addTab(self.results_tab, "")
-        
-        # 更新UI文本
-        self.update_ui_text()
+        self.tab_widget.addTab(self.test_tab, self.tr('test'))
+        self.tab_widget.addTab(self.settings_tab, self.tr('settings'))
+        self.tab_widget.addTab(self.results_tab, self.tr('results'))
         
         logger.info("主窗口初始化完成")
     
@@ -118,6 +118,7 @@ class MainWindow(QMainWindow):
     
     def update_ui_text(self):
         """更新UI文本"""
+        # 更新标签页标题
         self.tab_widget.setTabText(0, self.tr('test'))
         self.tab_widget.setTabText(1, self.tr('settings'))
         self.tab_widget.setTabText(2, self.tr('results'))
@@ -126,6 +127,17 @@ class MainWindow(QMainWindow):
         menubar = self.menuBar()
         menubar.clear()
         self.create_menu_bar()
+        
+        # 手动更新所有标签页的文本
+        self.test_tab.update_ui_text()
+        self.settings_tab.update_ui_text()
+        self.results_tab.update_ui_text()
+        
+        # 更新语言选择区域
+        for i in range(self.lang_combo.count()):
+            lang_code = self.lang_combo.itemData(i)
+            lang_name = self.language_manager.supported_languages.get(lang_code, lang_code)
+            self.lang_combo.setItemText(i, lang_name)
     
     def tr(self, key):
         """翻译文本"""

@@ -26,7 +26,7 @@ class ModelEditDialog(QDialog):
     
     def init_ui(self):
         """初始化UI"""
-        self.setWindowTitle(self.tr('edit') if self.model_data else self.tr('add'))
+        self.setWindowTitle(self.tr('edit_model') if self.model_data else self.tr('add_model'))
         layout = QFormLayout()
         layout.setSpacing(10)
         
@@ -36,22 +36,22 @@ class ModelEditDialog(QDialog):
         
         # API地址输入
         self.api_url_input = QLineEdit()
-        layout.addRow("API URL:", self.api_url_input)
+        layout.addRow(self.tr('api_url') + ":", self.api_url_input)
         
         # API密钥输入
         self.api_key_input = QLineEdit()
         self.api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
-        layout.addRow("API Key:", self.api_key_input)
+        layout.addRow(self.tr('api_key') + ":", self.api_key_input)
         
         # 模型名称输入
         self.model_input = QLineEdit()
-        layout.addRow(self.tr('model') + ":", self.model_input)
+        layout.addRow(self.tr('model_name') + ":", self.model_input)
         
         # 最大Token数输入
         self.max_tokens_input = QSpinBox()
         self.max_tokens_input.setRange(1, 100000)
         self.max_tokens_input.setValue(2048)
-        layout.addRow("Max Tokens:", self.max_tokens_input)
+        layout.addRow(self.tr('max_tokens') + ":", self.max_tokens_input)
         
         # 温度输入
         self.temperature_input = QDoubleSpinBox()
@@ -65,7 +65,7 @@ class ModelEditDialog(QDialog):
         self.top_p_input.setRange(0, 1)
         self.top_p_input.setSingleStep(0.1)
         self.top_p_input.setValue(0.9)
-        layout.addRow("Top P:", self.top_p_input)
+        layout.addRow(self.tr('top_p') + ":", self.top_p_input)
         
         # 按钮
         button_box = QHBoxLayout()
@@ -237,11 +237,11 @@ class ModelSettingsWidget(QWidget):
     def show_model_details(self, model: dict):
         """显示模型详情"""
         details = f"""
-        <b>API地址：</b> {model.get('api_url', 'N/A')}<br>
-        <b>模型名称：</b> {model.get('model', 'N/A')}<br>
-        <b>最大Token数：</b> {model.get('max_tokens', 'N/A')}<br>
-        <b>温度：</b> {model.get('temperature', 'N/A')}<br>
-        <b>Top P：</b> {model.get('top_p', 'N/A')}
+        <b>{self.tr('api_url')}：</b> {model.get('api_url', 'N/A')}<br>
+        <b>{self.tr('model_name')}：</b> {model.get('model', 'N/A')}<br>
+        <b>{self.tr('max_tokens')}：</b> {model.get('max_tokens', 'N/A')}<br>
+        <b>Temperature：</b> {model.get('temperature', 'N/A')}<br>
+        <b>{self.tr('top_p')}：</b> {model.get('top_p', 'N/A')}
         """
         self.details_label.setText(details)
     
@@ -297,8 +297,8 @@ class ModelSettingsWidget(QWidget):
         model_name = current_item.text()
         reply = QMessageBox.question(
             self,
-            "确认删除",
-            f"确定要删除模型 {model_name} 吗？",
+            self.tr('confirm_delete'),
+            self.tr('confirm_delete_model'),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
@@ -309,7 +309,7 @@ class ModelSettingsWidget(QWidget):
                 self.model_updated.emit()
                 logger.info(f"删除模型配置成功: {model_name}")
             else:
-                QMessageBox.critical(self, "错误", "删除模型配置失败")
+                QMessageBox.critical(self, self.tr('error'), self.tr('save_server_failed'))
     
     def reset_settings(self):
         """重置设置"""

@@ -82,6 +82,11 @@ class SettingsTab(QWidget):
     def update_ui_text(self):
         """更新UI文本"""
         self.reset_button.setText(self.tr('reset_settings'))
+        
+        # 调用各个设置组件的更新UI文本方法
+        self.model_settings.update_ui_text()
+        self.gpu_settings.update_ui_text()
+        self.dataset_settings.update_ui_text()
     
     def tr(self, key):
         """翻译文本"""

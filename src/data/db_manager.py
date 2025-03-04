@@ -684,5 +684,69 @@ class DatabaseManager:
             logger.error(f"保存配置失败: {e}")
             return False
 
+    def add_gpu_stats(self, host, gpu_util, gpu_memory_util, temperature, power_usage, 
+                     cpu_util=0, memory_util=0, disk_util=0, disk_io_latency=0,
+                     network_recv=0, network_send=0, timestamp=None):
+        """添加GPU监控数据到数据库
+        
+        Args:
+            host: 服务器主机名
+            gpu_util: GPU利用率
+            gpu_memory_util: GPU内存利用率
+            temperature: 温度
+            power_usage: 功率使用
+            cpu_util: CPU利用率
+            memory_util: 内存利用率
+            disk_util: 磁盘利用率
+            disk_io_latency: 磁盘IO延迟
+            network_recv: 网络接收速度
+            network_send: 网络发送速度
+            timestamp: 时间戳
+            
+        Returns:
+            是否成功
+        """
+        try:
+            if timestamp is None:
+                timestamp = time.time()
+                
+            # 检查gpu_stats表是否存在，如果不存在则创建
+            self.cursor.execute('''
+                CREATE TABLE IF NOT EXISTS gpu_stats (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    host TEXT NOT NULL,
+                    gpu_util REAL,
+                    gpu_memory_util REAL,
+                    temperature REAL,
+                    power_usage REAL,
+                    cpu_util REAL,
+                    memory_util REAL,
+                    disk_util REAL,
+                    disk_io_latency REAL,
+                    network_recv REAL,
+                    network_send REAL,
+                    timestamp REAL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
+            self.cursor.execute('''
+                INSERT INTO gpu_stats (
+                    host, gpu_util, gpu_memory_util, temperature, power_usage,
+                    cpu_util, memory_util, disk_util, disk_io_latency,
+                    network_recv, network_send, timestamp
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                host, gpu_util, gpu_memory_util, temperature, power_usage,
+                cpu_util, memory_util, disk_util, disk_io_latency,
+                network_recv, network_send, timestamp
+            ))
+            
+            self.conn.commit()
+            return True
+        except Exception as e:
+            logger.error(f"保存GPU统计数据失败: {e}")
+            return False
+
 # 创建全局数据库管理器实例
 db_manager = DatabaseManager()

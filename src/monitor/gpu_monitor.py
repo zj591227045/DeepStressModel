@@ -2,7 +2,7 @@
 GPU监控模块，提供远程GPU监控功能
 """
 import time
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 import paramiko
 from src.utils.logger import setup_logger
 from src.utils.config import config
@@ -14,42 +14,71 @@ class GPUStats:
     """GPU统计数据类"""
     def __init__(
         self,
-        memory_used: float,
-        memory_total: float,
-        gpu_util: float,
-        temperature: float,
-        power_usage: float = 0.0,  # 功率使用（瓦特）
-        power_limit: float = 0.0,  # 功率限制（瓦特）
+        gpus: List[Dict] = None,  # 多GPU数据列表
         cpu_util: float = 0.0,    # CPU使用率
         memory_util: float = 0.0,  # 系统内存使用率
         disk_util: float = 0.0,    # 磁盘使用率
+        disk_io_latency: float = 0.0,  # 磁盘IO延时（毫秒）
         network_io: Dict[str, float] = None,  # 网络IO统计
         timestamp: float = None,
         cpu_info: str = "",       # CPU型号信息
-        gpu_info: str = "",       # GPU型号信息
-        gpu_count: int = 1,       # GPU数量
+        gpu_count: int = 0,       # GPU数量
         total_memory: int = 0     # 系统总内存(GB)
     ):
-        self.memory_used = memory_used      # MB
-        self.memory_total = memory_total    # MB
-        self.gpu_util = gpu_util            # %
-        self.temperature = temperature      # °C
-        self.power_usage = power_usage     # W
-        self.power_limit = power_limit     # W
+        self.gpus = gpus or []    # 多GPU数据
         self.cpu_util = cpu_util 
         self._memory_util = memory_util     # %
         self.disk_util = disk_util         # %
+        self.disk_io_latency = disk_io_latency  # ms
         self.network_io = network_io or {}  # 包含上传下载速度
         self.timestamp = timestamp or time.time()
         self.cpu_info = cpu_info           # CPU型号
-        self.gpu_info = gpu_info           # GPU型号
         self.gpu_count = gpu_count         # GPU数量
         self.total_memory = total_memory   # 系统总内存
     
+    # 为了兼容现有代码，提供属性访问方法
+    @property
+    def gpu_util(self) -> float:
+        """第一个GPU的利用率"""
+        return self.gpus[0]['util'] if self.gpus else 0.0
+    
+    @property
+    def memory_used(self) -> float:
+        """第一个GPU的已用显存"""
+        return self.gpus[0]['memory_used'] if self.gpus else 0.0
+    
+    @property
+    def memory_total(self) -> float:
+        """第一个GPU的总显存"""
+        return self.gpus[0]['memory_total'] if self.gpus else 0.0
+    
+    @property
+    def temperature(self) -> float:
+        """第一个GPU的温度"""
+        return self.gpus[0]['temperature'] if self.gpus else 0.0
+    
+    @property
+    def power_usage(self) -> float:
+        """第一个GPU的功率使用"""
+        return self.gpus[0]['power_usage'] if self.gpus else 0.0
+    
+    @property
+    def power_limit(self) -> float:
+        """第一个GPU的功率限制"""
+        return self.gpus[0]['power_limit'] if self.gpus else 0.0
+    
+    @property
+    def gpu_info(self) -> str:
+        """第一个GPU的型号信息"""
+        return self.gpus[0]['info'] if self.gpus else ""
+    
     @property
     def gpu_memory_util(self) -> float:
-        """GPU内存使用率"""
-        return (self.memory_used / self.memory_total) * 100 if self.memory_total > 0 else 0
+        """第一个GPU的显存使用率"""
+        if not self.gpus:
+            return 0.0
+        gpu = self.gpus[0]
+        return (gpu['memory_used'] / gpu['memory_total']) * 100 if gpu['memory_total'] > 0 else 0
     
     @property
     def memory_util(self) -> float:
@@ -60,6 +89,19 @@ class GPUStats:
     def memory_util(self, value: float):
         """设置系统内存使用率"""
         self._memory_util = value
+    
+    def get_gpu(self, index: int) -> Dict:
+        """获取指定索引的GPU数据"""
+        if 0 <= index < len(self.gpus):
+            return self.gpus[index]
+        return None
+    
+    def get_gpu_memory_util(self, index: int) -> float:
+        """获取指定GPU的显存使用率"""
+        gpu = self.get_gpu(index)
+        if not gpu:
+            return 0.0
+        return (gpu['memory_used'] / gpu['memory_total']) * 100 if gpu['memory_total'] > 0 else 0
 
 class GPUMonitor:
     """远程GPU监控类"""
@@ -134,21 +176,27 @@ class GPUMonitor:
             net_command = "cat /proc/net/dev | grep -E 'eth0|ens|enp' | head -n1 | awk '{print $2,$10}'"
             net_output = self._execute_command(net_command)
             if not net_output:
-                return {'receive': 0, 'transmit': 0}
+                return {'receive': 0, 'transmit': 0, 'receive_rate': 0.1, 'send_rate': 0.1}
             
             current_time = time.time()
-            net_recv, net_send = map(float, net_output.split())
+            net_parts = net_output.split()
+            if len(net_parts) < 2:
+                return {'receive': 0, 'transmit': 0, 'receive_rate': 0.1, 'send_rate': 0.1}
+                
+            # 获取字节数
+            net_recv = float(net_parts[0])
+            net_send = float(net_parts[1])
             
             # 如果是第一次获取数据
             if self._last_net_stats is None:
                 self._last_net_stats = (net_recv, net_send)
                 self._last_net_time = current_time
-                return {'receive': 0, 'transmit': 0}
+                return {'receive': net_recv, 'transmit': net_send, 'receive_rate': 0.1, 'send_rate': 0.1}
             
             # 计算时间差
             time_diff = current_time - self._last_net_time
             if time_diff <= 0:
-                return {'receive': 0, 'transmit': 0}
+                return {'receive': net_recv, 'transmit': net_send, 'receive_rate': 0.1, 'send_rate': 0.1}
             
             # 计算速率（bytes/s）
             recv_speed = (net_recv - self._last_net_stats[0]) / time_diff
@@ -158,108 +206,202 @@ class GPUMonitor:
             self._last_net_stats = (net_recv, net_send)
             self._last_net_time = current_time
             
+            # 确保速率不小于0.1KB/s以保证显示
+            recv_rate = max(0.1, recv_speed / 1024)  # KB/s
+            send_rate = max(0.1, send_speed / 1024)
+            
             return {
-                'receive': max(0, recv_speed),  # 确保速度不为负
-                'transmit': max(0, send_speed)
+                'receive': net_recv, 
+                'transmit': net_send,
+                'receive_rate': recv_rate,
+                'send_rate': send_rate
             }
+            
         except Exception as e:
             logger.error(f"获取网络速度失败: {e}")
-            return {'receive': 0, 'transmit': 0}
+            return {'receive': 0, 'transmit': 0, 'receive_rate': 0.1, 'send_rate': 0.1}
 
-    def get_stats(self) -> Optional[GPUStats]:
-        """获取GPU统计信息"""
-        for attempt in range(self.max_retries):
-            try:
-                # 获取GPU信息
-                nvidia_smi = self._execute_command("nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,power.limit,name --format=csv,noheader,nounits")
-                if not nvidia_smi:
-                    raise Exception("无法获取GPU信息")
-                
-                gpu_data = nvidia_smi.split(',')
-                if len(gpu_data) < 7:
-                    raise Exception("GPU数据格式错误")
-                
-                gpu_util = float(gpu_data[0])
-                memory_used = float(gpu_data[1])
-                memory_total = float(gpu_data[2])
-                temperature = float(gpu_data[3])
-                power_usage = float(gpu_data[4]) if gpu_data[4].strip() != 'N/A' else 0.0
-                power_limit = float(gpu_data[5]) if gpu_data[5].strip() != 'N/A' else 0.0
-                gpu_info = gpu_data[6].strip()
-                
-                # 获取CPU使用率
-                cpu_command = "top -bn1 | grep 'Cpu(s)' | awk '{print $2}'"
-                cpu_output = self._execute_command(cpu_command)
-                if not cpu_output:
-                    raise Exception("无法获取CPU信息")
-                cpu_util = float(cpu_output)
-                
-                # 获取内存使用率
-                memory_command = "free | grep Mem | awk '{print $3/$2 * 100.0}'"
-                memory_output = self._execute_command(memory_command)
-                if not memory_output:
-                    raise Exception("无法获取内存信息")
-                memory_util = float(memory_output)
-                
-                # 获取磁盘使用率
-                disk_command = "df / | tail -1 | awk '{print $5}' | sed 's/%//'"
-                disk_output = self._execute_command(disk_command)
-                if not disk_output:
-                    raise Exception("无法获取磁盘信息")
-                disk_util = float(disk_output)
-                
-                # 获取网络速度
-                network_io = self._get_network_speed()
-                
-                # 获取CPU信息
-                cpu_info_command = "cat /proc/cpuinfo | grep 'model name' | head -n1 | cut -d':' -f2"
-                cpu_info = self._execute_command(cpu_info_command)
-                if not cpu_info:
-                    cpu_info = "未知CPU"
-                
-                # 获取系统总内存
-                total_memory_command = "free -g | grep Mem | awk '{print $2}'"
-                total_memory_output = self._execute_command(total_memory_command)
-                if not total_memory_output:
-                    raise Exception("无法获取系统总内存信息")
-                total_memory = int(total_memory_output)
-                
-                # 获取GPU数量
-                gpu_count_command = "nvidia-smi --query-gpu=gpu_name --format=csv,noheader | wc -l"
-                gpu_count_output = self._execute_command(gpu_count_command)
-                if not gpu_count_output:
-                    raise Exception("无法获取GPU数量信息")
-                gpu_count = int(gpu_count_output)
-                
-                return GPUStats(
-                    memory_used=memory_used,
-                    memory_total=memory_total,
-                    gpu_util=gpu_util,
-                    temperature=temperature,
-                    power_usage=power_usage,
-                    power_limit=power_limit,
-                    cpu_util=cpu_util,
-                    memory_util=memory_util,
-                    disk_util=disk_util,
-                    network_io=network_io,
-                    cpu_info=cpu_info.strip(),
-                    gpu_info=gpu_info,
-                    gpu_count=gpu_count,
-                    total_memory=total_memory
-                )
-            except Exception as e:
-                logger.error(f"获取GPU统计信息失败 (尝试 {attempt + 1}/{self.max_retries}): {e}")
-                if attempt < self.max_retries - 1:
-                    # 重置连接
-                    try:
-                        self.client.close()
-                    except:
-                        pass
-                    self.client = None
-                    time.sleep(self.retry_interval)
-                    continue
+    def get_stats(self, db_manager=None) -> Optional[GPUStats]:
+        """获取GPU和系统状态
+
+        Returns:
+            GPUStats: GPU统计信息
+        """
+        try:
+            if not self.client:
+                logger.warning("无法获取GPU信息：SSH连接未建立")
                 return None
-        return None
+
+            # 获取GPU使用信息
+            all_gpus = []
+            stdin, stdout, stderr = self.client.exec_command(
+                "nvidia-smi --query-gpu=index,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw,power.limit,name "
+                "--format=csv,noheader,nounits"
+            )
+            gpu_outputs = stdout.read().decode().strip().split('\n')
+            gpu_count = len(gpu_outputs)
+            
+            for line in gpu_outputs:
+                if not line.strip():
+                    continue
+                parts = [p.strip() for p in line.split(',')]
+                if len(parts) >= 8:
+                    try:
+                        index = int(parts[0])
+                        gpu_util = float(parts[1])
+                        memory_used = float(parts[2])
+                        memory_total = float(parts[3])
+                        temperature = float(parts[4])
+                        power_usage = float(parts[5]) if parts[5] else 0.0
+                        power_limit = float(parts[6]) if parts[6] else 0.0
+                        gpu_info = parts[7]
+                        
+                        gpu_data = {
+                            'index': index,
+                            'util': gpu_util,
+                            'memory_used': memory_used,
+                            'memory_total': memory_total,
+                            'temperature': temperature,
+                            'power_usage': power_usage,
+                            'power_limit': power_limit,
+                            'info': gpu_info
+                        }
+                        all_gpus.append(gpu_data)
+                    except (ValueError, IndexError) as e:
+                        logger.error(f"解析GPU数据错误: {e}, 数据行: {line}")
+            
+            if not all_gpus:
+                return None
+            
+            # 获取CPU使用率
+            stdin, stdout, stderr = self.client.exec_command(
+                "top -bn1 | grep 'Cpu(s)' | sed 's/.*, *\\([0-9.]*\\)%* id.*/\\1/' | awk '{print 100 - $1}'"
+            )
+            cpu_util = float(stdout.read().decode().strip())
+            
+            # 获取内存使用情况
+            stdin, stdout, stderr = self.client.exec_command(
+                "free -m | grep Mem | awk '{print $3,$2}'"
+            )
+            mem_output = stdout.read().decode().strip().split()
+            if len(mem_output) >= 2:
+                mem_used = float(mem_output[0])
+                mem_total = float(mem_output[1])
+                memory_util = (mem_used / mem_total) * 100
+                total_memory = int(mem_total / 1024)  # 转换为GB
+            else:
+                memory_util = 0
+                total_memory = 0
+            
+            # 获取磁盘使用情况
+            stdin, stdout, stderr = self.client.exec_command(
+                "df -h / | grep / | awk '{print $5}' | sed 's/%//'"
+            )
+            disk_util = float(stdout.read().decode().strip())
+            
+            # 获取磁盘IO延迟 - 使用iowait百分比作为指标
+            # iowait表示CPU等待I/O完成的时间百分比，更准确地反映了系统I/O性能
+            iowait_command = "top -bn1 | grep '%Cpu' | awk '{print $10}'"
+            iowait_output = self._execute_command(iowait_command)
+            
+            try:
+                # 将iowait百分比转换为毫秒单位的延迟值 (0-100% -> 0-100ms)
+                iowait_percent = float(iowait_output) if iowait_output else 1.0
+                disk_io_latency = iowait_percent  # 直接使用iowait百分比值作为毫秒数
+            except (ValueError, TypeError):
+                disk_io_latency = 1.0  # 默认值
+            
+            # 获取网络IO信息
+            stdin, stdout, stderr = self.client.exec_command(
+                "cat /proc/net/dev | grep -e eth0 -e ens -e eno -e enp | awk '{print $2,$10}'"
+            )
+            net_output = stdout.read().decode().strip().split()
+            if len(net_output) >= 2:
+                net_receive = float(net_output[0]) / 1024 / 1024  # 转换为MB
+                net_send = float(net_output[1]) / 1024 / 1024    # 转换为MB
+                
+                # 计算网络IO速率
+                curr_time = time.time()
+                if self._last_net_stats:
+                    time_diff = curr_time - self._last_net_time
+                    if time_diff > 0:
+                        if isinstance(self._last_net_stats, dict) and 'receive' in self._last_net_stats and 'transmit' in self._last_net_stats:
+                            last_receive = self._last_net_stats['receive']
+                            last_send = self._last_net_stats['transmit']
+                            
+                            receive_rate = max(0.1, (net_receive - last_receive) / time_diff * 1000)  # KB/s
+                            send_rate = max(0.1, (net_send - last_send) / time_diff * 1000)          # KB/s
+                        else:
+                            receive_rate = 0.1
+                            send_rate = 0.1
+                    else:
+                        receive_rate = 0.1
+                        send_rate = 0.1
+                else:
+                    receive_rate = 0.1
+                    send_rate = 0.1
+                
+                network_io = {
+                    'receive': net_receive,
+                    'transmit': net_send,
+                    'receive_rate': receive_rate,
+                    'send_rate': send_rate
+                }
+            else:
+                network_io = {'receive': 0, 'transmit': 0, 'receive_rate': 0.1, 'send_rate': 0.1}
+            
+            # 获取CPU信息
+            stdin, stdout, stderr = self.client.exec_command(
+                "lscpu | grep 'Model name' | sed 's/Model name: *//'"
+            )
+            cpu_info = stdout.read().decode().strip()
+            
+            # 创建GPU统计对象
+            stats = GPUStats(
+                gpus=all_gpus,
+                cpu_util=cpu_util,
+                memory_util=memory_util,
+                disk_util=disk_util,
+                disk_io_latency=disk_io_latency,
+                network_io=network_io,
+                cpu_info=cpu_info.strip(),
+                gpu_count=gpu_count,
+                total_memory=total_memory
+            )
+            
+            self._last_net_stats = network_io
+            self._last_net_time = curr_time
+            
+            # 保存到数据库
+            if db_manager:
+                db_manager.add_gpu_stats(
+                    self.host,
+                    stats.gpu_util,
+                    stats.gpu_memory_util,
+                    stats.temperature,
+                    stats.power_usage,
+                    stats.cpu_util,
+                    stats.memory_util
+                )
+            
+            return stats
+            
+        except Exception as e:
+            logger.error(f"获取GPU状态错误: {e}")
+            self.handle_connection_error()
+            return None
+    
+    def handle_connection_error(self):
+        """处理连接错误"""
+        logger.info(f"处理连接错误: {self.host}")
+        if self.client:
+            try:
+                self.client.close()
+            except:
+                pass
+            self.client = None
+        # 尝试重新连接
+        self._connect()
     
     def __del__(self):
         """析构函数，关闭SSH连接"""

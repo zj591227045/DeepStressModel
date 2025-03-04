@@ -20,13 +20,14 @@ class DatasetEditDialog(QDialog):
     def __init__(self, dataset_data=None, parent=None):
         super().__init__(parent)
         self.dataset_data = dataset_data
+        self.language_manager = LanguageManager()
         self.init_ui()
         if dataset_data:
             self.load_dataset_data()
     
     def init_ui(self):
         """初始化UI"""
-        self.setWindowTitle("编辑数据集" if self.dataset_data else "添加数据集")
+        self.setWindowTitle(self.tr('edit_dataset') if self.dataset_data else self.tr('add_dataset'))
         layout = QVBoxLayout()
         
         # 创建表单
@@ -34,29 +35,31 @@ class DatasetEditDialog(QDialog):
         
         # 名称
         self.name_edit = QLineEdit()
-        form_layout.addRow("数据集名称:", self.name_edit)
+        form_layout.addRow(self.tr('dataset_name') + ":", self.name_edit)
         
-        # 描述
-        self.description_edit = QLineEdit()
-        form_layout.addRow("描述:", self.description_edit)
-        
-        # 类别
+        # 类型
         self.category_combo = QComboBox()
-        self.category_combo.addItems(["问答", "文本生成", "代码生成", "其他"])
-        form_layout.addRow("类别:", self.category_combo)
+        self.category_combo.addItems([
+            self.tr('math_qa'),
+            self.tr('logic_qa'),
+            self.tr('basic_qa'),
+            self.tr('code_gen'),
+            self.tr('text_gen')
+        ])
+        form_layout.addRow(self.tr('dataset_type') + ":", self.category_combo)
         
         # 提示词列表
         self.prompts_edit = QTextEdit()
-        self.prompts_edit.setPlaceholderText("每行一个提示词...")
-        form_layout.addRow("提示词列表:", self.prompts_edit)
+        self.prompts_edit.setPlaceholderText(self.tr('example_prompts'))
+        form_layout.addRow(self.tr('prompt_count') + ":", self.prompts_edit)
         
         layout.addLayout(form_layout)
         
         # 按钮
         button_layout = QHBoxLayout()
-        save_button = QPushButton("保存")
+        save_button = QPushButton(self.tr('save'))
         save_button.clicked.connect(self.accept)
-        cancel_button = QPushButton("取消")
+        cancel_button = QPushButton(self.tr('cancel'))
         cancel_button.clicked.connect(self.reject)
         
         button_layout.addWidget(save_button)
@@ -68,7 +71,6 @@ class DatasetEditDialog(QDialog):
     def load_dataset_data(self):
         """加载数据集数据"""
         self.name_edit.setText(self.dataset_data["name"])
-        self.description_edit.setText(self.dataset_data.get("description", ""))
         self.category_combo.setCurrentText(self.dataset_data.get("category", "其他"))
         self.prompts_edit.setPlainText("\n".join(self.dataset_data["prompts"]))
     
@@ -77,11 +79,14 @@ class DatasetEditDialog(QDialog):
         prompts = [p.strip() for p in self.prompts_edit.toPlainText().split("\n") if p.strip()]
         return {
             "name": self.name_edit.text(),
-            "description": self.description_edit.text(),
             "category": self.category_combo.currentText(),
             "prompts": prompts,
             "is_builtin": False  # 用户创建的数据集默认非内置
         }
+    
+    def tr(self, key):
+        """翻译文本"""
+        return self.language_manager.get_text(key)
 
 class DatasetSettingsWidget(QWidget):
     """数据集设置组件"""
@@ -199,9 +204,10 @@ class DatasetSettingsWidget(QWidget):
         """显示数据集详情"""
         prompts = dataset.get("prompts", [])
         details = f"""
-        <b>{self.tr('dataset_name')}</b> {dataset.get('name', 'N/A')}<br>
-        <b>{self.tr('prompt_count')}</b> {len(prompts)}<br>
-        <b>{self.tr('example_prompts')}</b><br>
+        <b>{self.tr('dataset_name')}：</b> {dataset.get('name', 'N/A')}<br>
+        <b>{self.tr('dataset_type')}：</b> {self.tr(dataset.get('category', 'N/A'))}<br>
+        <b>{self.tr('prompt_count')}：</b> {len(prompts)}<br>
+        <b>{self.tr('example_prompts')}：</b><br>
         {prompts[0] if prompts else 'N/A'}<br>
         {prompts[1] if len(prompts) > 1 else ''}
         """
@@ -274,20 +280,22 @@ class DatasetSettingsWidget(QWidget):
         try:
             # 先选择内置数据集或从文件导入
             dialog = QDialog(self)
-            dialog.setWindowTitle("导入数据集")
+            dialog.setWindowTitle(self.tr('import_dataset'))
             layout = QVBoxLayout()
             
             # 添加选择框
             combo = QComboBox()
-            combo.addItem("从内置数据集导入")
-            combo.addItem("从文件导入")
+            combo.addItems([
+                self.tr('import_builtin'),
+                self.tr('import_file')
+            ])
             layout.addWidget(combo)
             
             # 添加按钮
             button_box = QHBoxLayout()
-            ok_btn = QPushButton("确定")
+            ok_btn = QPushButton(self.tr('confirm'))
             ok_btn.clicked.connect(dialog.accept)
-            cancel_btn = QPushButton("取消")
+            cancel_btn = QPushButton(self.tr('cancel'))
             cancel_btn.clicked.connect(dialog.reject)
             button_box.addWidget(ok_btn)
             button_box.addWidget(cancel_btn)
@@ -304,14 +312,14 @@ class DatasetSettingsWidget(QWidget):
                     self._import_from_file()
         except Exception as e:
             logger.error(f"导入数据集失败: {e}")
-            QMessageBox.critical(self, "错误", f"导入数据集失败：{e}")
+            QMessageBox.critical(self, self.tr('error'), f"{self.tr('error')}: {e}")
     
     def _import_builtin_dataset(self):
         """从内置数据集导入"""
         try:
             # 选择内置数据集
             dialog = QDialog(self)
-            dialog.setWindowTitle("选择内置数据集")
+            dialog.setWindowTitle(self.tr('select_builtin_dataset'))
             layout = QVBoxLayout()
             
             # 添加数据集列表
@@ -322,9 +330,9 @@ class DatasetSettingsWidget(QWidget):
             
             # 添加按钮
             button_box = QHBoxLayout()
-            ok_btn = QPushButton("导入")
+            ok_btn = QPushButton(self.tr('import'))
             ok_btn.clicked.connect(dialog.accept)
-            cancel_btn = QPushButton("取消")
+            cancel_btn = QPushButton(self.tr('cancel'))
             cancel_btn.clicked.connect(dialog.reject)
             button_box.addWidget(ok_btn)
             button_box.addWidget(cancel_btn)
@@ -344,16 +352,16 @@ class DatasetSettingsWidget(QWidget):
                     logger.info(f"导入内置数据集成功: {dataset_name}")
         except Exception as e:
             logger.error(f"导入内置数据集失败: {e}")
-            QMessageBox.critical(self, "错误", f"导入内置数据集失败：{e}")
+            QMessageBox.critical(self, self.tr('error'), f"{self.tr('error')}: {e}")
     
     def _import_from_file(self):
         """从文件导入数据集"""
         try:
             file_path, _ = QFileDialog.getOpenFileName(
                 self,
-                "选择数据集文件",
+                self.tr('select_dataset_file'),
                 "",
-                "文本文件 (*.txt);;所有文件 (*.*)"
+                f"{self.tr('text_file')} (*.txt);;{self.tr('all_files')} (*.*)"
             )
             
             if file_path:
@@ -371,10 +379,10 @@ class DatasetSettingsWidget(QWidget):
                         self.dataset_updated.emit()
                         logger.info(f"从文件导入数据集成功: {dataset_name}")
                 else:
-                    raise Exception("文件内容为空")
+                    raise Exception(self.tr('file_empty'))
         except Exception as e:
             logger.error(f"从文件导入数据集失败: {e}")
-            QMessageBox.critical(self, "错误", f"从文件导入数据集失败：{e}")
+            QMessageBox.critical(self, self.tr('error'), f"{self.tr('error')}: {e}")
     
     def export_dataset(self):
         """导出数据集"""
@@ -388,9 +396,9 @@ class DatasetSettingsWidget(QWidget):
             if dataset:
                 file_path, _ = QFileDialog.getSaveFileName(
                     self,
-                    "导出数据集",
+                    self.tr('export_dataset'),
                     f"{dataset['name']}.txt",
-                    "文本文件 (*.txt);;所有文件 (*.*)"
+                    f"{self.tr('text_file')} (*.txt);;{self.tr('all_files')} (*.*)"
                 )
                 
                 if file_path:
@@ -399,7 +407,7 @@ class DatasetSettingsWidget(QWidget):
                     logger.info(f"导出数据集成功: {dataset['name']}")
         except Exception as e:
             logger.error(f"导出数据集失败: {e}")
-            QMessageBox.critical(self, "错误", f"导出数据集失败：{e}")
+            QMessageBox.critical(self, self.tr('error'), f"{self.tr('error')}: {e}")
     
     def reset_settings(self):
         """重置设置"""

@@ -34,7 +34,9 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QCheckBox,
     QFileDialog,
-    QMenu)
+    QMenu,
+    QRadioButton,
+    QButtonGroup)
 from PyQt6.QtCore import Qt, QTimer, QThread, pyqtSignal
 from PyQt6.QtGui import QFont, QAction
 from src.utils.config import config
@@ -47,6 +49,7 @@ from src.data.db_manager import db_manager
 from src.gui.results_tab import ResultsTab
 from src.gui.i18n.language_manager import LanguageManager
 from typing import List, Dict
+from src.data.dataset_manager import DatasetManager
 
 logger = setup_logger("test_tab")
 
@@ -1255,6 +1258,9 @@ class TestTab(QWidget):
     def __init__(self):
         super().__init__()
         
+        # 初始化测试记录
+        self.current_test_records = None
+        
         # 获取语言管理器实例
         self.language_manager = LanguageManager()
         
@@ -1265,19 +1271,45 @@ class TestTab(QWidget):
         self.selected_datasets = {}
         self.test_manager = TestManager()  # 添加test_manager实例
         
-        # 初始化UI
+        # 初始化界面
         self.init_ui()
+        
+        # 更新界面文本
+        self.update_ui_text()
+        
+        # 加载数据集和模型
+        self.load_datasets()
+        self.load_models()
+        
+        # 初始化API调用方式
+        self._init_api_call_mode()
+        
+        # 监控线程
+        self.monitor_thread = MonitorThread()
         
         # 连接语言变更信号
         self.language_manager.language_changed.connect(self.update_ui_text)
         
-        # 加载初始数据
-        self.load_models()
-        self.load_datasets()
-        
         # 连接测试管理器的信号
         self.test_manager.progress_updated.connect(self._on_progress_updated)
         logger.info("已连接进度更新信号")
+    
+    def _init_api_call_mode(self):
+        """初始化API调用方式"""
+        # 从配置读取默认值，如果没有配置，则强制设置为流式输出(True)
+        is_stream_mode = config.get('openai_api.stream_mode', True)
+        
+        # 确保流式输出为默认值
+        if not is_stream_mode:
+            is_stream_mode = True
+            config.set('openai_api.stream_mode', True)
+            logger.info("已将API调用方式默认设置为流式输出")
+        
+        # 设置单选按钮状态
+        if is_stream_mode:
+            self.stream_mode_radio.setChecked(True)
+        else:
+            self.direct_mode_radio.setChecked(True)
     
     def update_ui_text(self):
         """更新所有UI文本"""
@@ -1293,6 +1325,9 @@ class TestTab(QWidget):
         
         # 更新并发设置标签
         self.total_concurrency_label.setText(self.tr('total_concurrency'))
+        self.api_call_mode_label.setText(self.tr('api_call_mode'))
+        self.stream_mode_radio.setText(self.tr('stream_output'))
+        self.direct_mode_radio.setText(self.tr('direct_output'))
         
         # 更新其他组件的文本
         self.gpu_monitor.update_ui_text()
@@ -1547,6 +1582,26 @@ class TestTab(QWidget):
         self.concurrency_spinbox.setRange(1, 100)
         self.concurrency_spinbox.setValue(1)
         concurrency_layout.addWidget(self.concurrency_spinbox)
+        
+        # 添加API调用方式选择器
+        self.api_call_mode_label = QLabel()
+        self.api_call_mode_label.setText(self.tr('api_call_mode'))
+        concurrency_layout.addWidget(self.api_call_mode_label)
+        
+        self.api_call_mode_group = QButtonGroup(self)
+        self.stream_mode_radio = QRadioButton(self.tr('stream_output'))
+        self.direct_mode_radio = QRadioButton(self.tr('direct_output'))
+        self.stream_mode_radio.setChecked(True)  # 默认选择流式输出
+        self.api_call_mode_group.addButton(self.stream_mode_radio)
+        self.api_call_mode_group.addButton(self.direct_mode_radio)
+        
+        api_mode_layout = QHBoxLayout()
+        api_mode_layout.addWidget(self.stream_mode_radio)
+        api_mode_layout.addWidget(self.direct_mode_radio)
+        concurrency_layout.addLayout(api_mode_layout)
+        
+        # 连接信号
+        self.api_call_mode_group.buttonClicked.connect(self._on_api_call_mode_changed)
         
         self.concurrency_group.setLayout(concurrency_layout)
         left_layout.addWidget(self.concurrency_group)
@@ -2029,3 +2084,13 @@ class TestTab(QWidget):
         """处理数据集列表项的点击事件"""
         # 切换选择状态
         item.setSelected(not item.isSelected())
+
+    def _on_api_call_mode_changed(self, button):
+        """当API调用方式改变时"""
+        is_stream_mode = button == self.stream_mode_radio
+        config.set('openai_api.stream_mode', is_stream_mode)
+        
+        # 打印配置以便验证
+        current_value = config.get('openai_api.stream_mode', None)
+        logger.info(f"API调用方式已更改为: {'流式输出' if is_stream_mode else '直接输出'}")
+        logger.info(f"当前配置值: openai_api.stream_mode = {current_value}")

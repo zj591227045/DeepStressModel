@@ -8,6 +8,7 @@ import aiohttp
 from typing import Dict, Any, Optional, AsyncGenerator
 from src.utils.logger import setup_logger
 from src.utils.token_counter import token_counter  # 导入token计数器
+from src.utils.config import config
 
 logger = setup_logger("api_client")
 
@@ -138,6 +139,13 @@ class APIClient:
         self.temperature = temperature
         self.top_p = top_p
         
+        # 模型参数
+        self.model_params = {
+            "max_tokens": max_tokens,
+            "temperature": temperature,
+            "top_p": top_p
+        }
+        
         # 创建异步HTTP会话
         self.session = aiohttp.ClientSession(
             headers={"Authorization": f"Bearer {api_key}"}
@@ -152,12 +160,15 @@ class APIClient:
     
     def _prepare_request(self, prompt: str) -> dict:
         """准备请求数据"""
+        # 根据配置决定是否使用流式输出
+        use_stream = config.get('openai_api.stream_mode', True)
+        
         return {
             "model": self.model,
             "messages": [
                 {"role": "user", "content": prompt}
             ],
-            "stream": True,  # 启用流式输出
+            "stream": use_stream,  # 根据配置决定是否启用流式输出
             **self.model_params  # 只包含支持的参数
         }
     
@@ -192,6 +203,9 @@ class APIClient:
         stream_stats = StreamStats(self.model)  # 传入模型名称
         full_response = []
         
+        # 根据配置决定是否使用流式输出
+        use_stream = config.get('openai_api.stream_mode', True)
+        
         for attempt in range(self.max_retries):
             try:
                 async with self.session.post(
@@ -199,10 +213,8 @@ class APIClient:
                     json={
                         "model": self.model,
                         "messages": [{"role": "user", "content": prompt}],
-                        "stream": True,
-                        "max_tokens": self.max_tokens,
-                        "temperature": self.temperature,
-                        "top_p": self.top_p
+                        "stream": use_stream,  # 根据配置决定是否启用流式输出
+                        **self.model_params  # 使用model_params代替直接指定参数
                     },
                     timeout=aiohttp.ClientTimeout(
                         connect=self.connect_timeout,
@@ -213,23 +225,46 @@ class APIClient:
                 ) as response:
                     if response.status == 200:
                         try:
-                            async for chunk in self._process_stream(response):
-                                full_response.append(chunk)
-                                stream_stats.update(chunk)
-                            
-                            end_time = time.time()
-                            response_text = ''.join(full_response)
-                            
-                            return APIResponse(
-                                success=True,
-                                response_text=response_text,
-                                tokens_generated=stream_stats.total_tokens,
-                                duration=end_time - start_time,
-                                start_time=start_time,
-                                end_time=end_time,
-                                model_name=self.model,
-                                stream_stats=stream_stats
-                            )
+                            # 根据配置决定处理方式
+                            if use_stream:
+                                # 流式输出处理
+                                async for chunk in self._process_stream(response):
+                                    full_response.append(chunk)
+                                    stream_stats.update(chunk)
+                                
+                                end_time = time.time()
+                                return APIResponse(
+                                    success=True,
+                                    response_text="".join(full_response),
+                                    tokens_generated=stream_stats.total_tokens,
+                                    duration=end_time - start_time,
+                                    start_time=start_time,
+                                    end_time=end_time,
+                                    model_name=self.model,
+                                    stream_stats=stream_stats
+                                )
+                            else:
+                                # 非流式输出处理
+                                data = await response.json()
+                                response_text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                                
+                                # 估算token数量
+                                tokens_generated = token_counter.count_tokens(response_text, self.model)
+                                
+                                # 更新流统计（虽然不是流式但仍需要计算速度）
+                                stream_stats.update(response_text)
+                                
+                                end_time = time.time()
+                                return APIResponse(
+                                    success=True,
+                                    response_text=response_text,
+                                    tokens_generated=tokens_generated,
+                                    duration=end_time - start_time,
+                                    start_time=start_time,
+                                    end_time=end_time,
+                                    model_name=self.model,
+                                    stream_stats=stream_stats
+                                )
                         except Exception as e:
                             logger.error(f"流式输出中断: {e}")
                             # 返回已生成的部分内容，但标记为失败

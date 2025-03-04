@@ -228,6 +228,9 @@ class TestManager(QObject):
                         f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {worker_id} 开始处理任务:\n")
                         f.write(f"- 数据集: {dataset_name}\n")
                         f.write(f"- Prompt: {prompt[:100]}...\n")
+                        # 获取并记录API调用方式
+                        is_stream_mode = config.get('openai_api.stream_mode', True)
+                        f.write(f"- API调用方式: {'流式输出' if is_stream_mode else '直接输出'}\n")
                     
                     response = await api_client.generate(prompt)
                     
@@ -239,6 +242,9 @@ class TestManager(QObject):
                             f.write(f"- 响应时间: {response.duration:.2f}s\n")
                             f.write(f"- 生成字符数: {response.total_chars}\n")
                             f.write(f"- 生成Token数: {response.total_tokens}\n")
+                            # 记录API调用方式
+                            is_stream_mode = config.get('openai_api.stream_mode', True)
+                            f.write(f"- API调用方式: {'流式输出' if is_stream_mode else '直接输出'}\n")
                         else:
                             f.write(f"- 错误: {response.error_msg}\n")
                         f.write("\n")

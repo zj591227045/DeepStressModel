@@ -30,6 +30,13 @@ DEFAULT_CONFIG = {
         "title": "DeepStressModel",
         "width": 1200,
         "height": 800,
+        "language": "zh_CN"
+    },
+    "openai_api": {
+        "stream_mode": True,  # 默认启用流式输出
+    },
+    "gpu": {
+        "poll_interval": 0.5,  # GPU监控轮询间隔，单位秒
     },
     "gpu_monitor": {
         "update_interval": 2.0,  # GPU监控更新间隔（秒）

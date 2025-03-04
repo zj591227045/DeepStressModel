@@ -84,6 +84,10 @@ TRANSLATIONS = {
         'complete': 'Complete',
         'test_completed_msg': 'Test has been completed!',
         
+        'api_call_mode': 'API Mode:',
+        'stream_output': 'Stream Output',
+        'direct_output': 'Direct Output',
+        
         'export_records': 'Export Records',
         'clear_logs': 'Clear Logs',
         'error_info_placeholder': 'Error messages during testing will be shown here...',
@@ -271,6 +275,10 @@ TRANSLATIONS = {
         'test_complete': '测试已完成！',
         'complete': '完成',
         'test_completed_msg': '测试已完成！',
+        
+        'api_call_mode': '调用方式:',
+        'stream_output': '流式输出',
+        'direct_output': '直接输出',
         
         'export_records': '导出记录',
         'clear_logs': '清除日志',
@@ -460,6 +468,10 @@ TRANSLATIONS = {
         'complete': 'Terminé',
         'test_completed_msg': 'Le test est terminé !',
         
+        'api_call_mode': 'API Mode:',
+        'stream_output': 'Stream Output',
+        'direct_output': 'Direct Output',
+        
         'export_records': 'Exporter les Enregistrements',
         'clear_logs': 'Effacer les Journaux',
         'error_info_placeholder': 'Les messages d\'erreur pendant le test seront affichés ici...',
@@ -584,6 +596,10 @@ TRANSLATIONS = {
         'test_complete': 'Test Abgeschlossen!',
         'complete': 'Abgeschlossen',
         'test_completed_msg': 'Test wurde abgeschlossen!',
+        
+        'api_call_mode': 'API Mode:',
+        'stream_output': 'Stream Output',
+        'direct_output': 'Direct Output',
         
         'export_records': 'Aufzeichnungen Exportieren',
         'clear_logs': 'Protokolle Löschen',

@@ -295,7 +295,7 @@ class GPUMonitorWidget(QGroupBox):
         def setup_label_style(label):
             label.setMinimumWidth(60)  # 设置最小宽度
             font = label.font()
-            font.setPointSize(13)  # 增加字体大小为20pt
+            font.setPointSize(10)  # 增加字体大小为20pt
             label.setFont(font)
         
         # GPU型号信息

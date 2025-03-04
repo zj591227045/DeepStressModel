@@ -38,8 +38,8 @@ env/
 Thumbs.db
 
 # 项目特定
-data/
-*.db
+/data/           # 只排除根目录下的 data 目录
+deepstress.db    # 具体指定数据库文件
 *.log
 logs/
 

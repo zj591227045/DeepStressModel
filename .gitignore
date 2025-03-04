@@ -26,6 +26,7 @@ venv/
 ENV/
 env/
 .env
+venv_*/
 
 # IDE
 .idea/
@@ -38,11 +39,15 @@ env/
 Thumbs.db
 
 # 项目特定
-/data/**          # 排除 data 目录及其所有内容
-data/             # 确保 data 目录在任何位置都被排除
-*.db              # 排除所有数据库文件
-*.log             # 排除所有日志文件
-logs/             # 排除日志目录
+# 只忽略根目录下的 data 目录
+/data/
+/data/**/*
+
+# 忽略所有日志和数据库文件，无论在哪个目录
+**/*.log
+**/*.db
+**/logs/
+**/logs/**/*
 
 # 其他
 *.bak

@@ -41,6 +41,12 @@ class ServerEditDialog(QDialog):
         self.host_input = QLineEdit()
         layout.addRow(self.tr('host') + ":", self.host_input)
         
+        # 端口
+        self.port_input = QSpinBox()
+        self.port_input.setRange(1, 65535)  # 有效的端口范围
+        self.port_input.setValue(22)  # 默认端口
+        layout.addRow(self.tr('port') + ":", self.port_input)
+        
         # 用户名
         self.username_input = QLineEdit()
         layout.addRow(self.tr('username') + ":", self.username_input)
@@ -66,6 +72,7 @@ class ServerEditDialog(QDialog):
         """加载服务器数据"""
         self.name_input.setText(self.server_data.get("name", ""))
         self.host_input.setText(self.server_data.get("host", ""))
+        self.port_input.setValue(self.server_data.get("port", 22))
         self.username_input.setText(self.server_data.get("username", ""))
         self.password_input.setText(self.server_data.get("password", ""))
     
@@ -74,6 +81,7 @@ class ServerEditDialog(QDialog):
         return {
             "name": self.name_input.text().strip(),
             "host": self.host_input.text().strip(),
+            "port": self.port_input.value(),
             "username": self.username_input.text().strip(),
             "password": self.password_input.text().strip()
         }
@@ -87,7 +95,7 @@ class ServerEditDialog(QDialog):
         try:
             data = self.get_server_data()
             monitor = GPUMonitorManager()
-            monitor.setup_remote(data["host"], data["username"], data["password"])
+            monitor.setup_monitor(data["host"], data["username"], data["password"], data["port"])
             stats = monitor.get_stats()
             
             if stats:
@@ -96,14 +104,14 @@ class ServerEditDialog(QDialog):
                     self.tr('success'),
                     self.tr('test_connection_success')
                 )
-                logger.info(f"服务器连接测试成功: {data['host']}")
+                logger.info(f"服务器连接测试成功: {data['host']}:{data['port']}")
             else:
                 QMessageBox.warning(
                     self,
                     self.tr('warning'),
                     self.tr('test_connection_no_gpu')
                 )
-                logger.warning(f"服务器GPU信息获取失败: {data['host']}")
+                logger.warning(f"服务器GPU信息获取失败: {data['host']}:{data['port']}")
         except Exception as e:
             logger.error(f"服务器连接测试失败: {e}")
             QMessageBox.critical(

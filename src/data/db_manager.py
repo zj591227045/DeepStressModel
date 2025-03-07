@@ -167,6 +167,7 @@ class DatabaseManager:
                     host TEXT NOT NULL,
                     username TEXT NOT NULL,
                     password TEXT NOT NULL,
+                    port INTEGER DEFAULT 22,
                     is_active BOOLEAN DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
@@ -374,13 +375,14 @@ class DatabaseManager:
         try:
             self.cursor.execute('''
                 INSERT OR REPLACE INTO gpu_servers 
-                (name, host, username, password, is_active)
-                VALUES (?, ?, ?, ?, ?)
+                (name, host, username, password, port, is_active)
+                VALUES (?, ?, ?, ?, ?, ?)
             ''', (
                 server_data["name"],
                 server_data["host"],
                 server_data["username"],
                 server_data.get("password"),
+                server_data.get("port", 22),  # 默认端口为22
                 server_data.get("is_active", False)
             ))
             self.conn.commit()

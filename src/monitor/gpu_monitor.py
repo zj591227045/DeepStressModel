@@ -105,10 +105,11 @@ class GPUStats:
 
 class GPUMonitor:
     """远程GPU监控类"""
-    def __init__(self, host: str, username: str, password: str):
+    def __init__(self, host: str, username: str, password: str, port: int = 22):
         self.host = host
         self.username = username
         self.password = password
+        self.port = port
         self.client = None
         self.max_retries = 3  # 最大重试次数
         self.retry_interval = 2  # 重试间隔（秒）
@@ -131,11 +132,12 @@ class GPUMonitor:
                 self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                 self.client.connect(
                     self.host,
+                    port=self.port,
                     username=self.username,
                     password=self.password,
                     timeout=5
                 )
-                logger.info(f"成功连接到远程服务器: {self.host}")
+                logger.info(f"成功连接到远程服务器: {self.host}:{self.port}")
                 return True
             except Exception as e:
                 logger.error(f"连接远程服务器失败 (尝试 {attempt + 1}/{self.max_retries}): {e}")
@@ -418,43 +420,39 @@ class GPUMonitorManager:
         self.active_server = None
     
     def init_monitor(self):
-        """初始化监控器"""
+        """初始化GPU监控器"""
         try:
             # 获取活动的GPU服务器配置
-            self.active_server = db_manager.get_active_gpu_server()
-            
-            if self.active_server:
-                # 初始化远程监控
-                logger.info(f"尝试初始化远程GPU监控: {self.active_server['host']}")
+            server = db_manager.get_active_gpu_server()
+            if server:
                 self.setup_monitor(
-                    self.active_server["host"],
-                    self.active_server["username"],
-                    self.active_server["password"]
+                    server["host"],
+                    server["username"],
+                    server["password"],
+                    server.get("port", 22)  # 使用默认端口22
                 )
+                logger.info(f"GPU监控器初始化成功: {server['host']}:{server.get('port', 22)}")
             else:
                 logger.warning("未找到活动的GPU服务器配置")
                 self.monitor = None
-                
         except Exception as e:
-            logger.error(f"初始化GPU监控失败: {e}")
+            logger.error(f"初始化GPU监控器失败: {e}")
             self.monitor = None
     
-    def setup_monitor(self, host: str, username: str, password: str):
-        """设置远程监控"""
+    def setup_monitor(self, host: str, username: str, password: str, port: int = 22):
+        """设置GPU监控器
+        
+        Args:
+            host: 主机地址
+            username: 用户名
+            password: 密码
+            port: SSH端口
+        """
         try:
-            monitor = GPUMonitor(host, username, password)
-            
-            # 测试连接和数据获取
-            stats = monitor.get_stats()
-            if stats:
-                self.monitor = monitor
-                logger.info(f"已设置远程GPU监控: {host}")
-            else:
-                logger.error(f"无法从远程服务器获取GPU统计数据: {host}")
-                self.monitor = None
-                
+            self.monitor = GPUMonitor(host, username, password, port)
+            logger.info(f"GPU监控器设置成功: {host}:{port}")
         except Exception as e:
-            logger.error(f"设置远程GPU监控失败: {e}")
+            logger.error(f"设置GPU监控器失败: {e}")
             self.monitor = None
     
     def get_stats(self) -> Optional[GPUStats]:

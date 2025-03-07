@@ -14,5 +14,6 @@ DeepStressModel is a powerful AI model performance testing and monitoring tool s
 
 ### 2. GPU Resource Monitoring
 - **Real-time Tracking**: Monitor local and remote GPU usage in real-time
+- **Remote Connection**: Support custom SSH port (default 22) for flexible server configuration
 - **Key Metrics**: Track memory usage, GPU utilization, temperature, and more
 - **Historical Records**: Save monitoring data for trend analysis (in development) 

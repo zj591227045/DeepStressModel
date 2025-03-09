@@ -20,6 +20,7 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+tempDatasheeet/
 
 # 虚拟环境
 venv/

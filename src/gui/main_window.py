@@ -12,6 +12,7 @@ from src.utils.logger import setup_logger
 from src.gui.test_tab import TestTab
 from src.gui.settings_tab import SettingsTab
 from src.gui.results_tab import ResultsTab
+from src.gui.benchmark_tab import BenchmarkTab  # 导入跑分标签页
 from src.gui.i18n.language_manager import LanguageManager
 
 logger = setup_logger("gui")
@@ -87,11 +88,13 @@ class MainWindow(QMainWindow):
         self.test_tab = TestTab()
         self.settings_tab = SettingsTab()
         self.results_tab = ResultsTab()
+        self.benchmark_tab = BenchmarkTab()  # 创建跑分标签页
         
         # 将标签页添加到tab_widget
         self.tab_widget.addTab(self.test_tab, self.tr('test'))
         self.tab_widget.addTab(self.settings_tab, self.tr('settings'))
         self.tab_widget.addTab(self.results_tab, self.tr('results'))
+        self.tab_widget.addTab(self.benchmark_tab, self.tr('benchmark'))  # 添加跑分标签页
         
         logger.info("主窗口初始化完成")
     
@@ -122,6 +125,7 @@ class MainWindow(QMainWindow):
         self.tab_widget.setTabText(0, self.tr('test'))
         self.tab_widget.setTabText(1, self.tr('settings'))
         self.tab_widget.setTabText(2, self.tr('results'))
+        self.tab_widget.setTabText(3, self.tr('benchmark'))  # 更新跑分标签页标题
         
         # 更新菜单栏文本
         menubar = self.menuBar()
@@ -132,6 +136,7 @@ class MainWindow(QMainWindow):
         self.test_tab.update_ui_text()
         self.settings_tab.update_ui_text()
         self.results_tab.update_ui_text()
+        self.benchmark_tab.update_ui_text()  # 更新跑分标签页文本
         
         # 更新语言选择区域
         for i in range(self.lang_combo.count()):

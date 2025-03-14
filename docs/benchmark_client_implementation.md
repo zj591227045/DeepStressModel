@@ -43,7 +43,7 @@ GUI跑分模块 --> 跑分引擎模块 --> 数据集管理模块
    ├── 提示用户设置昵称
    └── 选择在线/离线模式
 
-2. 在线模式
+2. 联网模式
    ├── 连接服务器
    ├── 检查/更新数据集
    ├── 执行测试
@@ -219,7 +219,7 @@ class ResultStorage:
 
 ### 5. 通信模块
 
-#### 5.1 在线模式
+#### 5.1 联网模式
 - 与排行榜服务器的安全通信
 - 数据集更新
 - 结果上传
@@ -557,7 +557,7 @@ class UserConfigWidget(QGroupBox):
         
         # 运行模式选择
         self.mode_select = QComboBox()
-        self.mode_select.addItems(["在线模式", "离线模式"])
+        self.mode_select.addItems(["联网模式", "离线模式"])
         
         self.layout.addRow("昵称:", self.nickname_input)
         self.layout.addRow("运行模式:", self.mode_select)
@@ -574,7 +574,7 @@ class DatasetManagerWidget(QGroupBox):
         # 当前数据集信息显示
         self.dataset_info = QLabel()
         
-        # 在线模式：更新按钮
+        # 联网模式：更新按钮
         self.update_button = QPushButton("更新数据集")
         self.update_button.clicked.connect(self._update_dataset)
         

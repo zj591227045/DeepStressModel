@@ -3,6 +3,8 @@
 """
 import os
 import uuid
+import asyncio
+import time
 from PyQt6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -19,18 +21,26 @@ from PyQt6.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QHeaderView,
-    QFileDialog
+    QFileDialog,
+    QSizePolicy,
+    QSpinBox,
+    QRadioButton,
+    QTextEdit,
+    QDialog,
+    QDialogButtonBox,
+    QCheckBox
 )
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
-from PyQt6.QtGui import QFont
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QEventLoop
+from PyQt6.QtGui import QFont, QIcon
 from src.utils.config import config
 from src.utils.logger import setup_logger
 from src.gui.i18n.language_manager import LanguageManager
 from src.gui.widgets.gpu_monitor import GPUMonitorWidget
 from src.gui.widgets.test_progress import TestProgressWidget  # 导入测试进度组件
 from src.gui.benchmark_history_tab import BenchmarkHistoryTab
-from src.engine.benchmark_manager import BenchmarkManager
+from src.benchmark.integration import benchmark_integration  # 导入跑分模块集成
 from src.data.db_manager import db_manager  # 导入数据库管理器
+from datetime import datetime
 
 # 设置日志记录器
 logger = setup_logger("benchmark_tab")
@@ -42,23 +52,22 @@ class BenchmarkThread(QThread):
     test_finished = pyqtSignal(dict)  # 测试完成信号
     test_error = pyqtSignal(str)  # 测试错误信号
     
-    def __init__(self, benchmark_manager, config):
+    def __init__(self, config):
         super().__init__()
-        self.benchmark_manager = benchmark_manager
         self.config = config
         self.running = False
         
-        # 设置进度回调函数
-        self.benchmark_manager.set_progress_callback(self._on_progress)
+        # 连接信号
+        benchmark_integration.progress_updated.connect(self.progress_updated)
+        benchmark_integration.test_finished.connect(self.test_finished)
+        benchmark_integration.test_error.connect(self.test_error)
     
     def run(self):
         """运行跑分测试"""
         self.running = True
         try:
             # 执行跑分测试
-            result = self.benchmark_manager.run_benchmark(self.config)
-            if self.running:  # 确保没有被中途停止
-                self.test_finished.emit(result)
+            benchmark_integration.run_benchmark(self.config)
         except Exception as e:
             logger.error(f"跑分测试错误: {str(e)}")
             if self.running:
@@ -69,11 +78,7 @@ class BenchmarkThread(QThread):
     def stop(self):
         """停止测试"""
         self.running = False
-        self.benchmark_manager.stop_benchmark()
-    
-    def _on_progress(self, progress):
-        """进度回调处理"""
-        self.progress_updated.emit(progress)
+        benchmark_integration.stop_benchmark()
 
 
 class BenchmarkTab(QWidget):
@@ -85,9 +90,6 @@ class BenchmarkTab(QWidget):
         # 获取语言管理器实例
         self.language_manager = LanguageManager()
         
-        # 初始化跑分管理器
-        self.benchmark_manager = BenchmarkManager()
-        
         # 初始化成员变量
         self.benchmark_thread = None
         self.device_id = self._generate_device_id()
@@ -98,387 +100,923 @@ class BenchmarkTab(QWidget):
         # 更新界面文本
         self.update_ui_text()
         
-        # 连接语言变更信号
-        self.language_manager.language_changed.connect(self.update_ui_text)
+        # 不再自动注册设备
+        # self._register_device_if_needed()
     
     def _generate_device_id(self):
-        """生成设备唯一ID"""
-        # 从配置中读取设备ID，如果不存在则生成新的
-        device_id = config.get("benchmark.device_id", None)
+        """生成设备ID"""
+        # 获取设备ID
+        device_id = config.get("benchmark.device_id", "")
         if not device_id:
-            # 生成基于硬件信息的唯一ID
+            # 生成新的设备ID
             device_id = str(uuid.uuid4())
-            # 保存到配置
             config.set("benchmark.device_id", device_id)
         return device_id
     
+    def _register_device_if_needed(self):
+        """如果需要，注册设备"""
+        # 获取API密钥
+        api_key = config.get("benchmark.api_key", "")
+        if not api_key and self.mode_select.currentIndex() == 0:  # 联网模式
+            # 获取昵称
+            nickname = self.nickname_input.text()
+            if not nickname:
+                nickname = "未命名设备"
+            
+            # 注册设备
+            benchmark_integration.register_device(nickname, self._on_register_result)
+    
+    def _on_register_result(self, success, message):
+        """设备注册结果处理"""
+        if success:
+            QMessageBox.information(self, "注册成功", message)
+        else:
+            QMessageBox.warning(self, "注册失败", message)
+    
     def init_ui(self):
-        """初始化UI"""
-        main_layout = QVBoxLayout(self)
+        """初始化界面"""
+        # 创建主布局
+        main_layout = QVBoxLayout()
         
-        # 创建标签页容器
-        self.tab_widget = QTabWidget()
+        # 创建顶部工具栏
+        toolbar_layout = QHBoxLayout()
         
-        # 创建测试标签页
-        self.test_tab = self._create_test_tab()
-        self.tab_widget.addTab(self.test_tab, "跑分测试")
+        # 添加跑分基础设置按钮
+        self.settings_button = QPushButton("跑分基础设置")
+        self.settings_button.clicked.connect(self._show_settings_dialog)
+        toolbar_layout.addWidget(self.settings_button)
         
-        # 创建历史记录标签页
-        self.history_tab = BenchmarkHistoryTab()
-        self.tab_widget.addTab(self.history_tab, "历史记录")
+        # 添加访问服务器按钮
+        self.server_link_button = QPushButton("visit_server")
+        self.server_link_button.clicked.connect(self._open_server_link)
+        toolbar_layout.addWidget(self.server_link_button)
         
-        # 添加标签页容器到主布局
-        main_layout.addWidget(self.tab_widget)
-    
-    def _create_test_tab(self):
-        """创建测试标签页"""
-        test_tab = QWidget()
-        test_layout = QVBoxLayout(test_tab)
+        # 添加说明标签
+        toolbar_layout.addStretch()
+        self.status_label = QLabel()
+        self._update_status_label()  # 更新状态文本
+        toolbar_layout.addWidget(self.status_label)
         
-        # 创建水平分割器
-        splitter = QSplitter(Qt.Orientation.Horizontal)
+        main_layout.addLayout(toolbar_layout)
         
-        # 左侧：控制面板
-        control_panel = QWidget()
-        control_layout = QVBoxLayout(control_panel)
+        # 创建主内容区域
+        content_splitter = QSplitter(Qt.Orientation.Horizontal)
         
-        # 用户配置区域
-        user_config = self._create_user_config()
-        control_layout.addWidget(user_config)
+        # 创建左侧布局（模型选择、数据集选择、并发设置、开始测试按钮）
+        left_layout = QVBoxLayout()
         
-        # 数据集管理区域
-        dataset_manager = self._create_dataset_manager()
-        control_layout.addWidget(dataset_manager)
+        # 模型选择
+        model_select_group = QGroupBox("模型选择")
+        model_select_layout = QHBoxLayout()
         
-        # 模型配置区域（复用测试标签页的模型选择）
-        model_config = self._create_model_config()
-        control_layout.addWidget(model_config)
+        # 模型下拉框
+        self.model_combo = QComboBox()
+        self.model_combo.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        model_select_layout.addWidget(self.model_combo)
         
-        # 测试控制按钮
-        control_buttons = self._create_control_buttons()
-        control_layout.addWidget(control_buttons)
+        # 刷新按钮
+        refresh_button = QPushButton("刷新")
+        refresh_button.setIcon(QIcon.fromTheme("view-refresh", QIcon(":/icons/refresh.png")))
+        refresh_button.setIconSize(QSize(16, 16))
+        refresh_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        refresh_button.setStyleSheet("""
+            QPushButton {
+                background-color: #2196F3;
+                color: white;
+                border: none;
+                padding: 4px 8px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #0b7dda;
+            }
+            QPushButton:pressed {
+                background-color: #0a69b7;
+            }
+        """)
+        refresh_button.clicked.connect(self.load_models)
+        model_select_layout.addWidget(refresh_button)
         
-        # 测试进度窗口
-        self.progress_widget = TestProgressWidget()
-        control_layout.addWidget(self.progress_widget)
+        model_select_group.setLayout(model_select_layout)
+        left_layout.addWidget(model_select_group)
         
-        # 添加弹性空间
-        control_layout.addStretch()
+        # 数据集选择
+        dataset_group = QGroupBox("数据集选择")
+        dataset_layout = QVBoxLayout()
         
-        # 右侧：监控面板
-        monitor_panel = QWidget()
-        monitor_layout = QVBoxLayout(monitor_panel)
+        # 添加数据集信息显示区域
+        self.dataset_info_text = QTextEdit()
+        self.dataset_info_text.setReadOnly(True)
+        self.dataset_info_text.setMaximumHeight(120)
+        self.dataset_info_text.setPlaceholderText("数据集信息将在这里显示")
+        dataset_layout.addWidget(self.dataset_info_text)
         
-        # GPU监控（复用现有的GPU监控组件）
-        self.gpu_monitor = GPUMonitorWidget()
-        monitor_layout.addWidget(self.gpu_monitor)
-        
-        # 性能指标图表
-        performance_charts = self._create_performance_charts()
-        monitor_layout.addWidget(performance_charts)
-        
-        # 添加左右面板到分割器
-        splitter.addWidget(control_panel)
-        splitter.addWidget(monitor_panel)
-        
-        # 设置分割比例
-        splitter.setSizes([300, 700])  # 左侧300像素，右侧700像素
-        
-        # 添加分割器到测试标签页布局
-        test_layout.addWidget(splitter)
-        
-        # 启动GPU监控
-        self.gpu_monitor.start_monitoring()
-        
-        return test_tab
-    
-    def _create_user_config(self):
-        """创建用户配置组件"""
-        group_box = QGroupBox()
-        layout = QFormLayout(group_box)
-        
-        # 用户昵称输入
-        self.nickname_input = QLineEdit()
-        self.nickname_input.setText(config.get("benchmark.nickname", ""))
-        self.nickname_input.textChanged.connect(self._on_nickname_changed)
-        
-        # 运行模式选择
-        self.mode_select = QComboBox()
-        self.mode_select.addItems(["在线模式", "离线模式"])
-        self.mode_select.setCurrentIndex(config.get("benchmark.mode", 0))
-        self.mode_select.currentIndexChanged.connect(self._on_mode_changed)
-        
-        # 添加到布局
-        layout.addRow("昵称:", self.nickname_input)
-        layout.addRow("运行模式:", self.mode_select)
-        
-        return group_box
-    
-    def _create_dataset_manager(self):
-        """创建数据集管理组件"""
-        group_box = QGroupBox()
-        layout = QVBoxLayout(group_box)
-        
-        # 当前数据集信息显示
-        self.dataset_info = QLabel("未加载数据集")
-        layout.addWidget(self.dataset_info)
-        
-        # 按钮布局
+        # 添加数据集操作按钮
         button_layout = QHBoxLayout()
         
-        # 在线模式：更新按钮
-        self.update_button = QPushButton("更新数据集")
-        self.update_button.clicked.connect(self._update_dataset)
-        button_layout.addWidget(self.update_button)
+        # 添加获取数据集按钮（联网模式）
+        self.dataset_download_button = QPushButton("获取数据集")
+        self.dataset_download_button.clicked.connect(self._get_offline_package)  # 直接连接到方法
+        button_layout.addWidget(self.dataset_download_button)
         
-        # 离线模式：上传按钮
-        self.upload_button = QPushButton("上传数据集")
-        self.upload_button.clicked.connect(self._upload_dataset)
-        button_layout.addWidget(self.upload_button)
+        # 添加上传数据集按钮（离线模式）
+        self.dataset_upload_button = QPushButton("上传数据集")
+        self.dataset_upload_button.clicked.connect(self._load_offline_package)
+        button_layout.addWidget(self.dataset_upload_button)
         
-        layout.addLayout(button_layout)
+        dataset_layout.addLayout(button_layout)
         
-        # 根据当前模式更新UI
-        self._update_mode_ui()
+        # 设置布局
+        dataset_group.setLayout(dataset_layout)
+        left_layout.addWidget(dataset_group)
         
-        return group_box
-    
-    def _create_model_config(self):
-        """创建模型配置组件（复用测试标签页的模型选择）"""
-        group_box = QGroupBox("模型配置")
-        layout = QVBoxLayout(group_box)
+        # 并发设置
+        concurrency_group = QGroupBox("并发设置")
+        concurrency_layout = QHBoxLayout()
         
-        # 模型选择区域
-        model_layout = QHBoxLayout()
+        # 添加并发数输入
+        concurrency_layout.addWidget(QLabel("总并发数:"))
+        self.concurrency_input = QSpinBox()
+        self.concurrency_input.setMinimum(1)
+        self.concurrency_input.setMaximum(9999)
+        self.concurrency_input.setValue(1)
+        concurrency_layout.addWidget(self.concurrency_input)
         
-        # 添加模型选择下拉框（复用测试标签页的模型选择）
-        self.model_combo = QComboBox()
-        model_layout.addWidget(self.model_combo)
+        # 添加运行方式选择
+        concurrency_layout.addWidget(QLabel("运行方式:"))
+        self.run_mode_group = QHBoxLayout()
         
-        # 添加刷新按钮
-        self.refresh_btn = QPushButton("刷新")
-        self.refresh_btn.clicked.connect(self.load_models)
-        model_layout.addWidget(self.refresh_btn)
+        self.stream_mode_radio = QRadioButton("流式输出")
+        self.stream_mode_radio.setChecked(True)
+        self.run_mode_group.addWidget(self.stream_mode_radio)
         
-        layout.addLayout(model_layout)
+        self.direct_mode_radio = QRadioButton("直接输出")
+        self.run_mode_group.addWidget(self.direct_mode_radio)
         
-        # 参数量输入区域
-        param_layout = QFormLayout()
+        concurrency_layout.addLayout(self.run_mode_group)
         
-        # 参数量输入框
-        self.param_input = QLineEdit()
-        self.param_input.setPlaceholderText("例如：7")
-        param_layout.addRow("参数量(B):", self.param_input)
+        concurrency_group.setLayout(concurrency_layout)
+        left_layout.addWidget(concurrency_group)
         
-        layout.addLayout(param_layout)
+        # 测试控制
+        test_control_group = QGroupBox("测试控制")
+        test_control_layout = QVBoxLayout()
         
-        # 精度选择区域
-        precision_layout = QFormLayout()
+        # 添加开始按钮
+        self.start_button = QPushButton("开始跑分测试")
+        self.start_button.setIcon(QIcon.fromTheme("media-playback-start", QIcon(":/icons/start.png")))
+        self.start_button.setIconSize(QSize(16, 16))
+        self.start_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.start_button.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 4px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+            QPushButton:pressed {
+                background-color: #3d8b40;
+            }
+            QPushButton:disabled {
+                background-color: #cccccc;
+                color: #666666;
+            }
+        """)
+        self.start_button.clicked.connect(self.start_benchmark)
+        test_control_layout.addWidget(self.start_button)
         
-        # 模型精度选择
-        self.precision_combo = QComboBox()
-        self.precision_combo.addItems(["FP16", "FP32", "BF16", "INT8", "INT4", "AWQ"])
-        precision_layout.addRow("精度:", self.precision_combo)
+        # 添加停止按钮
+        self.stop_checkbox = QCheckBox("停止当前测试")
+        self.stop_checkbox.stateChanged.connect(self._on_stop_checkbox_changed)
+        test_control_layout.addWidget(self.stop_checkbox)
         
-        # 框架配置
-        self.framework_input = QLineEdit()
-        precision_layout.addRow("框架配置:", self.framework_input)
+        test_control_group.setLayout(test_control_layout)
+        left_layout.addWidget(test_control_group)
         
-        layout.addLayout(precision_layout)
+        # 创建左侧容器
+        left_container = QWidget()
+        left_container.setLayout(left_layout)
+        
+        # 创建右侧布局（GPU监控、测试进度、测试结果）
+        right_layout = QVBoxLayout()
+        
+        # 添加GPU监控
+        gpu_monitor_group = QGroupBox("GPU监控")
+        gpu_monitor_layout = QVBoxLayout()
+        
+        # 添加GPU监控组件
+        self.gpu_monitor = GPUMonitorWidget()
+        gpu_monitor_layout.addWidget(self.gpu_monitor)
+        
+        gpu_monitor_group.setLayout(gpu_monitor_layout)
+        right_layout.addWidget(gpu_monitor_group)
+        
+        # 添加测试信息
+        test_info_group = QGroupBox("测试信息")
+        test_info_layout = QVBoxLayout()
+        
+        # 添加测试进度标签
+        self.test_status_label = QLabel("状态: 未开始")
+        test_info_layout.addWidget(self.test_status_label)
+        
+        # 添加测试进度组件
+        self.test_progress = self._create_performance_charts()
+        test_info_layout.addWidget(self.test_progress)
+        
+        test_info_group.setLayout(test_info_layout)
+        right_layout.addWidget(test_info_group)
+        
+        # 创建右侧容器
+        right_container = QWidget()
+        right_container.setLayout(right_layout)
+        
+        # 添加左右两侧到分割器
+        content_splitter.addWidget(left_container)
+        content_splitter.addWidget(right_container)
+        content_splitter.setSizes([400, 600])  # 设置初始大小
+        
+        main_layout.addWidget(content_splitter)
+        
+        # 添加测试结果表格
+        result_group = QGroupBox("测试结果")
+        result_layout = QVBoxLayout()
+        
+        # 创建表格
+        self.result_table = QTableWidget()
+        self.result_table.setColumnCount(8)
+        self.result_table.setHorizontalHeaderLabels([
+            "数据集", "完成/总数", "成功率", "平均响应时间", "平均生成速度", "当前速度", "总字节数", "平均TPS"
+        ])
+        self.result_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        result_layout.addWidget(self.result_table)
+        
+        result_group.setLayout(result_layout)
+        main_layout.addWidget(result_group)
+        
+        # 添加错误信息区域
+        error_group = QGroupBox("错误")
+        error_layout = QVBoxLayout()
+        
+        self.error_text = QTextEdit()
+        self.error_text.setReadOnly(True)
+        self.error_text.setPlaceholderText("测试过程中的错误信息将在此显示...")
+        error_layout.addWidget(self.error_text)
+        
+        error_group.setLayout(error_layout)
+        main_layout.addWidget(error_group)
+        
+        # 设置主布局
+        self.setLayout(main_layout)
         
         # 加载模型列表
         self.load_models()
         
+        # 初始化UI状态
+        self._update_mode_ui()
+        
+        # 更新状态标签
+        self._update_status_label()
+    
+    def _create_user_config(self):
+        """创建用户配置组件"""
+        # 创建分组框
+        group_box = QGroupBox("用户配置")
+        
+        # 创建布局
+        layout = QFormLayout()
+        
+        # 添加昵称输入
+        self.nickname_input = QLineEdit()
+        self.nickname_input.setText(config.get("benchmark.nickname", "未命名设备"))
+        self.nickname_input.textChanged.connect(self._on_nickname_changed)
+        self.nickname_input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)  # 水平方向自适应
+        layout.addRow("设备名称:", self.nickname_input)
+        
+        # 添加API密钥输入和清除按钮
+        api_key_layout = QHBoxLayout()
+        
+        # API密钥输入框
+        self.api_key_input = QLineEdit()
+        self.api_key_input.setEchoMode(QLineEdit.EchoMode.Password)  # 密码模式，不显示明文
+        
+        # 如果配置中有API密钥，显示在输入框中
+        saved_api_key = config.get("benchmark.api_key", "")
+        if saved_api_key:
+            self.api_key_input.setText(saved_api_key)
+            self.api_key_input.setPlaceholderText("")
+        else:
+            self.api_key_input.setPlaceholderText("请输入API密钥")
+        
+        self.api_key_input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)  # 水平方向自适应
+        # 确保API密钥输入框默认是启用的，并添加特殊样式使其看起来始终可编辑
+        self.api_key_input.setEnabled(True)
+        self.api_key_input.setStyleSheet("QLineEdit { background-color: white; color: black; }")
+        self.api_key_input.setReadOnly(False)  # 确保不是只读的
+        api_key_layout.addWidget(self.api_key_input)
+        
+        # 添加清除按钮
+        clear_button = QPushButton("清除")
+        clear_button.setFixedWidth(60)  # 设置固定宽度
+        clear_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        clear_button.setStyleSheet("""
+            QPushButton {
+                background-color: #f44336;
+                color: white;
+                border: none;
+                padding: 4px 8px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #e53935;
+            }
+            QPushButton:pressed {
+                background-color: #d32f2f;
+            }
+        """)
+        # 点击时清空API密钥输入框并清除配置中的API密钥
+        clear_button.clicked.connect(self._clear_api_key)
+        api_key_layout.addWidget(clear_button)
+        
+        # 将API密钥布局添加到表单
+        layout.addRow("API密钥:", api_key_layout)
+        
+        # 添加模式选择
+        self.mode_select = QComboBox()
+        self.mode_select.addItem("联网模式")
+        self.mode_select.addItem("离线模式")
+        self.mode_select.setCurrentIndex(config.get("benchmark.mode", 0))  # 根据配置设置默认值
+        self.mode_select.currentIndexChanged.connect(self._on_mode_changed)
+        layout.addRow("运行模式:", self.mode_select)
+        
+        # 添加控制按钮
+        button_layout = QHBoxLayout()
+        
+        # 创建启用跑分模块按钮
+        self.enable_button = QPushButton("启用跑分模块")
+        self.enable_button.clicked.connect(self._enable_benchmark_module)
+        button_layout.addWidget(self.enable_button)
+        
+        # 创建禁用跑分模块按钮
+        self.disable_button = QPushButton("禁用跑分模块")
+        self.disable_button.clicked.connect(self._disable_benchmark_module)
+        button_layout.addWidget(self.disable_button)
+        
+        # 添加按钮布局到表单
+        layout.addRow("", button_layout)
+        
+        # 设置布局
+        group_box.setLayout(layout)
+        
         return group_box
     
-    def _create_control_buttons(self):
-        """创建控制按钮组件"""
-        group_box = QGroupBox()
-        layout = QHBoxLayout(group_box)
+    def _create_dataset_manager(self):
+        """创建数据集管理器部分"""
+        # 创建数据集管理器组
+        dataset_group = QGroupBox("数据集管理")
+        layout = QVBoxLayout()
         
-        # 开始测试按钮
-        self.start_button = QPushButton("开始跑分")
-        self.start_button.clicked.connect(self.start_benchmark)
-        layout.addWidget(self.start_button)
+        # 创建按钮布局
+        button_layout = QHBoxLayout()
         
-        # 停止测试按钮
-        self.stop_button = QPushButton("停止跑分")
-        self.stop_button.clicked.connect(self.stop_benchmark)
-        self.stop_button.setEnabled(False)
-        layout.addWidget(self.stop_button)
+        # 创建获取数据集按钮
+        self.dataset_download_button = QPushButton("获取数据集")
+        self.dataset_download_button.clicked.connect(self._get_offline_package)  # 直接连接到方法
+        button_layout.addWidget(self.dataset_download_button)
+        
+        # 添加上传数据集按钮（离线模式）
+        self.dataset_upload_button = QPushButton("上传数据集")
+        self.dataset_upload_button.clicked.connect(self._load_offline_package)
+        button_layout.addWidget(self.dataset_upload_button)
+        
+        layout.addLayout(button_layout)
+        
+        # 设置布局
+        dataset_group.setLayout(layout)
+        
+        # 根据当前模式更新按钮显示状态
+        self._update_dataset_buttons()
+        
+        return dataset_group
+    
+    def _create_model_config(self):
+        """创建模型配置组件"""
+        # 创建分组框
+        group_box = QGroupBox("模型配置")
+        
+        # 创建布局
+        layout = QFormLayout()
+        
+        # 添加精度选择
+        self.precision_combo = QComboBox()
+        self.precision_combo.addItem("FP32")
+        self.precision_combo.addItem("FP16")
+        self.precision_combo.addItem("INT8")
+        layout.addRow("精度:", self.precision_combo)
+        
+        # 添加参数量输入
+        self.params_input = QLineEdit()
+        self.params_input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)  # 水平方向自适应
+        layout.addRow("参数量(M):", self.params_input)
+        
+        # 添加框架配置输入
+        self.framework_input = QLineEdit()
+        self.framework_input.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)  # 水平方向自适应
+        layout.addRow("框架配置:", self.framework_input)
+        
+        # 添加按钮
+        button_layout = QHBoxLayout()
+        self.model_config_button = QPushButton("保存配置")
+        button_layout.addWidget(self.model_config_button)
+        layout.addRow("", button_layout)
+        
+        # 设置布局
+        group_box.setLayout(layout)
         
         return group_box
     
     def _create_performance_charts(self):
-        """创建性能指标图表组件"""
-        group_box = QGroupBox()
-        layout = QVBoxLayout(group_box)
+        """创建性能图表组件"""
+        # 创建分组框
+        group_box = QGroupBox("测试信息")
         
-        # 创建标签页容器
-        tab_widget = QTabWidget()
+        # 创建布局
+        layout = QVBoxLayout()
         
-        # TPS图表标签页
-        tps_tab = QWidget()
-        tps_layout = QVBoxLayout(tps_tab)
-        self.tps_chart = QLabel("TPS图表将在此显示")
-        tps_layout.addWidget(self.tps_chart)
-        tab_widget.addTab(tps_tab, "Token生成速度")
+        # 创建测试结果表格
+        self.result_table = QTableWidget()
+        self.result_table.setColumnCount(8)
+        self.result_table.setHorizontalHeaderLabels([
+            "数据集", "完成/总数", "成功率", "平均响应时间", "平均生成速度", "当前速度", "总字符数", "平均TPS"
+        ])
         
-        # 延迟图表标签页
-        latency_tab = QWidget()
-        latency_layout = QVBoxLayout(latency_tab)
-        self.latency_chart = QLabel("延迟图表将在此显示")
-        latency_layout.addWidget(self.latency_chart)
-        tab_widget.addTab(latency_tab, "请求延迟")
+        # 设置表格属性
+        self.result_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)  # 不可编辑
+        self.result_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)  # 选择整行
+        self.result_table.setAlternatingRowColors(True)  # 交替行颜色
+        self.result_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)  # 列宽自适应
         
-        # 内存使用图表标签页
-        memory_tab = QWidget()
-        memory_layout = QVBoxLayout(memory_tab)
-        self.memory_chart = QLabel("内存使用图表将在此显示")
-        memory_layout.addWidget(self.memory_chart)
-        tab_widget.addTab(memory_tab, "内存使用")
+        layout.addWidget(self.result_table)
         
-        layout.addWidget(tab_widget)
+        # 设置布局
+        group_box.setLayout(layout)
         
         return group_box
     
+    def _enable_benchmark_module(self):
+        """启用跑分模块"""
+        # 禁用按钮，防止重复点击
+        self.enable_button.setEnabled(False)
+        self.enable_button.setText("正在启用...")
+        
+        # 获取昵称
+        nickname = self.nickname_input.text()
+        if not nickname:
+            nickname = "未命名设备"
+        
+        # 获取API密钥
+        api_key = self.api_key_input.text()
+        
+        # 保存配置
+        config.set("benchmark.nickname", nickname)
+        config.set("benchmark.mode", self.mode_select.currentIndex())
+        
+        # 验证API密钥
+        if not api_key:
+            QMessageBox.warning(self, "警告", "请输入API密钥")
+            self.enable_button.setEnabled(True)
+            self.enable_button.setText("启用跑分模块")
+            return
+        
+        # 保存API密钥到配置
+        config.set("benchmark.api_key", api_key)
+        # 设置API密钥到benchmark_integration
+        benchmark_integration.set_api_key(api_key, self.device_id, nickname)
+        
+        # 设置跑分模块已启用标志
+        config.set("benchmark.enabled", True)
+        
+        # 更新状态标签
+        self._update_status_label()
+        
+        # 更新模式UI
+        self._update_mode_ui()
+        
+        # 显示成功消息
+        QMessageBox.information(self, "成功", "跑分模块已启用")
+        
+        # 恢复按钮状态
+        self.enable_button.setEnabled(True)
+        self.enable_button.setText("启用跑分模块")
+    
+    def _disable_benchmark_module(self):
+        """禁用跑分模块"""
+        # 禁用按钮，防止重复点击
+        self.disable_button.setEnabled(False)
+        self.disable_button.setText("正在禁用...")
+        
+        # 禁用跑分模块
+        benchmark_integration.disable_benchmark_module(self._on_disable_result)
+    
+    def _on_disable_result(self, success, message):
+        """禁用跑分模块结果处理"""
+        # 恢复按钮状态
+        self.disable_button.setEnabled(True)
+        self.disable_button.setText("禁用跑分模块")
+        
+        if success:
+            # 设置跑分模块已禁用标志
+            config.set("benchmark.enabled", False)
+            # 更新状态标签
+            self._update_status_label()
+            # 更新模式UI
+            self._update_mode_ui()
+            # 显示成功消息
+            QMessageBox.information(self, "成功", message)
+        else:
+            # 显示错误消息
+            QMessageBox.warning(self, "警告", message)
+    
     def load_models(self):
-        """加载模型列表（复用测试标签页的模型加载逻辑）"""
+        """加载模型列表"""
         try:
-            # 清空当前列表
+            # 清空模型下拉框
             self.model_combo.clear()
             
-            # 从数据库获取模型配置
+            # 从数据库中加载模型列表而不是从配置中加载
+            from src.data.db_manager import db_manager
             models = db_manager.get_model_configs()
-            if models:
-                for model in models:
+            for model in models:
+                if "name" in model:
                     self.model_combo.addItem(model["name"])
-                logger.info(f"已加载 {len(models)} 个模型配置")
-            else:
-                logger.warning("未找到模型配置")
+            
+            logger.info(f"加载了 {self.model_combo.count()} 个模型")
         except Exception as e:
-            logger.error(f"加载模型配置失败: {e}")
-            QMessageBox.critical(self, "错误", f"加载模型配置失败：{e}")
+            logger.error(f"加载模型列表失败: {str(e)}")
     
     def get_selected_model(self) -> dict:
-        """获取选中的模型配置（复用测试标签页的获取模型逻辑）"""
+        """获取选中的模型配置"""
+        if self.model_combo.count() == 0 or self.model_combo.currentIndex() < 0:
+            return {}
+        
+        # 获取选中的模型名称
         model_name = self.model_combo.currentText()
-        if not model_name:
-            return None
-            
+        
+        # 从数据库中获取模型信息而不是从配置中获取
+        from src.data.db_manager import db_manager
         models = db_manager.get_model_configs()
-        return next((m for m in models if m["name"] == model_name), None)
+        model = next((m for m in models if m["name"] == model_name), None)
+        
+        # 如果没有找到匹配的模型，返回基本信息
+        return model if model else {"name": model_name}
     
     def _on_nickname_changed(self, text):
         """昵称变更处理"""
         config.set("benchmark.nickname", text)
     
-    def _on_mode_changed(self, index):
-        """运行模式变更处理"""
-        config.set("benchmark.mode", index)
+    def _on_mode_changed(self):
+        """
+        当运行模式改变时的处理函数
+        """
+        # 获取当前模式
+        mode = config.get("benchmark.mode", 0)  # 0=联网模式，1=离线模式
+        
+        # 更新UI状态
         self._update_mode_ui()
     
     def _update_mode_ui(self):
-        """根据运行模式更新UI"""
-        is_online = self.mode_select.currentIndex() == 0
+        """
+        根据当前模式更新UI状态
+        """
+        # 获取当前模式和状态
+        mode = config.get("benchmark.mode", 0)  # 0=联网模式，1=离线模式
+        is_enabled = config.get("benchmark.enabled", False)
+        api_key = config.get("benchmark.api_key", "")
         
-        # 更新按钮可见性
-        self.update_button.setVisible(is_online)
-        self.upload_button.setVisible(not is_online)
+        # 更新状态标签
+        self._update_status_label()
+        
+        # 更新按钮状态
+        self.server_link_button.setEnabled(mode == 0)  # 联网模式才能访问服务器
+        self.settings_button.setEnabled(True)  # 设置按钮始终可用
+        
+        # 更新测试相关按钮状态
+        can_test = bool(is_enabled and (mode == 1 or (mode == 0 and api_key)))
+        self.start_button.setEnabled(can_test)
+        self.stop_checkbox.setEnabled(can_test)
     
-    def _update_dataset(self):
-        """更新数据集（在线模式）"""
+    def _update_status_label(self):
+        """
+        更新状态标签
+        """
+        # 获取当前状态
+        is_enabled = config.get("benchmark.enabled", False)
+        api_key = config.get("benchmark.api_key", "")
+        mode = config.get("benchmark.mode", 0)  # 0=联网模式，1=离线模式
+        
+        # 生成状态文本
+        enabled_text = "已启用" if is_enabled else "未启用"
+        api_key_text = "已配置" if api_key else "未配置"
+        mode_text = "联网模式" if mode == 0 else "离线模式"
+        
+        # 更新状态标签
+        status_text = f"跑分模式: {enabled_text} | API密钥: {api_key_text} | 运行模式: {mode_text}"
+        self.status_label.setText(status_text)
+    
+    def _clear_api_key(self):
+        """清除API密钥"""
+        # 清空输入框
+        self.api_key_input.clear()
+        
+        # 清除配置中的API密钥
+        config.set("benchmark.api_key", "")
+        
+        # 如果已经设置了API密钥到benchmark_integration，也需要清除
+        if hasattr(self, 'benchmark_integration') and hasattr(benchmark_integration, 'set_api_key'):
+            benchmark_integration.set_api_key("", self.device_id, self.nickname_input.text())
+        
+        # 更新状态标签
+        self._update_status_label()
+        
+        # 显示提示消息
+        QMessageBox.information(self, "成功", "API密钥已清除") 
+
+    def _get_offline_package(self):
+        """获取离线测试数据包"""
         try:
-            # 调用数据集更新逻辑
-            self.benchmark_manager.update_dataset()
+            # 检查API密钥
+            api_key = config.get("benchmark.api_key")
+            logger.debug(f"当前API密钥状态: {'已设置' if api_key else '未设置'}")
+            if not api_key:
+                QMessageBox.warning(self, "错误", "请先配置API密钥")
+                return
             
-            # 更新数据集信息显示
-            dataset_info = self.benchmark_manager.get_dataset_info()
-            self.dataset_info.setText(f"数据集版本: {dataset_info['version']}")
+            # 禁用按钮
+            self.dataset_download_button.setEnabled(False)
+            self.dataset_download_button.setText("正在获取...")
             
-            QMessageBox.information(self, "更新成功", "数据集更新成功")
+            # 重置状态
+            if hasattr(benchmark_integration, 'running') and benchmark_integration.running:
+                logger.warning("有正在进行的操作，先停止它")
+                benchmark_integration.stop_benchmark()
+            
+            # 定义回调函数
+            def on_package_received(success: bool, message: str = None, package: dict = None):
+                try:
+                    # 恢复按钮状态
+                    self.dataset_download_button.setEnabled(True)
+                    self.dataset_download_button.setText("获取数据集")
+                    
+                    if success:
+                        logger.info(f"离线包获取成功，开始解密流程")
+                        if package:
+                            logger.debug(f"离线包内容: {package.keys() if isinstance(package, dict) else type(package)}")
+                        
+                        # 更新数据集信息显示
+                        self._update_dataset_info_display()
+                        
+                        # 检查数据集是否成功加载
+                        dataset_info = benchmark_integration.get_dataset_info()
+                        logger.debug(f"数据集信息: {dataset_info if isinstance(dataset_info, dict) else type(dataset_info)}")
+                        
+                        # 判断数据集是否加载成功（兼容返回布尔值或字典的情况）
+                        if dataset_info and (isinstance(dataset_info, dict) or dataset_info is True):
+                            QMessageBox.information(self, "获取成功", "数据集获取并解密成功")
+                            # 启用开始测试按钮
+                            self.start_button.setEnabled(True)
+                        else:
+                            QMessageBox.warning(self, "解密失败", "数据集获取成功但解密失败，请检查API密钥是否正确")
+                    else:
+                        error_msg = message or "未知错误"
+                        logger.error(f"离线包获取失败: {error_msg}")
+                        QMessageBox.warning(self, "获取失败", error_msg)
+                except Exception as e:
+                    logger.error(f"回调处理异常: {str(e)}")
+                    QMessageBox.warning(self, "处理失败", f"数据处理失败: {str(e)}")
+                finally:
+                    # 确保按钮状态恢复
+                    self.dataset_download_button.setEnabled(True)
+                    self.dataset_download_button.setText("获取数据集")
+            
+            # 发起获取离线包请求
+            logger.info(f"开始获取离线包，使用API密钥: {api_key[:4]}...")
+            # 调用benchmark_integration获取离线包方法，传入ID为1的数据集（默认数据集）
+            benchmark_integration.get_offline_package(1, on_package_received)
+        
         except Exception as e:
-            logger.error(f"更新数据集错误: {str(e)}")
-            QMessageBox.warning(self, "更新失败", f"数据集更新失败: {str(e)}")
-    
-    def _upload_dataset(self):
-        """上传数据集（离线模式）"""
+            logger.error(f"获取离线包出错: {str(e)}")
+            QMessageBox.warning(self, "错误", f"获取离线包失败: {str(e)}")
+            # 确保按钮状态恢复
+            self.dataset_download_button.setEnabled(True)
+            self.dataset_download_button.setText("获取数据集")
+
+    def _load_offline_package(self):
+        """加载离线包"""
         try:
+            # 检查API密钥
+            api_key = config.get("benchmark.api_key", "")
+            if not api_key:
+                QMessageBox.warning(self, "错误", "请先配置API密钥")
+                return
+            
             # 打开文件选择对话框
             file_path, _ = QFileDialog.getOpenFileName(
                 self,
-                "选择数据集文件",
+                "选择离线包文件",
                 "",
-                "数据集文件 (*.bin *.dat *.zip);;所有文件 (*)"
+                "JSON文件 (*.json);;所有文件 (*)"
             )
             
             if not file_path:
-                # 用户取消了选择
                 return
             
-            # 调用数据集上传逻辑
-            self.benchmark_manager.upload_dataset(file_path)
+            # 禁用按钮，防止重复点击
+            self.dataset_upload_button.setEnabled(False)
+            self.dataset_upload_button.setText("正在加载...")
             
+            # 定义回调函数
+            def on_package_loaded(success: bool, message: str):
+                # 恢复按钮状态
+                self.dataset_upload_button.setEnabled(True)
+                self.dataset_upload_button.setText("上传数据集")
+                
+                if success:
             # 更新数据集信息显示
-            dataset_info = self.benchmark_manager.get_dataset_info()
-            self.dataset_info.setText(f"数据集版本: {dataset_info['version']}")
+                    self._update_dataset_info_display()
+                    QMessageBox.information(self, "加载成功", "数据集加载成功")
+                else:
+                    QMessageBox.warning(self, "加载失败", message)
             
-            QMessageBox.information(self, "上传成功", "数据集上传成功")
+            # 加载离线包
+            benchmark_integration.load_offline_package(file_path, callback=on_package_loaded)
+            
         except Exception as e:
-            logger.error(f"上传数据集错误: {str(e)}")
-            QMessageBox.warning(self, "上传失败", f"数据集上传失败: {str(e)}")
+            # 恢复按钮状态
+            self.dataset_upload_button.setEnabled(True)
+            self.dataset_upload_button.setText("上传数据集")
+            
+            error_msg = str(e)
+            logger.error(f"加载数据集错误: {error_msg}")
+            QMessageBox.warning(self, "加载失败", f"数据集加载失败: {error_msg}")
+
+    def _update_dataset_info_display(self):
+        """更新数据集信息显示"""
+        dataset_info = benchmark_integration.get_dataset_info()
+        if not dataset_info:
+            self.dataset_info_text.setText("未加载数据集")
+            return
+        
+        logger.debug(f"更新数据集信息显示，数据集信息: {dataset_info}")
+        
+        # 构建信息文本
+        info_text = ""
+        
+        # 获取元数据信息
+        metadata = dataset_info.get('metadata', {})
+        logger.debug(f"元数据信息: {metadata}")
+        
+        # 获取文件大小 - 使用实际大小或元数据中的大小
+        file_size = dataset_info.get('size', 0)
+        logger.debug(f"文件大小: {file_size} 字节")
+        
+        # 计算并格式化数据集大小
+        dataset_size = file_size / 1024  # 转换为KB
+        size_text = f"{dataset_size:.2f} KB" if dataset_size < 1024 else f"{dataset_size/1024:.2f} MB"
+        
+        # 处理下载时间
+        download_time = metadata.get('download_time', int(time.time() * 1000))
+        download_time_str = datetime.fromtimestamp(download_time/1000).strftime('%Y-%m-%d %H:%M:%S')
+        
+        # 获取离线包格式版本
+        package_format = metadata.get('package_format', '3.0')
+        
+        # 构建信息文本
+        info_text = "数据集信息:\n"
+        info_text += f"dataset_name: {metadata.get('dataset_name', dataset_info.get('名称', '未知'))}\n"
+        info_text += f"dataset_version: {metadata.get('dataset_version', dataset_info.get('版本', '未知'))}\n"
+        info_text += f"package_format: {package_format}\n"
+        info_text += f"download_time: {download_time_str}\n"
+        info_text += f"大小: {size_text}\n"
+        
+        # 添加记录数
+        if "记录数" in dataset_info:
+            info_text += f"记录数: {dataset_info['记录数']}\n"
+        
+        # 添加描述
+        if "描述" in dataset_info:
+            info_text += f"描述: {dataset_info['描述']}\n"
+        
+        # 添加创建时间
+        if "created_at" in dataset_info:
+            # 尝试格式化ISO时间字符串
+            try:
+                created_at = dataset_info["created_at"]
+                if isinstance(created_at, str) and 'T' in created_at:
+                    # ISO格式的日期时间
+                    date_part = created_at.split('T')[0]
+                    time_part = created_at.split('T')[1].split('.')[0] if '.' in created_at.split('T')[1] else created_at.split('T')[1]
+                    info_text += f"创建时间: {date_part} {time_part}\n"
+                else:
+                    info_text += f"创建时间: {created_at}\n"
+            except:
+                info_text += f"创建时间: {dataset_info.get('created_at', '未知')}\n"
+        
+        # 添加到期时间
+        if "expires_at" in dataset_info:
+            # 尝试格式化ISO时间字符串
+            try:
+                expires_at = dataset_info["expires_at"]
+                if isinstance(expires_at, str) and 'T' in expires_at:
+                    # ISO格式的日期时间
+                    date_part = expires_at.split('T')[0]
+                    time_part = expires_at.split('T')[1].split('.')[0] if '.' in expires_at.split('T')[1] else expires_at.split('T')[1]
+                    info_text += f"到期时间: {date_part} {time_part}\n"
+                else:
+                    info_text += f"到期时间: {expires_at}\n"
+            except:
+                info_text += f"到期时间: {dataset_info.get('expires_at', '未知')}\n"
+        
+        # 设置信息文本
+        self.dataset_info_text.setText(info_text)
+        
+        # 启用数据集相关按钮
+        self._update_dataset_buttons()
+
+    def _on_stop_checkbox_changed(self, state):
+        """停止当前测试处理"""
+        if state == Qt.CheckState.Checked:
+            self.stop_checkbox.setEnabled(False)
+            self.stop_checkbox.setText("正在停止...")
+            self.benchmark_thread.stop()
+        else:
+            self.stop_checkbox.setEnabled(True)
+            self.stop_checkbox.setText("停止当前测试")
     
     def start_benchmark(self):
         """开始跑分测试"""
-        # 检查是否已加载数据集
-        if not self.benchmark_manager.is_dataset_loaded():
-            QMessageBox.warning(self, "无法开始", "请先加载或更新数据集")
+        # 检查是否已选择模型
+        if self.model_combo.count() == 0 or self.model_combo.currentIndex() < 0:
+            QMessageBox.warning(self, "无法开始", "请选择模型")
             return
         
-        # 获取选中的模型配置
-        selected_model = self.get_selected_model()
-        if not selected_model:
-            QMessageBox.warning(self, "无法开始", "请先选择一个模型")
+        # 获取模型配置
+        model_config = self.get_selected_model()
+        if not model_config:
+            QMessageBox.warning(self, "无法开始", "请选择有效的模型")
             return
         
         # 获取参数量
-        model_params = self.param_input.text().strip()
+        model_params = self.params_input.text().strip() if hasattr(self, 'params_input') else ""
         if not model_params:
             QMessageBox.warning(self, "无法开始", "请输入模型参数量")
             return
         
         try:
-            # 尝试将参数量转换为浮点数
             model_params = float(model_params)
         except ValueError:
             QMessageBox.warning(self, "无法开始", "模型参数量必须是数字")
             return
         
-        # 获取配置信息
+        # 获取框架配置
+        framework_config = self.framework_input.text().strip() if hasattr(self, 'framework_input') else ""
+        
+        # 获取精度
+        precision = self.precision_combo.currentText() if hasattr(self, 'precision_combo') else "FP16"
+        
+        # 获取并发数
+        concurrency = self.concurrency_input.value()
+        
+        # 获取调用方式
+        stream_mode = self.stream_mode_radio.isChecked()
+        
+        # 清空错误信息
+        self.error_text.clear()
+        
+        # 构建测试配置
         config = {
-            "device_id": self.device_id,
-            "nickname": self.nickname_input.text(),
-            "mode": "online" if self.mode_select.currentIndex() == 0 else "offline",
-            "model": selected_model["name"],
-            "model_config": selected_model,  # 添加完整的模型配置
-            "model_params": model_params,  # 添加模型参数量
-            "precision": self.precision_combo.currentText(),
-            "framework_config": self.framework_input.text()
+            "model": model_config.get("name", "未知模型"),
+            "precision": precision,
+            "model_params": model_params,
+            "model_config": model_config,
+            "framework_config": framework_config,
+            "concurrency": concurrency,
+            "stream_mode": stream_mode
         }
         
-        # 重置进度显示
-        self.progress_widget.reset()
+        # 禁用开始按钮，启用停止按钮
+        self.start_button.setEnabled(False)
+        self.stop_checkbox.setEnabled(True)
         
         # 创建并启动测试线程
-        self.benchmark_thread = BenchmarkThread(self.benchmark_manager, config)
+        self.benchmark_thread = BenchmarkThread(config)
         self.benchmark_thread.progress_updated.connect(self._on_progress_updated)
         self.benchmark_thread.test_finished.connect(self._on_test_finished)
         self.benchmark_thread.test_error.connect(self._on_test_error)
         self.benchmark_thread.start()
-        
-        # 更新UI状态
-        self.start_button.setEnabled(False)
-        self.stop_button.setEnabled(True)
     
     def stop_benchmark(self):
         """停止跑分测试"""
@@ -488,62 +1026,276 @@ class BenchmarkTab(QWidget):
         
         # 更新UI状态
         self.start_button.setEnabled(True)
-        self.stop_button.setEnabled(False)
+        self.stop_checkbox.setEnabled(False)
     
     def _on_progress_updated(self, progress):
         """进度更新处理"""
         # 更新进度显示
-        self.progress_widget.update_progress(progress)
+        self.test_status_label.setText(f"状态: {progress.get('status', '未知状态')}")
+        
+        # 更新结果表格
+        self._update_result_table(progress)
+    
+    def _update_result_table(self, progress):
+        """更新结果表格"""
+        # 清空表格
+        self.result_table.setRowCount(0)
+        
+        # 添加数据集行
+        for dataset_name, dataset_progress in progress.get("datasets", {}).items():
+            row_position = self.result_table.rowCount()
+            self.result_table.insertRow(row_position)
+            
+            # 设置数据集名称
+            self.result_table.setItem(row_position, 0, QTableWidgetItem(dataset_name))
+            
+            # 设置完成/总数
+            completed = dataset_progress.get("completed", 0)
+            total = dataset_progress.get("total", 0)
+            self.result_table.setItem(row_position, 1, QTableWidgetItem(f"{completed}/{total}"))
+            
+            # 设置成功率
+            success_rate = dataset_progress.get("success_rate", 0) * 100
+            self.result_table.setItem(row_position, 2, QTableWidgetItem(f"{success_rate:.2f}%"))
+            
+            # 设置平均响应时间
+            avg_response_time = dataset_progress.get("avg_response_time", 0)
+            self.result_table.setItem(row_position, 3, QTableWidgetItem(f"{avg_response_time:.2f}s"))
+            
+            # 设置平均生成速度
+            avg_gen_speed = dataset_progress.get("avg_gen_speed", 0)
+            self.result_table.setItem(row_position, 4, QTableWidgetItem(f"{avg_gen_speed:.2f}t/s"))
+            
+            # 设置当前速度
+            current_speed = dataset_progress.get("current_speed", 0)
+            self.result_table.setItem(row_position, 5, QTableWidgetItem(f"{current_speed:.2f}t/s"))
+            
+            # 设置总字符数
+            total_tokens = dataset_progress.get("total_tokens", 0)
+            self.result_table.setItem(row_position, 6, QTableWidgetItem(str(total_tokens)))
+            
+            # 设置平均TPS
+            avg_tps = dataset_progress.get("avg_tps", 0)
+            self.result_table.setItem(row_position, 7, QTableWidgetItem(f"{avg_tps:.2f}"))
+        
+        # 如果有错误信息，显示在错误文本框中
+        if "errors" in progress and progress["errors"]:
+            error_text = "\n".join(progress["errors"])
+            self.error_text.setText(error_text)
     
     def _on_test_finished(self, result):
         """测试完成处理"""
         # 处理测试结果
         QMessageBox.information(self, "测试完成", "跑分测试已完成")
         
+        # 更新结果表格（最终结果）
+        if "datasets" in result:
+            self._update_result_table(result)
+        
+        # 导出结果
+        export_path = benchmark_integration.export_result(result, "html")
+        if export_path:
+            QMessageBox.information(self, "导出成功", f"结果已导出到: {export_path}")
+        
         # 更新UI状态
         self.start_button.setEnabled(True)
-        self.stop_button.setEnabled(False)
+        self.stop_checkbox.setEnabled(False)
         
-        # 刷新历史记录
-        self.history_tab.load_history()
-        
-        # 切换到历史记录标签页
-        self.tab_widget.setCurrentIndex(1)
+        # 刷新历史记录标签页（如果存在）
+        if hasattr(self, 'history_tab'):
+            self.history_tab.load_history()
     
     def _on_test_error(self, error_msg):
         """测试错误处理"""
         QMessageBox.critical(self, "测试错误", f"跑分测试出错: {error_msg}")
         
+        # 显示错误信息
+        self.error_text.setText(error_msg)
+        
         # 更新UI状态
         self.start_button.setEnabled(True)
-        self.stop_button.setEnabled(False)
+        self.stop_checkbox.setEnabled(False)
     
     def update_ui_text(self):
-        """更新UI文本"""
-        # 更新标签页标题
-        self.tab_widget.setTabText(0, self.tr("benchmark_test"))
-        self.tab_widget.setTabText(1, self.tr("history"))
+        """更新界面文本"""
+        # 更新用户配置文本（如果存在）
+        if hasattr(self, 'api_key_input') and self.api_key_input:
+            self.api_key_input.setPlaceholderText(self.tr("enter_api_key"))
         
-        # 更新按钮文本
-        self.refresh_btn.setText(self.tr("refresh_model"))
-        self.start_button.setText(self.tr("start_benchmark"))
-        self.stop_button.setText(self.tr("stop_benchmark"))
-        self.update_button.setText(self.tr("update_dataset"))
-        self.upload_button.setText(self.tr("upload_dataset"))
+        # 更新模式选择文本（如果存在）
+        if hasattr(self, 'mode_select') and self.mode_select:
+            current_index = self.mode_select.currentIndex()
+            self.mode_select.clear()
+            self.mode_select.addItem(self.tr("online_mode"))
+            self.mode_select.addItem(self.tr("offline_mode"))
+            self.mode_select.setCurrentIndex(current_index)
+        
+        # 更新按钮文本（如果存在）
+        if hasattr(self, 'enable_button') and self.enable_button:
+            self.enable_button.setText(self.tr("enable_benchmark"))
+        
+        if hasattr(self, 'server_link_button') and self.server_link_button:
+            self.server_link_button.setText(self.tr("visit_server"))
+        
+        if hasattr(self, 'start_button') and self.start_button:
+            self.start_button.setText(self.tr("start_benchmark"))
+        
+        if hasattr(self, 'stop_checkbox') and self.stop_checkbox:
+            self.stop_checkbox.setText(self.tr("stop_benchmark"))
+        
+        if hasattr(self, 'dataset_download_button') and self.dataset_download_button:
+            self.dataset_download_button.setText(self.tr("download_dataset"))
+        
+        if hasattr(self, 'dataset_upload_button') and self.dataset_upload_button:
+            self.dataset_upload_button.setText(self.tr("upload_dataset"))
+        
+        # 检查model_config_button是否存在
+        if hasattr(self, 'model_config_button') and self.model_config_button:
+            self.model_config_button.setText(self.tr("save_model_config"))
         
         # 更新历史记录标签页文本
-        self.history_tab.update_ui_text()
+        if hasattr(self, 'history_tab') and self.history_tab:
+            self.history_tab.update_ui_text()
     
     def tr(self, key):
         """翻译文本"""
         return self.language_manager.get_text(key)
     
     def closeEvent(self, event):
-        """窗口关闭事件"""
-        # 停止测试线程
-        self.stop_benchmark()
-        
+        """关闭事件处理"""
         # 停止GPU监控
-        self.gpu_monitor.stop_monitoring()
+        if hasattr(self, 'gpu_monitor'):
+            self.gpu_monitor.stop_monitoring()
         
+        # 停止测试线程
+        if hasattr(self, 'benchmark_thread') and self.benchmark_thread and self.benchmark_thread.isRunning():
+            self.benchmark_thread.stop()
+            self.benchmark_thread.wait(1000)  # 等待最多1秒
+        
+        # 清理跑分模块资源
+        benchmark_integration.cleanup()
+        
+        # 接受关闭事件
         event.accept() 
+
+    def _open_server_link(self):
+        """打开服务器网站"""
+        try:
+            import webbrowser
+            server_url = config.get("benchmark.server_url", "http://localhost:8083")
+            # 确保URL以http://或https://开头
+            if not server_url.startswith("http://") and not server_url.startswith("https://"):
+                server_url = "http://" + server_url
+            webbrowser.open(server_url)
+            logger.info(f"已打开服务器网站: {server_url}")
+        except Exception as e:
+            logger.error(f"打开服务器网站失败: {str(e)}")
+            QMessageBox.critical(self, "错误", f"打开服务器网站失败: {str(e)}")
+
+    def _show_settings_dialog(self):
+        """显示用户配置对话框"""
+        # 创建对话框
+        dialog = QDialog(self)
+        dialog.setWindowTitle("跑分基础设置")
+        dialog.setMinimumWidth(400)
+        
+        # 创建布局
+        layout = QVBoxLayout(dialog)
+        
+        # 创建用户配置组件
+        user_config = self._create_user_config()
+        layout.addWidget(user_config)
+        
+        # 添加确定按钮
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok)
+        button_box.accepted.connect(dialog.accept)
+        layout.addWidget(button_box)
+        
+        # 确保API密钥输入框是启用的
+        # 在对话框中查找API密钥输入框和清除按钮
+        api_key_inputs = dialog.findChildren(QLineEdit)
+        clear_buttons = dialog.findChildren(QPushButton)
+        
+        # 找到API密钥输入框
+        api_key_input = None
+        for input_field in api_key_inputs:
+            if input_field.placeholderText() == "请输入API密钥" or config.get("benchmark.api_key", ""):
+                api_key_input = input_field
+                api_key_input.setEnabled(True)
+                api_key_input.setStyleSheet("QLineEdit { background-color: white; color: black; }")
+                api_key_input.setReadOnly(False)
+                break
+        
+        # 找到清除按钮并重新连接信号
+        if api_key_input:
+            for button in clear_buttons:
+                if button.text() == "清除":
+                    # 断开所有现有连接
+                    try:
+                        button.clicked.disconnect()
+                    except:
+                        pass
+                    
+                    # 创建一个新的清除函数，在对话框中使用
+                    def clear_api_key_in_dialog():
+                        # 清空输入框
+                        api_key_input.clear()
+                        
+                        # 清除配置中的API密钥
+                        config.set("benchmark.api_key", "")
+                        
+                        # 如果已经设置了API密钥到benchmark_integration，也需要清除
+                        if hasattr(benchmark_integration, 'set_api_key'):
+                            benchmark_integration.set_api_key("", self.device_id, self.nickname_input.text())
+                        
+                        # 更新状态标签
+                        self._update_status_label()
+                        
+                        # 显示提示消息
+                        QMessageBox.information(dialog, "成功", "API密钥已清除")
+                    
+                    # 连接新的清除函数
+                    button.clicked.connect(clear_api_key_in_dialog)
+                    break
+        
+        # 显示对话框
+        dialog.exec()
+
+    def _update_dataset_buttons(self):
+        """根据当前模式更新按钮显示状态"""
+        mode = config.get("benchmark.mode", 0)  # 0=联网模式，1=离线模式
+        self.dataset_download_button.setEnabled(mode == 0)
+        self.dataset_upload_button.setEnabled(mode == 1)
+
+    def _on_test_start(self):
+        """
+        开始测试时的处理函数
+        """
+        # 获取当前模式
+        mode = config.get("benchmark.mode", 0)  # 0=联网模式，1=离线模式
+        
+        # 检查API密钥
+        if mode == 0 and not config.get("benchmark.api_key"):
+            QMessageBox.warning(self, "警告", "联网模式下需要配置API密钥")
+            return
+        
+        # 其他代码保持不变...
+    
+    def _on_test_finished(self, result):
+        """
+        测试完成时的处理函数
+        """
+        # 获取当前模式
+        mode = config.get("benchmark.mode", 0)  # 0=联网模式，1=离线模式
+        
+        # 其他代码保持不变...
+
+    def save_config(self):
+        """
+        保存配置
+        """
+        # 保存当前模式
+        mode = config.get("benchmark.mode", 0)  # 0=联网模式，1=离线模式
+        config.set("benchmark.mode", mode)
+        
+        # 其他代码保持不变... 

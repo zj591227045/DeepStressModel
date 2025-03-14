@@ -9,10 +9,11 @@ import platform
 import psutil
 import requests
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Callable
 from src.utils.config import config
 from src.utils.logger import setup_logger
 from src.monitor.gpu_monitor import gpu_monitor
+from src.data.dataset_manager import dataset_manager
 
 # 设置日志记录器
 logger = setup_logger("benchmark_manager")
@@ -26,7 +27,8 @@ class BenchmarkManager:
         self.dataset = None
         self.dataset_info = None
         self.running = False
-        self.server_url = config.get("benchmark.server_url", "https://benchmark.deepstressmodel.com")
+        self.progress_callback = None
+        self.server_url = config.get("benchmark.server_url", "http://localhost:8083")
         self.result_dir = os.path.join(os.path.expanduser("~"), ".deepstressmodel", "benchmark_results")
         
         # 确保结果目录存在
@@ -34,7 +36,7 @@ class BenchmarkManager:
     
     def update_dataset(self) -> bool:
         """
-        从服务器更新数据集（在线模式）
+        从服务器更新数据集（联网模式）
         
         Returns:
             bool: 更新是否成功
@@ -74,12 +76,13 @@ class BenchmarkManager:
             logger.error(f"更新数据集失败: {str(e)}")
             raise
     
-    def upload_dataset(self, file_path: str = None) -> bool:
+    def upload_dataset(self, file_path: str = None, api_key: str = None) -> bool:
         """
-        上传本地数据集（离线模式）
+        上传并解密离线数据包（离线模式）
         
         Args:
-            file_path: 本地数据集文件路径
+            file_path: 离线包文件路径
+            api_key: API密钥
             
         Returns:
             bool: 上传是否成功
@@ -87,38 +90,36 @@ class BenchmarkManager:
         try:
             if not file_path or not os.path.exists(file_path):
                 raise ValueError("无效的数据集文件路径")
+            
+            if not api_key:
+                raise ValueError("API密钥不能为空")
                 
             # 获取文件信息
             file_size = os.path.getsize(file_path)
             file_name = os.path.basename(file_path)
             
             # 生成离线版本号
-            dataset_version = "offline-" + datetime.now().strftime("%Y%m%d%H%M%S")
+            timestamp = int(time.time() * 1000)
+            dataset_version = f"offline_{timestamp}"
             
-            # 复制数据集文件到本地存储
-            dataset_dir = os.path.join(self.result_dir, "datasets")
-            os.makedirs(dataset_dir, exist_ok=True)
-            
-            local_path = os.path.join(dataset_dir, f"{dataset_version}-{file_name}")
-            with open(file_path, 'rb') as src_file, open(local_path, 'wb') as dst_file:
-                dst_file.write(src_file.read())
-            
-            # 保存数据集信息
+            # 保存离线包信息（不保存API密钥）
             self.dataset_info = {
                 "version": dataset_version,
                 "created_at": datetime.now().isoformat(),
                 "size": file_size,
                 "file_name": file_name,
-                "local_path": local_path
+                "original_path": file_path
             }
             
-            # 加载数据集
-            self._load_dataset(dataset_version, local_path)
+            # 加载并解密数据集
+            success = self._load_offline_dataset(file_path, api_key, dataset_version)
+            if not success:
+                raise ValueError("解密数据集失败")
             
-            logger.info(f"数据集上传成功，版本: {dataset_version}，文件: {file_name}")
+            logger.info(f"离线数据包加载成功，版本: {dataset_version}，文件: {file_name}")
             return True
         except Exception as e:
-            logger.error(f"上传数据集失败: {str(e)}")
+            logger.error(f"加载离线数据包失败: {str(e)}")
             raise
     
     def get_dataset_info(self) -> Dict[str, Any]:
@@ -128,6 +129,19 @@ class BenchmarkManager:
         Returns:
             Dict[str, Any]: 数据集信息
         """
+        # 优先使用离线数据集信息
+        offline_info = dataset_manager.get_offline_dataset_info()
+        if offline_info:
+            result = self.dataset_info.copy() if self.dataset_info else {"version": "未知", "created_at": "", "size": 0}
+            # 合并离线数据集的详细信息
+            result.update({
+                "名称": offline_info.get("名称", "未知"),
+                "版本": offline_info.get("版本", "未知"),
+                "描述": offline_info.get("描述", "无描述"),
+                "记录数": offline_info.get("记录数", "0")
+            })
+            return result
+        
         return self.dataset_info or {"version": "未知", "created_at": "", "size": 0}
     
     def is_dataset_loaded(self) -> bool:
@@ -137,6 +151,10 @@ class BenchmarkManager:
         Returns:
             bool: 数据集是否已加载
         """
+        # 检查离线数据集是否已加载
+        if dataset_manager.get_offline_dataset_info() is not None:
+            return True
+        
         return self.dataset is not None
     
     def run_benchmark(self, config: Dict[str, Any]) -> Dict[str, Any]:
@@ -193,7 +211,7 @@ class BenchmarkManager:
             # 7. 保存结果
             self._save_result(result)
             
-            # 8. 上传结果（如果是在线模式）
+            # 8. 上传结果（如果是联网模式）
             if config["mode"] == "online":
                 self._upload_result(result)
             
@@ -229,6 +247,32 @@ class BenchmarkManager:
         logger.info(f"正在加载数据集，版本: {version}")
         self.dataset = {"version": version, "data": [], "path": file_path}  # 模拟数据集
     
+    def _load_offline_dataset(self, file_path: str, api_key: str, version: str) -> bool:
+        """
+        加载离线数据包
+        
+        Args:
+            file_path: 离线包文件路径
+            api_key: API密钥
+            version: 版本号
+            
+        Returns:
+            bool: 加载是否成功
+        """
+        logger.info(f"正在加载离线数据包，版本: {version}")
+        
+        # 使用数据集管理器加载并解密离线包
+        success = dataset_manager.load_offline_package(file_path, api_key)
+        
+        if success:
+            # 模拟数据集对象，实际上我们使用dataset_manager中的数据
+            self.dataset = {"version": version, "path": file_path}
+            logger.info(f"离线数据包加载成功")
+        else:
+            logger.error(f"离线数据包加载失败")
+            
+        return success
+    
     def _check_environment(self):
         """检查环境"""
         # 检查GPU是否可用
@@ -243,7 +287,26 @@ class BenchmarkManager:
         Returns:
             List[Dict[str, Any]]: 测试数据列表
         """
-        # 模拟测试数据
+        # 如果有离线数据集，使用离线数据集
+        if dataset_manager.get_offline_dataset_info() is not None:
+            # 将所有类别的数据集平铺为一个列表
+            all_prompts = []
+            
+            # 获取所有数据集
+            datasets = dataset_manager.get_all_datasets()
+            for category, prompts in datasets.items():
+                # 为每个提示添加分类标签
+                for prompt in prompts:
+                    all_prompts.append({
+                        "id": len(all_prompts) + 1,
+                        "input": prompt,
+                        "category": category
+                    })
+            
+            logger.info(f"从离线数据集准备了 {len(all_prompts)} 个测试样本")
+            return all_prompts
+        
+        # 模拟测试数据（兼容旧逻辑）
         return [
             {"id": 1, "input": "这是测试输入1", "expected_output": "这是期望输出1"},
             {"id": 2, "input": "这是测试输入2", "expected_output": "这是期望输出2"},
@@ -403,7 +466,7 @@ class BenchmarkManager:
     
     def _upload_result(self, result: Dict[str, Any]) -> bool:
         """
-        上传测试结果（在线模式）
+        上传测试结果（联网模式）
         
         Args:
             result: 测试结果

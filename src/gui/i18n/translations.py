@@ -262,7 +262,7 @@ TRANSLATIONS = {
         'stop_benchmark': '停止基准测试',
         'benchmark_result': '基准测试结果',
         'nickname': '昵称',
-        'online_mode': '在线模式',
+        'online_mode': '联网模式',
         'offline_mode': '离线模式',
         'update_dataset': '更新数据集',
         'upload_dataset': '上传数据集',

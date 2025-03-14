@@ -1,0 +1,1007 @@
+{
+  "name": "DSM-Benchmark-Standard",
+  "version": "v1.0.0",
+  "description": "标准测试数据集，适合性能测试和基准比较。",
+  "data": [
+    {
+      "id": 1,
+      "text": "这是第1条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 22
+      }
+    },
+    {
+      "id": 2,
+      "text": "这是第2条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 22
+      }
+    },
+    {
+      "id": 3,
+      "text": "这是第3条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 22
+      }
+    },
+    {
+      "id": 4,
+      "text": "这是第4条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 22
+      }
+    },
+    {
+      "id": 5,
+      "text": "这是第5条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 22
+      }
+    },
+    {
+      "id": 6,
+      "text": "这是第6条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 22
+      }
+    },
+    {
+      "id": 7,
+      "text": "这是第7条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 22
+      }
+    },
+    {
+      "id": 8,
+      "text": "这是第8条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 22
+      }
+    },
+    {
+      "id": 9,
+      "text": "这是第9条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 22
+      }
+    },
+    {
+      "id": 10,
+      "text": "这是第10条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 11,
+      "text": "这是第11条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 12,
+      "text": "这是第12条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 13,
+      "text": "这是第13条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 14,
+      "text": "这是第14条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 15,
+      "text": "这是第15条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 16,
+      "text": "这是第16条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 17,
+      "text": "这是第17条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 18,
+      "text": "这是第18条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 19,
+      "text": "这是第19条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 20,
+      "text": "这是第20条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 21,
+      "text": "这是第21条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 22,
+      "text": "这是第22条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 23,
+      "text": "这是第23条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 24,
+      "text": "这是第24条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 25,
+      "text": "这是第25条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 26,
+      "text": "这是第26条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 27,
+      "text": "这是第27条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 28,
+      "text": "这是第28条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 29,
+      "text": "这是第29条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 30,
+      "text": "这是第30条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 31,
+      "text": "这是第31条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 32,
+      "text": "这是第32条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 33,
+      "text": "这是第33条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 34,
+      "text": "这是第34条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 35,
+      "text": "这是第35条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 36,
+      "text": "这是第36条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 37,
+      "text": "这是第37条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 38,
+      "text": "这是第38条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 39,
+      "text": "这是第39条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 40,
+      "text": "这是第40条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 41,
+      "text": "这是第41条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 42,
+      "text": "这是第42条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 43,
+      "text": "这是第43条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 44,
+      "text": "这是第44条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 45,
+      "text": "这是第45条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 46,
+      "text": "这是第46条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 47,
+      "text": "这是第47条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 48,
+      "text": "这是第48条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 49,
+      "text": "这是第49条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 50,
+      "text": "这是第50条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 51,
+      "text": "这是第51条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 52,
+      "text": "这是第52条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 53,
+      "text": "这是第53条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 54,
+      "text": "这是第54条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 55,
+      "text": "这是第55条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 56,
+      "text": "这是第56条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 57,
+      "text": "这是第57条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 58,
+      "text": "这是第58条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 59,
+      "text": "这是第59条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 60,
+      "text": "这是第60条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 61,
+      "text": "这是第61条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 62,
+      "text": "这是第62条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 63,
+      "text": "这是第63条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 64,
+      "text": "这是第64条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 65,
+      "text": "这是第65条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 66,
+      "text": "这是第66条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 67,
+      "text": "这是第67条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 68,
+      "text": "这是第68条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 69,
+      "text": "这是第69条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 70,
+      "text": "这是第70条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 71,
+      "text": "这是第71条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 72,
+      "text": "这是第72条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 73,
+      "text": "这是第73条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 74,
+      "text": "这是第74条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 75,
+      "text": "这是第75条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 76,
+      "text": "这是第76条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 77,
+      "text": "这是第77条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 78,
+      "text": "这是第78条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 79,
+      "text": "这是第79条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 80,
+      "text": "这是第80条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 81,
+      "text": "这是第81条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 82,
+      "text": "这是第82条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 83,
+      "text": "这是第83条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 84,
+      "text": "这是第84条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 85,
+      "text": "这是第85条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 86,
+      "text": "这是第86条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 87,
+      "text": "这是第87条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 88,
+      "text": "这是第88条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 89,
+      "text": "这是第89条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 90,
+      "text": "这是第90条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 91,
+      "text": "这是第91条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 92,
+      "text": "这是第92条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 93,
+      "text": "这是第93条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 94,
+      "text": "这是第94条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 95,
+      "text": "这是第95条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 96,
+      "text": "这是第96条测试数据，用于性能测试和基准比较。",
+      "label": 1,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 97,
+      "text": "这是第97条测试数据，用于性能测试和基准比较。",
+      "label": 2,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 23
+      }
+    },
+    {
+      "id": 98,
+      "text": "这是第98条测试数据，用于性能测试和基准比较。",
+      "label": 3,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 3,
+        "length": 23
+      }
+    },
+    {
+      "id": 99,
+      "text": "这是第99条测试数据，用于性能测试和基准比较。",
+      "label": 4,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 1,
+        "length": 23
+      }
+    },
+    {
+      "id": 100,
+      "text": "这是第100条测试数据，用于性能测试和基准比较。",
+      "label": 0,
+      "metadata": {
+        "source": "DSM-Benchmark",
+        "difficulty": 2,
+        "length": 24
+      }
+    }
+  ]
+}

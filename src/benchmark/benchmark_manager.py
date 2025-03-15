@@ -20,6 +20,7 @@ from src.monitor.gpu_monitor import gpu_monitor
 from src.benchmark.api.benchmark_api_client import BenchmarkAPIClient
 from src.benchmark.crypto.data_encryptor import DataEncryptor
 from src.benchmark.crypto.signature_manager import SignatureManager
+from src.benchmark.crypto.benchmark_log_encrypt import BenchmarkEncryption
 
 # 导入分离出的模块
 from src.benchmark.utils.hardware_info import collect_system_info, get_hardware_info
@@ -439,22 +440,25 @@ class BenchmarkManager:
         logger.debug(f"标准化API URL: {api_url}")
         return api_url
     
-    async def run_benchmark(self, model, precision="FP32", api_url=None, model_params=None, concurrency=1, test_mode=1, use_gpu=True, api_timeout=None):
+    async def run_benchmark(self, model, precision="FP32", api_url=None, model_params=None, 
+                          concurrency=1, test_mode=1, use_gpu=True, api_timeout=None,
+                          encrypt_and_upload=False):
         """
-        运行跑分测试
+        运行基准测试
         
         Args:
-            model (str): 模型名称（警告：此参数仅用于UI显示，API调用必须使用model_config["model"]）
-            precision (str): 精度，如FP16、INT8等
-            api_url (str): API地址
-            model_params (dict): 模型参数
-            concurrency (int): 并发数
-            test_mode (int): 测试模式，1=在线，2=离线
-            use_gpu (bool): 是否启用GPU
-            api_timeout (float, optional): API请求超时时间（秒），如果为None则无超时限制
+            model: 模型或模型名称
+            precision: 精度，可以是"FP32"、"FP16"或"INT8"等
+            api_url: API的URL（如果是API模式）
+            model_params: 模型参数
+            concurrency: 并发数
+            test_mode: 测试模式，0=联网模式，1=离线模式
+            use_gpu: 是否使用GPU
+            api_timeout: API超时时间（秒）
+            encrypt_and_upload: 是否加密并上传结果
             
         Returns:
-            dict: 测试结果
+            Dict[str, Any]: 测试结果
         """
         # 添加数据集验证逻辑 - 严格要求必须更新或上传测试数据集
         if not hasattr(self, 'dataset_updated') or not self.dataset_updated:
@@ -717,6 +721,11 @@ class BenchmarkManager:
             if result_path:
                 result["result_path"] = result_path
             
+            # 如果需要，加密并上传结果
+            if encrypt_and_upload and self.api_key:
+                encryption_result = self.encrypt_and_upload_result(result)
+                result["encryption_result"] = encryption_result
+            
             return result
         except Exception as e:
             logger.error(f"运行基准测试出错: {str(e)}")
@@ -944,4 +953,72 @@ class BenchmarkManager:
             return True
         except Exception as e:
             logger.error(f"禁用跑分模块失败: {str(e)}")
-            return False 
+            return False
+    
+    def encrypt_and_upload_result(self, result: Dict[str, Any], 
+                                api_key: str = None, 
+                                server_url: str = None,
+                                save_encrypted: bool = True,
+                                metadata: Dict[str, Any] = None) -> Dict[str, Any]:
+        """
+        加密并上传测试结果
+        
+        Args:
+            result: 测试结果
+            api_key: API密钥，如果为None则使用当前配置的API密钥
+            server_url: 服务器URL，如果为None则使用当前配置的服务器URL
+            save_encrypted: 是否保存加密结果到本地文件
+            metadata: 要包含在上传中的元数据
+            
+        Returns:
+            Dict[str, Any]: 操作结果
+        """
+        try:
+            # 使用当前API密钥（如果没有提供）
+            if not api_key:
+                api_key = self.api_key
+            
+            if not api_key:
+                logger.error("未提供API密钥，无法加密和上传结果")
+                return {"status": "error", "message": "未提供API密钥"}
+            
+            # 使用当前服务器URL（如果没有提供）
+            if not server_url:
+                server_url = f"{self.server_url}/api/v1/benchmark/upload"
+            
+            # 准备元数据
+            if not metadata:
+                metadata = {}
+            
+            # 添加设备信息
+            metadata.update({
+                "device_id": self.device_id,
+                "nickname": self.nickname,
+                "submitter": self.nickname,
+                "submission_time": datetime.now().isoformat()
+            })
+            
+            # 先保存加密结果（如果需要）
+            if save_encrypted:
+                original_path, encrypted_path = result_handler.save_encrypted_result(result, api_key)
+                if encrypted_path:
+                    logger.info(f"加密结果已保存到: {encrypted_path}")
+            
+            # 上传加密结果
+            upload_result = result_handler.upload_encrypted_result(
+                result,
+                api_key=api_key,
+                server_url=server_url,
+                metadata=metadata
+            )
+            
+            if upload_result.get("status") == "success":
+                logger.info(f"加密结果上传成功，ID: {upload_result.get('upload_id', 'unknown')}")
+                return {"status": "success", "upload_result": upload_result}
+            else:
+                logger.error(f"上传加密结果失败: {upload_result.get('message', '未知错误')}")
+                return {"status": "error", "message": upload_result.get("message", "上传失败"), "upload_result": upload_result}
+        
+        except Exception as e:
+            logger.error(f"加密和上传结果时发生错误: {str(e)}")
+            return {"status": "error", "message": str(e)} 

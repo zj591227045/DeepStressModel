@@ -5,8 +5,9 @@ import os
 import json
 import time
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 from src.utils.logger import setup_logger
+from src.benchmark.crypto.benchmark_log_encrypt import BenchmarkEncryption
 
 # 设置日志记录器
 logger = setup_logger("result_handler")
@@ -167,6 +168,81 @@ class ResultHandler:
         except Exception as e:
             logger.error(f"更新测试结果失败: {str(e)}")
             return False
+    
+    def save_encrypted_result(self, result: Dict[str, Any], api_key: str) -> Tuple[str, str]:
+        """
+        加密并保存测试结果
+        
+        Args:
+            result: 测试结果
+            api_key: API密钥
+            
+        Returns:
+            Tuple[str, str]: 原始结果文件路径和加密结果文件路径
+        """
+        try:
+            # 先保存原始结果
+            original_path = self.save_result(result)
+            
+            # 生成加密结果文件名
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            encrypted_file = f"encrypted_benchmark_result_{timestamp}.json"
+            encrypted_path = os.path.join(self.result_dir, encrypted_file)
+            
+            # 初始化加密器
+            encryptor = BenchmarkEncryption()
+            
+            # 加密并保存结果
+            encryptor.encrypt_and_save(result, encrypted_path, api_key)
+            
+            logger.info(f"加密结果已保存到: {encrypted_path}")
+            return original_path, encrypted_path
+        except Exception as e:
+            logger.error(f"保存加密结果失败: {str(e)}")
+            return "", ""
+    
+    def upload_encrypted_result(self, result: Dict[str, Any], api_key: str, 
+                              server_url: str, metadata: Dict[str, Any] = None) -> Dict[str, Any]:
+        """
+        加密并上传测试结果到服务器
+        
+        Args:
+            result: 测试结果
+            api_key: API密钥
+            server_url: 服务器URL
+            metadata: 元数据，如提交者信息、模型信息等
+            
+        Returns:
+            Dict[str, Any]: 服务器响应结果
+        """
+        try:
+            # 初始化加密器
+            encryptor = BenchmarkEncryption()
+            
+            # 准备元数据
+            if not metadata:
+                metadata = {}
+            
+            # 添加硬件信息到元数据
+            if "hardware_info" in result:
+                metadata["hardware_info"] = result["hardware_info"]
+            
+            if "model" in result:
+                metadata["model_name"] = result["model"]
+            
+            # 加密并上传结果
+            response = encryptor.encrypt_and_upload(
+                result, 
+                api_key=api_key,
+                server_url=server_url,
+                metadata=metadata
+            )
+            
+            logger.info(f"加密结果已上传，ID: {response.get('upload_id', 'unknown')}")
+            return response
+        except Exception as e:
+            logger.error(f"上传加密结果失败: {str(e)}")
+            return {"status": "error", "message": str(e)}
 
 
 # 创建一个全局的结果处理器实例

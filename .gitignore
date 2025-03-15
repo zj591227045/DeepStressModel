@@ -53,3 +53,10 @@ Thumbs.db
 # 其他
 *.bak
 *.tmp 
+
+# 敏感源码文件
+key_storage.pyx
+
+# 预编译二进制文件例外 - 允许追踪
+# 注意：这里使用 ! 表示不忽略匹配的文件
+!src/benchmark/crypto/key_module/prebuilt/macos/python3.13/key_storage.cpython-313-darwin.so 

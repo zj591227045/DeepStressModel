@@ -32,7 +32,7 @@ class BenchmarkHistoryTab(QWidget):
         super().__init__()
         
         # 初始化成员变量
-        self.result_dir = os.path.join(os.path.expanduser("~"), ".deepstressmodel", "benchmark_results")
+        self.result_dir = os.path.join(os.getcwd(), "data", "benchmark", "results")
         self.results = []
         
         # 初始化界面

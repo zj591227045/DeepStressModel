@@ -32,7 +32,7 @@ class ResultExporterPlugin(BenchmarkPlugin):
         self.author = "DeepStressModel团队"
         
         # 导出目录
-        self.export_dir = os.path.join(os.path.expanduser("~"), ".deepstressmodel", "exports")
+        self.export_dir = os.path.join(os.getcwd(), "data", "benchmark", "exports")
         os.makedirs(self.export_dir, exist_ok=True)
         
         # 支持的导出格式

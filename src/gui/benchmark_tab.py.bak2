@@ -1054,9 +1054,9 @@ class BenchmarkTab(QWidget):
             logger.debug("已发送停止信号到测试线程")
         
         # 更新UI状态
-        self.status_label.setText("测试状态: 已停止")
-        self.start_button.setEnabled(True)
-        self.stop_button.setEnabled(False)
+    self.status_label.setText("测试状态: 已停止")
+    self.start_button.setEnabled(True)
+    self.stop_button.setEnabled(False)
     
     def _on_progress_updated(self, progress_data):
         """

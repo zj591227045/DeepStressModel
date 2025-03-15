@@ -158,7 +158,7 @@ class PluginManager:
         self.plugins: Dict[str, BenchmarkPlugin] = {}
         self.plugin_dirs = [
             os.path.join(os.path.dirname(__file__), "plugins"),
-            os.path.join(os.path.expanduser("~"), ".deepstressmodel", "plugins")
+            os.path.join(os.getcwd(), "data", "benchmark", "plugins")
         ]
         
         # 确保插件目录存在

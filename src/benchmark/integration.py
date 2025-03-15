@@ -116,6 +116,33 @@ class BenchmarkIntegration(QObject):
         Args:
             progress: 进度信息
         """
+        # 添加调试日志
+        logger.debug(f"BenchmarkIntegration: 收到进度更新，准备发送信号. 数据键: {list(progress.keys() if isinstance(progress, dict) else ['非字典数据'])}")
+        
+        # 检查总耗时相关字段
+        if "datasets" in progress and progress["datasets"]:
+            first_dataset_name = list(progress["datasets"].keys())[0]
+            first_dataset = progress["datasets"][first_dataset_name]
+            
+            # 检查并记录总耗时相关字段
+            duration_fields = {
+                "total_duration": first_dataset.get("total_duration", "MISSING"),
+                "total_time": first_dataset.get("total_time", "MISSING"),
+                "test_duration": first_dataset.get("test_duration", "MISSING"),
+                "duration": first_dataset.get("duration", "MISSING")
+            }
+            logger.debug(f"BenchmarkIntegration: 数据集 '{first_dataset_name}' 的总耗时字段: {duration_fields}")
+            
+            # 如果所有总耗时字段都不存在，则补充一个
+            all_missing = all(value == "MISSING" for value in duration_fields.values())
+            if all_missing and "completed" in first_dataset and "total" in first_dataset:
+                # 检查是否有单项测试的耗时数据可以累加
+                if "items" in first_dataset and isinstance(first_dataset["items"], list):
+                    total_duration = sum(item.get("duration", 0) for item in first_dataset["items"] if isinstance(item, dict))
+                    if total_duration > 0:
+                        logger.debug(f"BenchmarkIntegration: 为数据集 '{first_dataset_name}' 补充总耗时: {total_duration}")
+                        first_dataset["total_duration"] = total_duration
+        
         # 转发进度信号
         self.progress_updated.emit(progress)
         
@@ -298,7 +325,79 @@ class BenchmarkIntegration(QObject):
             
             # 运行测试
             try:
-                result = await self.benchmark_manager.run_benchmark(config)
+                # 从配置中提取所需参数
+                model = config.get("model", "")
+                precision = config.get("precision", "FP16")
+                
+                # 统一处理API URL
+                api_url = None
+                # 1. 尝试从model_config中获取api_url
+                model_config = config.get("model_config", {})
+                if isinstance(model_config, dict) and "api_url" in model_config:
+                    api_url = model_config["api_url"]
+                
+                # 2. 如果model_config中没有，尝试从framework_config中获取
+                if not api_url:
+                    framework_config = config.get("framework_config", {})
+                    if isinstance(framework_config, dict) and "api_url" in framework_config:
+                        api_url = framework_config["api_url"]
+                
+                # 3. 如果还是没有，检查config本身
+                if not api_url and "api_url" in config:
+                    api_url = config["api_url"]
+                
+                # 4. 确保URL包含完整路径
+                if api_url:
+                    # 如果URL不以/结尾，添加/
+                    if not api_url.endswith("/"):
+                        api_url += "/"
+                    
+                    # 如果URL不包含chat/completions，添加它
+                    if "chat/completions" not in api_url:
+                        # 移除可能的v1/结尾
+                        if api_url.endswith("v1/"):
+                            api_url = api_url
+                        # 移除重复的v1
+                        elif "/v1/v1/" in api_url:
+                            api_url = api_url.replace("/v1/v1/", "/v1/")
+                        # 如果已经包含v1但不以v1/结尾，确保正确格式
+                        elif "/v1" in api_url and not api_url.endswith("v1/"):
+                            parts = api_url.split("/v1")
+                            api_url = parts[0] + "/v1/"
+                        
+                        # 现在添加chat/completions
+                        api_url += "chat/completions"
+                    
+                    logger.info(f"完整API URL: {api_url}")
+                
+                model_params = config.get("model_params", {})
+                
+                # 检查model_params类型，如果是浮点数则将其转换为字典
+                if isinstance(model_params, (int, float)):
+                    # 将参数量转换为字典参数
+                    logger.info(f"转换model_params从 {type(model_params).__name__} ({model_params}) 到字典")
+                    params_value = model_params  # 保存原始参数量的值
+                    model_params = {
+                        "params_count": params_value,  # 保存原始参数量
+                        "params_billions": float(params_value)  # 保存为十亿参数计数
+                    }
+                
+                concurrency = config.get("concurrency", 1)
+                test_mode = config.get("test_mode", 1)
+                use_gpu = config.get("use_gpu", True)
+                
+                logger.info(f"开始测试，参数: model={model}, precision={precision}, concurrency={concurrency}")
+                
+                # 调用带有单独参数的run_benchmark方法
+                result = await self.benchmark_manager.run_benchmark(
+                    model=model,
+                    precision=precision,
+                    api_url=api_url,
+                    model_params=model_params,
+                    concurrency=concurrency,
+                    test_mode=test_mode,
+                    use_gpu=use_gpu
+                )
                 self.running = False
                 return result
             except Exception as e:
@@ -348,11 +447,39 @@ class BenchmarkIntegration(QObject):
         """
         self.running = False
         
-        # 通知插件
-        self.plugin_manager.notify_plugins("benchmark_error", {"message": error})
+        # 处理可能包含UI提示的错误对象
+        error_message = error
+        ui_message = None
+        ui_detail = None
+        ui_type = "error"
         
-        # 转发测试错误信号
-        self.test_error.emit(error)
+        # 如果error是字典类型，提取其中的UI相关信息
+        if isinstance(error, dict):
+            error_message = error.get("message", str(error))
+            ui_message = error.get("ui_message")
+            ui_detail = error.get("ui_detail")
+            ui_type = error.get("ui_type", "error")
+            
+            # 构建包含UI信息的错误对象
+            error_obj = {
+                "message": error_message,
+                "ui_message": ui_message,
+                "ui_detail": ui_detail,
+                "ui_type": ui_type
+            }
+            
+            # 通知插件
+            self.plugin_manager.notify_plugins("benchmark_error", error_obj)
+            
+            # 转发测试错误信号，包含UI信息
+            self.test_error.emit(error_obj)
+        else:
+            # 对于普通字符串错误，仍使用原有流程
+            # 通知插件
+            self.plugin_manager.notify_plugins("benchmark_error", {"message": error})
+            
+            # 转发测试错误信号
+            self.test_error.emit(error)
     
     def export_result(self, result: Dict[str, Any], format_type: str = "json", output_path: Optional[str] = None) -> str:
         """

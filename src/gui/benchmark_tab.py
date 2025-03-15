@@ -28,7 +28,8 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QDialog,
     QDialogButtonBox,
-    QCheckBox
+    QCheckBox,
+    QProgressBar
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QEventLoop
 from PyQt6.QtGui import QFont, QIcon
@@ -57,6 +58,13 @@ class BenchmarkThread(QThread):
         self.config = config
         self.running = False
         
+        # 添加测试参数成员变量
+        self.model_name = ""
+        self.api_url = ""
+        self.model_params = {}
+        self.concurrency = 1
+        self.test_mode = 1  # 默认为联网模式
+        
         # 连接信号
         logger.debug("正在连接benchmark_integration信号到BenchmarkThread")
         
@@ -80,13 +88,33 @@ class BenchmarkThread(QThread):
         benchmark_integration.test_finished.connect(on_test_finished)
         benchmark_integration.test_error.connect(on_test_error)
     
+    def set_test_parameters(self, model, api_url, model_params, concurrency, test_mode, api_timeout):
+        """设置测试参数"""
+        self.model_name = model
+        self.api_url = api_url
+        self.model_params = model_params
+        self.concurrency = concurrency
+        self.test_mode = test_mode
+        self.api_timeout = api_timeout
+        logger.debug(f"已设置测试参数: 模型={model}, API={api_url}, 并发数={concurrency}, 模式={test_mode}, API超时={api_timeout}")
+    
     def run(self):
         """运行跑分测试"""
         self.running = True
         logger.debug("BenchmarkThread: 开始执行跑分测试")
         try:
+            # 创建测试配置
+            test_config = {
+                "model": self.model_name,
+                "api_url": self.api_url,
+                "model_params": self.model_params,
+                "concurrency": self.concurrency,
+                "test_mode": self.test_mode,
+                "api_timeout": self.api_timeout
+            }
+            
             # 执行跑分测试
-            benchmark_integration.run_benchmark(self.config)
+            benchmark_integration.run_benchmark(test_config)
             logger.debug("BenchmarkThread: 跑分测试执行完成")
         except Exception as e:
             logger.error(f"BenchmarkThread: 跑分测试错误: {str(e)}")
@@ -106,8 +134,10 @@ class BenchmarkThread(QThread):
 class BenchmarkTab(QWidget):
     """跑分标签页"""
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        """初始化基准测试标签页"""
+        super().__init__(parent)
+        self.parent = parent
         
         # 获取语言管理器实例
         self.language_manager = LanguageManager()
@@ -115,6 +145,11 @@ class BenchmarkTab(QWidget):
         # 初始化成员变量
         self.benchmark_thread = None
         self.device_id = self._generate_device_id()
+        self.config = config  # 保存配置对象引用
+        self.is_testing = False
+        self.test_thread = None
+        self.test_task_id = None
+        self.dataset_updated = False  # 添加 dataset_updated 属性
         
         # 初始化界面
         self.init_ui()
@@ -256,27 +291,25 @@ class BenchmarkTab(QWidget):
         concurrency_group = QGroupBox("并发设置")
         concurrency_layout = QHBoxLayout()
         
-        # 添加并发数输入
-        concurrency_layout.addWidget(QLabel("总并发数:"))
-        self.concurrency_input = QSpinBox()
-        self.concurrency_input.setMinimum(1)
-        self.concurrency_input.setMaximum(9999)
-        self.concurrency_input.setValue(1)
-        concurrency_layout.addWidget(self.concurrency_input)
+        # 添加并发数显示（改为显示标签而不是可编辑的spinbox）
+        concurrency_layout.addWidget(QLabel("并发数:"))
+        self.concurrency_label = QLabel("0")  # 初始值为0，后续根据数据集自动设置
+        concurrency_layout.addWidget(self.concurrency_label)
         
-        # 添加运行方式选择
-        concurrency_layout.addWidget(QLabel("运行方式:"))
-        self.run_mode_group = QHBoxLayout()
+        # 添加说明标签
+        concurrency_info = QLabel("(自动设置为数据集记录数)")
+        concurrency_info.setStyleSheet("color: gray; font-size: 11px;")
+        concurrency_layout.addWidget(concurrency_info)
+
+        # 添加弹性空间，使状态指示器靠右显示
+        concurrency_layout.addStretch()
         
-        self.stream_mode_radio = QRadioButton("流式输出")
-        self.stream_mode_radio.setChecked(True)
-        self.run_mode_group.addWidget(self.stream_mode_radio)
-        
-        self.direct_mode_radio = QRadioButton("直接输出")
-        self.run_mode_group.addWidget(self.direct_mode_radio)
-        
-        concurrency_layout.addLayout(self.run_mode_group)
-        
+        # 添加测试状态指示器
+        concurrency_layout.addWidget(QLabel("测试状态:"))
+        self.test_status_label = QLabel("就绪")
+        self.test_status_label.setStyleSheet("color: green; font-weight: bold;")
+        concurrency_layout.addWidget(self.test_status_label)
+
         concurrency_group.setLayout(concurrency_layout)
         left_layout.addWidget(concurrency_group)
         
@@ -345,6 +378,17 @@ class BenchmarkTab(QWidget):
         buttons_layout.addWidget(self.stop_button)
         test_control_layout.addLayout(buttons_layout)
         
+        # 添加API超时设置选项
+        timeout_layout = QHBoxLayout()
+        timeout_layout.addWidget(QLabel("API超时设置(秒):"))
+        self.api_timeout_spin = QSpinBox()
+        self.api_timeout_spin.setMinimum(30)  # 最小30秒
+        self.api_timeout_spin.setMaximum(600)  # 最大600秒（10分钟）
+        self.api_timeout_spin.setValue(120)  # 默认120秒
+        self.api_timeout_spin.setToolTip("设置API请求的超时时间，超过此时间未收到响应将视为超时")
+        timeout_layout.addWidget(self.api_timeout_spin)
+        test_control_layout.addLayout(timeout_layout)
+        
         test_control_group.setLayout(test_control_layout)
         left_layout.addWidget(test_control_group)
         
@@ -366,13 +410,22 @@ class BenchmarkTab(QWidget):
         gpu_monitor_group.setLayout(gpu_monitor_layout)
         right_layout.addWidget(gpu_monitor_group)
         
-        # 添加测试信息 - 使用TestProgressWidget来显示测试进度
-        test_info_group = QGroupBox("测试信息")
+        # 添加测试信息 - 使用进度条和状态标签
+        test_info_group = QGroupBox("测试进度")
         test_info_layout = QVBoxLayout()
         
-        # 使用TestProgressWidget替换原有的测试进度显示
-        self.test_progress_widget = TestProgressWidget()
-        test_info_layout.addWidget(self.test_progress_widget)
+        # 添加详细的测试进度信息
+        self.test_progress_text = QTextEdit()
+        self.test_progress_text.setReadOnly(True)
+        self.test_progress_text.setMaximumHeight(100)
+        self.test_progress_text.setPlaceholderText("测试进度信息将在这里显示...")
+        test_info_layout.addWidget(self.test_progress_text)
+        
+        # 添加进度条
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        test_info_layout.addWidget(self.progress_bar)
         
         test_info_group.setLayout(test_info_layout)
         right_layout.addWidget(test_info_group)
@@ -394,9 +447,9 @@ class BenchmarkTab(QWidget):
         
         # 创建表格
         self.result_table = QTableWidget()
-        self.result_table.setColumnCount(8)
+        self.result_table.setColumnCount(9)
         self.result_table.setHorizontalHeaderLabels([
-            "数据集", "完成/总数", "成功率", "平均响应时间", "平均生成速度", "总耗时", "总字符数", "平均TPS"
+            "会话ID", "数据集名称", "成功/总数", "成功率", "平均响应时间", "平均生成速度", "总字符数", "总时间", "平均输出TPS"
         ])
         self.result_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         result_layout.addWidget(self.result_table)
@@ -797,6 +850,8 @@ class BenchmarkTab(QWidget):
                         
                         # 判断数据集是否加载成功（兼容返回布尔值或字典的情况）
                         if dataset_info and (isinstance(dataset_info, dict) or dataset_info is True):
+                            # 设置数据集已更新标志
+                            self.dataset_updated = True
                             QMessageBox.information(self, "获取成功", "数据集获取并解密成功")
                             # 启用开始测试按钮
                             self.start_button.setEnabled(True)
@@ -857,8 +912,10 @@ class BenchmarkTab(QWidget):
                 self.dataset_upload_button.setText("上传数据集")
                 
                 if success:
-            # 更新数据集信息显示
+                    # 更新数据集信息显示
                     self._update_dataset_info_display()
+                    # 设置数据集已更新标志
+                    self.dataset_updated = True
                     QMessageBox.information(self, "加载成功", "数据集加载成功")
                 else:
                     QMessageBox.warning(self, "加载失败", message)
@@ -916,7 +973,10 @@ class BenchmarkTab(QWidget):
         
         # 添加记录数
         if "记录数" in dataset_info:
-            info_text += f"记录数: {dataset_info['记录数']}\n"
+            record_count = dataset_info["记录数"]
+            info_text += f"记录数: {record_count}\n"
+            # 更新并发数标签显示
+            self.concurrency_label.setText(str(record_count))
         
         # 添加描述
         if "描述" in dataset_info:
@@ -969,79 +1029,102 @@ class BenchmarkTab(QWidget):
         if mode == 0 and not config.get("benchmark.api_key"):
             QMessageBox.warning(self, "警告", "联网模式下需要配置API密钥")
             return
-        
-        # 其他代码保持不变...
     
     def start_benchmark(self):
-        """
-        开始基准测试
-        """
-        logger.debug("开始基准测试")
-        
-        # 检查数据集是否已加载
-        dataset_info = benchmark_integration.get_dataset_info()
-        if not dataset_info:
-            QMessageBox.warning(self, "错误", "请先获取或上传数据集")
-            return
-        
-        # 检查是否选择了模型
-        if not self.model_combo.currentText():
-            QMessageBox.warning(self, "错误", "请选择要测试的模型")
-            return
-        
-        # 获取模型配置
-        model_name = self.model_combo.currentText()
-        model_config = self.get_selected_model()
-        
-        # 获取并验证并发数
+        """开始跑分测试"""
         try:
-            concurrency = int(self.concurrency_input.text())
-            if concurrency < 1:
-                raise ValueError("并发数必须大于0")
-        except ValueError as e:
-            QMessageBox.warning(self, "错误", f"并发数设置错误: {str(e)}")
-            return
-        
-        # 构建测试配置
-        config_dict = {
-            "model_name": model_name,
-            "model": model_config.get("model", model_name),  # 添加model字段，优先使用model_config中的model值，如果没有则使用model_name
-            "precision": model_config.get("precision", "FP16"),
-            "model_params": model_config.get("params", {}),
-            "concurrency": concurrency,
-            "timeout": int(config.get("test.timeout", 30)),
-            "retry_count": int(config.get("test.retry_count", 1))
-        }
-        
-        # 添加API URL
-        if "api_url" in model_config:
-            config_dict["api_url"] = model_config["api_url"]
-        elif "api_url" in model_config.get("framework_config", {}):
-            config_dict["api_url"] = model_config["framework_config"]["api_url"]
-        else:
-            # 如果模型配置中没有API URL，显示错误消息
-            QMessageBox.warning(self, "错误", "所选模型缺少API URL配置")
-            self.start_button.setEnabled(True)
-            self.stop_button.setEnabled(False)
-            return
-        
-        # 更新UI状态
-        self.start_button.setEnabled(False)
-        self.stop_button.setEnabled(True)
-        self.status_label.setText("测试状态: 正在进行")
-        self.test_progress_widget.progress_bar.setValue(0)
-        
-        # 清空结果表格
-        self.result_table.setRowCount(0)
-        
-        # 创建并启动测试线程
-        self.benchmark_thread = BenchmarkThread(config_dict)
-        self.benchmark_thread.progress_updated.connect(self._on_progress_updated)
-        self.benchmark_thread.test_finished.connect(self._on_test_finished)
-        self.benchmark_thread.test_error.connect(self._on_test_error)
-        self.benchmark_thread.start()
-        
-        logger.debug(f"基准测试线程已启动，配置: {config_dict}")
+            logger.info("开始跑分测试...")
+            
+            # 检查数据集是否已加载
+            if not self.dataset_updated:
+                QMessageBox.warning(self, "警告", "请先更新或上传测试数据集")
+                logger.warning("无法开始测试：未更新或上传测试数据集")
+                return
+                
+            # 获取选择的模型
+            model_config = self.get_selected_model()
+            if not model_config:
+                QMessageBox.warning(self, "警告", "请先选择模型")
+                logger.warning("无法开始测试：未选择模型")
+                return
+            
+            # 获取API地址 - 使用模型配置中的API URL或配置中的默认值
+            api_url = model_config.get("api_url", "")
+            if not api_url:
+                api_url = config.get("benchmark.api_url", "http://localhost:8083/v1")
+                
+            # 获取并发数 - 使用数据集记录数
+            dataset_info = benchmark_integration.get_dataset_info()
+            if isinstance(dataset_info, dict) and "记录数" in dataset_info:
+                concurrency = int(dataset_info["记录数"])
+            else:
+                # 如果无法获取记录数，使用默认值1
+                concurrency = 1
+                
+            logger.debug(f"使用数据集记录数作为并发数: {concurrency}")
+            
+            # 获取API超时设置
+            api_timeout = self.api_timeout_spin.value()
+            logger.debug(f"API超时设置: {api_timeout}秒")
+            
+            # 固定使用联网模式(1)作为测试模式，移除运行方式选择后
+            test_mode = 1
+            
+            # 更新UI状态 - 设置为测试中
+            self.is_testing = True
+            self.update_ui_buttons()
+            
+            # 生成更用户友好的会话ID
+            import time
+            current_time = int(time.time())
+            time_str = time.strftime("%m-%d-%H-%M", time.localtime(current_time))
+            
+            # 生成短随机部分，确保唯一性
+            import random
+            import string
+            random_id = ''.join(random.choice(string.hexdigits.lower()) for _ in range(4))
+            
+            # 最终格式: MM-DD-HH-MM-xxxx (例如: 03-15-19-50-a7f3)
+            self.test_task_id = f"{time_str}-{random_id}"
+            
+            logger.debug(f"生成测试任务ID: {self.test_task_id}")
+            
+            # 创建测试线程
+            self.test_thread = BenchmarkThread(self.config)
+            
+            # 连接信号
+            self.test_thread.progress_updated.connect(self.on_progress_updated)
+            self.test_thread.test_finished.connect(self.on_test_finished)
+            self.test_thread.test_error.connect(self.on_test_error)
+            
+            # 设置测试参数并启动线程
+            self.test_thread.set_test_parameters(
+                model=model_config["name"], 
+                api_url=api_url,
+                model_params=model_config, 
+                concurrency=concurrency,
+                test_mode=test_mode,
+                api_timeout=api_timeout
+            )
+            self.test_thread.start()  # 直接启动线程，不传递参数
+            
+            # 更新UI - 会在progress回调中更新
+            self.progress_bar.setValue(0)
+            self.status_label.setText("测试进行中...")
+            self.test_progress_text.setText("测试开始中，等待结果...")
+            self.is_testing = True
+            self.update_ui_buttons()
+            
+            # 更新测试状态指示器
+            self.test_status_label.setText("运行中")
+            self.test_status_label.setStyleSheet("color: blue; font-weight: bold;")
+            
+            logger.info(f"测试已启动：模型={model_config['name']}, API={api_url}, 并发数={concurrency}")
+        except Exception as e:
+            logger.error(f"启动测试失败: {str(e)}")
+            QMessageBox.critical(self, "错误", f"启动测试失败: {str(e)}")
+            self.is_testing = False
+            self.update_ui_buttons()
     
     def stop_benchmark(self):
         """
@@ -1053,181 +1136,36 @@ class BenchmarkTab(QWidget):
             self.benchmark_thread.stop()
             logger.debug("已发送停止信号到测试线程")
         
+        if hasattr(self, 'test_thread') and self.test_thread and self.test_thread.isRunning():
+            self.test_thread.stop()
+            logger.debug("已发送停止信号到测试线程")
+        
         # 更新UI状态
+        self.is_testing = False
+        self.update_ui_buttons()
         self.status_label.setText("测试状态: 已停止")
-        self.start_button.setEnabled(True)
-        self.stop_button.setEnabled(False)
+        
+        # 更新测试状态指示器
+        self.test_status_label.setText("已停止")
+        self.test_status_label.setStyleSheet("color: orange; font-weight: bold;")
     
-    def _on_progress_updated(self, progress_data):
+    def on_progress_updated(self, progress_data):
         """
-        处理进度更新
-        
-        Args:
-            progress_data: 进度数据字典
+        处理进度更新 (从BenchmarkThread接收的信号)
         """
-        logger.debug(f"收到进度更新: {list(progress_data.keys() if isinstance(progress_data, dict) else ['非字典数据'])}")
-        
-        try:
-            # 检查进度数据是否有效
-            if not isinstance(progress_data, dict):
-                logger.error(f"进度数据类型错误: {type(progress_data)}")
-                return
-            
-            # 获取状态信息
-            status = progress_data.get("status", "测试进行中")
-            
-            # 更新状态标签
-            self.status_label.setText(f"测试状态: {status}")
-            
-            # 处理数据集进度
-            if "datasets" in progress_data and progress_data["datasets"]:
-                datasets = progress_data["datasets"]
-                
-                # 清空结果表格
-                self.result_table.setRowCount(0)
-                
-                # 总进度计算变量
-                total_completed = 0
-                total_items = 0
-                
-                # 遍历所有数据集
-                for dataset_name, dataset_data in datasets.items():
-                    # 获取数据集进度信息
-                    completed = dataset_data.get("completed", 0)
-                    total = dataset_data.get("total", 0)
-                    success_rate = dataset_data.get("success_rate", 0)
-                    avg_response_time = dataset_data.get("avg_response_time", 0)
-                    avg_generation_speed = dataset_data.get("avg_generation_speed", 0)
-                    total_time = dataset_data.get("total_time", 0)
-                    total_duration = dataset_data.get("total_duration", 0)  # 新增字段
-                    
-                    # 使用可用的耗时字段
-                    duration = total_duration if total_duration > 0 else total_time
-                    
-                    # 累计总进度
-                    total_completed += completed
-                    total_items += total if total > 0 else 0
-                    
-                    # 格式化值
-                    success_rate_text = f"{success_rate:.2f}%" if isinstance(success_rate, (int, float)) else str(success_rate)
-                    avg_response_time_text = f"{avg_response_time:.2f}s" if isinstance(avg_response_time, (int, float)) else str(avg_response_time)
-                    avg_generation_speed_text = f"{avg_generation_speed:.2f} token/s" if isinstance(avg_generation_speed, (int, float)) else str(avg_generation_speed)
-                    
-                    # 格式化耗时
-                    if isinstance(duration, (int, float)):
-                        if duration < 60:
-                            duration_text = f"{duration:.2f}秒"
-                        elif duration < 3600:
-                            minutes = int(duration / 60)
-                            seconds = duration % 60
-                            duration_text = f"{minutes}分{seconds:.2f}秒"
-                        else:
-                            hours = int(duration / 3600)
-                            minutes = int((duration % 3600) / 60)
-                            seconds = duration % 60
-                            duration_text = f"{hours}时{minutes}分{seconds:.2f}秒"
-                    else:
-                        duration_text = str(duration)
-                    
-                    # 添加到结果表格
-                    row = self.result_table.rowCount()
-                    self.result_table.insertRow(row)
-                    
-                    # 设置表格内容
-                    self.result_table.setItem(row, 0, QTableWidgetItem(dataset_name))
-                    self.result_table.setItem(row, 1, QTableWidgetItem(f"{completed}/{total}"))
-                    self.result_table.setItem(row, 2, QTableWidgetItem(success_rate_text))
-                    self.result_table.setItem(row, 3, QTableWidgetItem(avg_response_time_text))
-                    self.result_table.setItem(row, 4, QTableWidgetItem(avg_generation_speed_text))
-                    self.result_table.setItem(row, 5, QTableWidgetItem(duration_text))
-                
-                # 计算总进度百分比
-                if total_items > 0:
-                    percentage = int((total_completed / total_items) * 100)
-                    # 更新进度条
-                    self.test_progress_widget.progress_bar.setValue(percentage)
-                    # 更新进度文本
-                    self.test_progress_widget.status_label.setText(f"进度: {percentage}% ({total_completed}/{total_items})")
-                    
-                    # 更新详细信息
-                    detail_text = f"完成测试项: {total_completed}/{total_items}\n"
-                    detail_text += f"状态: {status}\n"
-                    self.test_progress_widget.detail_text.setText(detail_text)
-            
-            # 处理可能的错误信息
-            if "error" in progress_data:
-                error_msg = progress_data["error"]
-                self.error_text.append(f"错误: {error_msg}")
-            
-            # 确保UI更新
-            from PyQt6.QtWidgets import QApplication
-            QApplication.processEvents()
-            
-        except Exception as e:
-            logger.error(f"处理进度更新时出错: {str(e)}")
-            self.error_text.append(f"处理进度更新错误: {str(e)}")
+        self._on_progress_updated(progress_data)
     
-    def _on_test_finished(self, result):
+    def on_test_finished(self, result):
         """
-        测试完成时的处理函数
+        处理测试完成 (从BenchmarkThread接收的信号)
         """
-        # 获取当前模式
-        mode = config.get("benchmark.mode", 0)  # 0=联网模式，1=离线模式
-        
-        # 更新UI状态
-        self.start_button.setEnabled(True)
-        self.stop_button.setEnabled(False)
-        self.status_label.setText("测试状态: 已完成")
-        
-        # 确保进度条显示100%
-        self.test_progress_widget.progress_bar.setValue(100)
-        
-        # 记录测试完成日志
-        logger.info("基准测试完成")
-        
-        # 显示完成消息
-        QMessageBox.information(self, "测试完成", "基准测试已完成")
+        self._on_test_finished(result)
     
-    def _on_test_error(self, error_msg):
+    def on_test_error(self, error_msg):
         """
-        测试错误处理函数
-        
-        Args:
-            error_msg: 错误信息
+        处理测试错误 (从BenchmarkThread接收的信号)
         """
-        logger.error(f"测试错误: {error_msg}")
-        
-        # 更新UI状态
-        self.start_button.setEnabled(True)
-        self.stop_button.setEnabled(False)
-        self.status_label.setText("测试状态: 出错")
-        
-        # 添加错误信息到错误文本框
-        self.error_text.append(f"错误: {error_msg}")
-        
-        # 显示错误消息
-        error_title = "测试错误"
-        error_detail = ""
-        
-        # 判断错误信息类型
-        if isinstance(error_msg, dict):
-            # 如果是字典类型，提取ui_message字段作为显示信息
-            error_content = error_msg.get("ui_message", str(error_msg))
-            error_detail = error_msg.get("ui_detail", "")
-        else:
-            # 如果是字符串类型，直接显示
-            error_content = str(error_msg)
-        
-        # 显示错误消息对话框
-        error_dialog = QMessageBox(self)
-        error_dialog.setIcon(QMessageBox.Icon.Critical)
-        error_dialog.setWindowTitle(error_title)
-        error_dialog.setText(error_content)
-        
-        if error_detail:
-            error_dialog.setDetailedText(error_detail)
-        
-        error_dialog.exec()
+        self._on_test_error(error_msg)
 
     def save_config(self):
         """
@@ -1339,10 +1277,6 @@ class BenchmarkTab(QWidget):
         # 更新标签文本
         if hasattr(self, 'model_label'):
             self.model_label.setText("选择模型:")
-        if hasattr(self, 'concurrency_label'):
-            self.concurrency_label.setText("并发数:")
-        if hasattr(self, 'dataset_label'):
-            self.dataset_label.setText("数据集:")
         
         # 更新数据集按钮
         if hasattr(self, 'dataset_download_button'):
@@ -1371,34 +1305,228 @@ class BenchmarkTab(QWidget):
         # 更新表格头
         if hasattr(self, 'result_table'):
             self.result_table.setHorizontalHeaderLabels([
-                "数据集",
-                "完成数",
-                "总数",
-                "成功率",
-                "平均响应时间",
-                "平均生成速度",
-                "总时间"
+                "会话ID",
+                "数据集名称", 
+                "成功/总数", 
+                "成功率", 
+                "平均响应时间", 
+                "平均生成速度", 
+                "总字符数", 
+                "总时间", 
+                "平均输出TPS"
             ])
 
-    def _on_test_start(self):
-        """
-        开始测试时的处理函数
-        """
-        # 获取当前模式
-        mode = config.get("benchmark.mode", 0)  # 0=联网模式，1=离线模式
+    def update_ui_buttons(self):
+        """更新UI按钮状态"""
+        # 根据是否正在测试更新按钮状态
+        self.start_button.setEnabled(not self.is_testing and self.dataset_updated)
+        self.stop_button.setEnabled(self.is_testing)
         
-        # 检查API密钥
-        if mode == 0 and not config.get("benchmark.api_key"):
-            QMessageBox.warning(self, "警告", "联网模式下需要配置API密钥")
-            return
+        # 更新数据集按钮状态
+        self.dataset_download_button.setEnabled(not self.is_testing)
+        self.dataset_upload_button.setEnabled(not self.is_testing)
         
-        # 其他代码保持不变...
-    
+        # 更新模型选择是否启用
+        self.model_combo.setEnabled(not self.is_testing)
+
+    def _on_progress_updated(self, progress_data):
+        """
+        处理进度更新
+        
+        Args:
+            progress_data: 进度数据字典
+        """
+        logger.debug(f"收到进度更新: {list(progress_data.keys() if isinstance(progress_data, dict) else ['非字典数据'])}")
+        
+        try:
+            # 检查进度数据是否有效
+            if not isinstance(progress_data, dict):
+                logger.error(f"进度数据类型错误: {type(progress_data)}")
+                return
+            
+            # 获取状态信息
+            status = progress_data.get("status", "测试进行中")
+            
+            # 更新状态标签
+            self.status_label.setText(f"测试状态: {status}")
+            
+            # 更新测试状态指示器
+            self.test_status_label.setText("运行中")
+            self.test_status_label.setStyleSheet("color: blue; font-weight: bold;")
+            
+            # 处理数据集进度
+            if "datasets" in progress_data and progress_data["datasets"]:
+                datasets = progress_data["datasets"]
+                
+                # 清空结果表格
+                self.result_table.setRowCount(0)
+                
+                # 总进度计算变量
+                total_completed = 0
+                total_items = 0
+                
+                # 更新测试进度文本框
+                progress_text = ""
+                
+                # 遍历所有数据集
+                for dataset_name, dataset_stats in datasets.items():
+                    # 获取数据集进度信息
+                    completed = dataset_stats.get("completed", 0)  # 已成功完成的任务数
+                    total = dataset_stats.get("total", 0)  # 总任务数
+                    failed_count = dataset_stats.get("failed_count", 0)  # 失败任务数（含超时）
+                    timeout_count = dataset_stats.get("timeout_count", 0)  # 超时任务数
+                    error_count = dataset_stats.get("error_count", 0)  # 错误任务数
+                    success_rate = dataset_stats.get("success_rate", 0)
+                    avg_response_time = dataset_stats.get("avg_response_time", 0)
+                    avg_generation_speed = dataset_stats.get("avg_generation_speed", 0)
+                    total_time = dataset_stats.get("total_time", 0)
+                    total_duration = dataset_stats.get("total_duration", 0)  # 新增字段
+                    
+                    # 更新进度文本信息
+                    progress_text += f"数据集: {dataset_name}\n"
+                    progress_text += f"进度: {completed}/{total} (成功完成/总数 {(completed/total*100) if total > 0 else 0:.1f}%)\n"
+                    progress_text += f"状态: {status}\n"
+                    if isinstance(success_rate, (int, float)):
+                        progress_text += f"当前成功率: {success_rate*100 if success_rate <= 1 else success_rate:.2f}%\n"
+                    if failed_count > 0:
+                        progress_text += f"失败任务: {failed_count} (超时: {timeout_count}, 错误: {error_count})\n"
+                    if isinstance(avg_response_time, (int, float)):
+                        progress_text += f"平均响应时间: {avg_response_time:.2f}秒\n"
+                    progress_text += f"已用时间: {total_duration:.1f}秒\n"
+                    
+                    # 设置进度文本
+                    self.test_progress_text.setText(progress_text)
+                    
+                    # 使用可用的耗时字段
+                    duration = total_duration if total_duration > 0 else total_time
+                    
+                    # 累计总进度
+                    total_completed += completed
+                    total_items += total if total > 0 else 0
+                    
+                    # 格式化值
+                    if isinstance(success_rate, (int, float)):
+                        # 检查成功率是否已经是百分比形式（>1）或小数形式（<=1）
+                        if success_rate <= 1:
+                            success_rate_text = f"{success_rate * 100:.2f}%"
+                        else:
+                            success_rate_text = f"{success_rate:.2f}%"
+                    else:
+                        success_rate_text = str(success_rate)
+                    avg_response_time_text = f"{avg_response_time:.2f}s" if isinstance(avg_response_time, (int, float)) else str(avg_response_time)
+                    avg_generation_speed_text = f"{avg_generation_speed:.2f} 字符/秒" if isinstance(avg_generation_speed, (int, float)) else str(avg_generation_speed)
+                    
+                    # 格式化耗时
+                    if isinstance(duration, (int, float)):
+                        if duration < 60:
+                            duration_text = f"{duration:.2f}秒"
+                        elif duration < 3600:
+                            minutes = int(duration / 60)
+                            seconds = duration % 60
+                            duration_text = f"{minutes}分{seconds:.2f}秒"
+                        else:
+                            hours = int(duration / 3600)
+                            minutes = int((duration % 3600) / 60)
+                            seconds = duration % 60
+                            duration_text = f"{hours}时{minutes}分{seconds:.2f}秒"
+                    else:
+                        duration_text = str(duration)
+                    
+                    # 添加到结果表格
+                    row = self.result_table.rowCount()
+                    self.result_table.insertRow(row)
+                    
+                    # 设置表格内容
+                    session_id = self.test_task_id if hasattr(self, 'test_task_id') else "未知会话"
+                    
+                    # 直接使用session_id，不再需要格式转换
+                    # 因为session_id已经是用户友好的格式了: MM-DD-HH-MM-xxxx
+                    
+                    self.result_table.setItem(row, 0, QTableWidgetItem(session_id))  # 会话ID
+                    self.result_table.setItem(row, 1, QTableWidgetItem(dataset_name))  # 数据集名称
+                    self.result_table.setItem(row, 2, QTableWidgetItem(f"{completed}/{total}"))  # 成功完成/总数
+                    self.result_table.setItem(row, 3, QTableWidgetItem(success_rate_text))  # 成功率
+                    
+                    # 在结果表格中添加失败信息（如果有）
+                    if failed_count > 0:
+                        self.result_table.setItem(row, 4, QTableWidgetItem(f"{avg_response_time_text} (失败: {failed_count})"))  # 平均响应时间+失败数
+                    else:
+                        self.result_table.setItem(row, 4, QTableWidgetItem(avg_response_time_text))  # 平均响应时间
+                        
+                    self.result_table.setItem(row, 5, QTableWidgetItem(avg_generation_speed_text))  # 平均生成速度
+                    
+                    # 计算总字符数（如果可用）
+                    total_chars = dataset_stats.get('total_chars', 0)
+                    self.result_table.setItem(row, 6, QTableWidgetItem(str(total_chars)))  # 总字符数
+                    
+                    self.result_table.setItem(row, 7, QTableWidgetItem(duration_text))  # 总时间
+                    
+                    # 平均TPS（如果可用）
+                    avg_tps = dataset_stats.get('output_tps', dataset_stats.get('avg_tps', 0))  # 优先使用输出TPS，如果没有则用平均TPS
+                    self.result_table.setItem(row, 8, QTableWidgetItem(f"{avg_tps:.2f}"))  # 平均输出TPS
+                
+                # 计算总进度百分比
+                if total_items > 0:
+                    percentage = int((total_completed / total_items) * 100)
+                    # 更新进度条
+                    self.progress_bar.setValue(percentage)
+                    # 更新进度文本
+                    self.status_label.setText(f"进度: {percentage}% (成功完成: {total_completed}/{total_items})")
+                    
+                    # 更新详细信息
+                    detail_text = f"成功完成测试项: {total_completed}/{total_items}\n"
+                    detail_text += f"状态: {status}\n"
+                    self.status_label.setText(detail_text)
+            
+            # 处理可能的错误信息
+            if "error" in progress_data:
+                error_msg = progress_data["error"]
+                self.error_text.append(f"错误: {error_msg}")
+            
+            # 确保UI更新
+            from PyQt6.QtWidgets import QApplication
+            QApplication.processEvents()
+            
+        except Exception as e:
+            logger.error(f"处理进度更新时出错: {str(e)}")
+            self.error_text.append(f"处理进度更新错误: {str(e)}")
+
     def _on_test_finished(self, result):
         """
         测试完成时的处理函数
         """
-        # 获取当前模式
-        mode = config.get("benchmark.mode", 0)  # 0=联网模式，1=离线模式
+        # 更新UI状态
+        self.is_testing = False
+        self.update_ui_buttons()
+        self.status_label.setText("测试状态: 已完成")
         
-        # 其他代码保持不变... 
+        # 更新测试状态指示器
+        self.test_status_label.setText("已完成")
+        self.test_status_label.setStyleSheet("color: green; font-weight: bold;")
+        
+        # 确保进度条显示100%
+        self.progress_bar.setValue(100)
+        
+        # 记录测试完成日志
+        logger.info("基准测试完成")
+        
+        # 显示完成消息
+        QMessageBox.information(self, "测试完成", "基准测试已完成")
+    
+    def _on_test_error(self, error_msg):
+        """
+        测试错误处理函数
+        
+        Args:
+            error_msg: 错误信息
+        """
+        logger.error(f"测试错误: {error_msg}")
+        
+        # 更新UI状态
+        self.start_button.setEnabled(True)
+        self.stop_button.setEnabled(False)
+        self.status_label.setText("测试状态: 出错")
+        
+        # 更新测试状态指示器
+        self.test_status_label.setText("错误")
+        self.test_status_label.setStyleSheet("color: red; font-weight: bold;")

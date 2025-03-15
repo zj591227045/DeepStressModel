@@ -30,6 +30,21 @@ class ResultHandler:
         # 确保目录存在
         os.makedirs(self.result_dir, exist_ok=True)
     
+    def _truncate_text(self, text: str, max_length: int = 50) -> str:
+        """
+        截断文本，超过指定长度的部分用...代替
+        
+        Args:
+            text: 要截断的文本
+            max_length: 最大长度，默认50
+            
+        Returns:
+            str: 截断后的文本
+        """
+        if isinstance(text, str) and len(text) > max_length:
+            return text[:max_length] + "..."
+        return text
+    
     def save_result(self, result: Dict[str, Any]) -> str:
         """
         保存测试结果
@@ -57,6 +72,36 @@ class ResultHandler:
                 logger.info(f"硬件ID: {hardware_info.get('id', '未知')}")
             else:
                 logger.warning("结果中未包含硬件信息！")
+            
+            # 截断每个测试结果的输入和输出文本，减小日志文件大小
+            if "results" in result and isinstance(result["results"], list):
+                truncated_count = 0
+                total_items = len(result["results"])
+                
+                for item in result["results"]:
+                    # 截断input字段
+                    if "input" in item:
+                        original = item["input"]
+                        item["input"] = self._truncate_text(original)
+                        if original != item["input"]:
+                            truncated_count += 1
+                    
+                    # 截断output字段
+                    if "output" in item:
+                        original = item["output"]
+                        item["output"] = self._truncate_text(original)
+                        if original != item["output"]:
+                            truncated_count += 1
+                    
+                    # 截断error字段
+                    if "error" in item:
+                        original = item["error"]
+                        item["error"] = self._truncate_text(original)
+                        if original != item["error"]:
+                            truncated_count += 1
+                
+                if truncated_count > 0:
+                    logger.info(f"已截断 {truncated_count} 个字段，测试项总数: {total_items}")
             
             # 保存结果
             with open(result_path, 'w', encoding='utf-8') as f:

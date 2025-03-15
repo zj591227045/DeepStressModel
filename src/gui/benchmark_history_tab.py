@@ -305,6 +305,7 @@ class BenchmarkHistoryTab(QWidget):
         
         # 更新测试信息
         test_info = f"""
+        <b>会话ID:</b> {result.get('session_id', '未知会话')}<br>
         <b>设备ID:</b> {result.get('device_id', '')}<br>
         <b>昵称:</b> {result.get('nickname', '')}<br>
         <b>数据集版本:</b> {result.get('dataset_version', '')}<br>

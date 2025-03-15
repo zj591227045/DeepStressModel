@@ -370,23 +370,16 @@ class BenchmarkIntegration(QObject):
                     
                     logger.info(f"完整API URL: {api_url}")
                 
+                # 4. 获取其他参数
                 model_params = config.get("model_params", {})
-                
-                # 检查model_params类型，如果是浮点数则将其转换为字典
-                if isinstance(model_params, (int, float)):
-                    # 将参数量转换为字典参数
-                    logger.info(f"转换model_params从 {type(model_params).__name__} ({model_params}) 到字典")
-                    params_value = model_params  # 保存原始参数量的值
-                    model_params = {
-                        "params_count": params_value,  # 保存原始参数量
-                        "params_billions": float(params_value)  # 保存为十亿参数计数
-                    }
-                
                 concurrency = config.get("concurrency", 1)
                 test_mode = config.get("test_mode", 1)
                 use_gpu = config.get("use_gpu", True)
                 
-                logger.info(f"开始测试，参数: model={model}, precision={precision}, concurrency={concurrency}")
+                # 5. 获取API超时设置
+                api_timeout = config.get("api_timeout", None)
+                
+                logger.info(f"开始测试，参数: model={model}, precision={precision}, concurrency={concurrency}, api_timeout={api_timeout}")
                 
                 # 调用带有单独参数的run_benchmark方法
                 result = await self.benchmark_manager.run_benchmark(
@@ -396,7 +389,8 @@ class BenchmarkIntegration(QObject):
                     model_params=model_params,
                     concurrency=concurrency,
                     test_mode=test_mode,
-                    use_gpu=use_gpu
+                    use_gpu=use_gpu,
+                    api_timeout=api_timeout
                 )
                 self.running = False
                 return result

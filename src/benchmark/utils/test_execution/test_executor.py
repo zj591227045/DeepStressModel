@@ -65,6 +65,10 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
     use_gpu = config.get("use_gpu", True)
     running = config.get("running", True)  # 测试是否在运行的标志
     
+    # 获取API请求超时设置，如果未设置则为None（无超时限制）
+    api_timeout = config.get("api_timeout", None)
+    logger.info(f"API请求超时设置: {api_timeout if api_timeout is not None else '无限制'}")
+    
     # 这里是测试执行的具体逻辑
     results = []
     total_items = 0
@@ -160,6 +164,7 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
             
             # 记录开始时间
             start_time = time.time()
+            start_timestamp = int(start_time * 1000)  # 毫秒时间戳，用于记录
             
             #######################################################################
             # 重要提示: API请求中的模型名称必须使用model_config["model"]字段
@@ -220,10 +225,11 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
                         api_url, 
                         json=request_data,
                         headers={"Content-Type": "application/json"},
-                        timeout=30  # 设置超时时间为30秒
+                        timeout=api_timeout  # 使用从config中获取的超时设置
                     ) as response:
                         # 记录结束时间
                         end_time = time.time()
+                        end_timestamp = int(end_time * 1000)  # 毫秒时间戳，用于记录
                         latency = end_time - start_time
                         
                         # 计算吞吐量（字符数/秒）
@@ -249,6 +255,19 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
                             # 计算基于token的吞吐量（tokens/秒）
                             token_throughput = total_tokens / latency if latency > 0 else 0
                             
+                            # 添加更详细的日志记录
+                            logger.debug(f"测试项 #{index} token计算: 输入={input_tokens}, 输出={output_tokens}, 总计={total_tokens}")
+                            logger.debug(f"测试项 #{index} latency={latency:.4f}秒, token吞吐量={token_throughput:.4f} tokens/s")
+                            
+                            # 获取格式化的时间字符串
+                            start_time_fmt = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_timestamp/1000))
+                            start_time_ms = start_timestamp % 1000
+                            start_time_str = f"{start_time_fmt}.{start_time_ms:03d}"
+                            
+                            end_time_fmt = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(end_timestamp/1000))
+                            end_time_ms = end_timestamp % 1000
+                            end_time_str = f"{end_time_fmt}.{end_time_ms:03d}"
+                            
                             # 构造测试结果
                             return {
                                 "id": item_id,
@@ -262,12 +281,26 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
                                 "output_tokens": output_tokens,
                                 "tokens": total_tokens,
                                 "status": "success",
-                                "timestamp": int(time.time() * 1000)
+                                "timestamp": int(time.time() * 1000),
+                                "start_time": start_timestamp,  # 保留原始时间戳
+                                "end_time": end_timestamp,  # 保留原始时间戳
+                                "start_time_str": start_time_str,  # 添加格式化的开始时间
+                                "end_time_str": end_time_str  # 添加格式化的结束时间
                             }
                         else:
                             # API调用失败 - 添加更详细的错误日志
                             error_text = await response.text()
                             logger.warning(f"测试项 #{index} API调用失败: URL={api_url}, 状态码={response.status}, 错误={error_text}")
+                            # 获取格式化的时间字符串
+                            start_time_fmt = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_timestamp/1000))
+                            start_time_ms = start_timestamp % 1000
+                            start_time_str = f"{start_time_fmt}.{start_time_ms:03d}"
+                            
+                            current_time = int(time.time() * 1000)
+                            end_time_fmt = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(current_time/1000))
+                            end_time_ms = current_time % 1000
+                            end_time_str = f"{end_time_fmt}.{end_time_ms:03d}"
+                            
                             return {
                                 "id": item_id,
                                 "input": input_text,
@@ -275,23 +308,51 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
                                 "latency": latency,
                                 "throughput": 0,
                                 "status": "error",
-                                "timestamp": int(time.time() * 1000)
+                                "timestamp": int(time.time() * 1000),
+                                "start_time": start_timestamp,
+                                "end_time": end_timestamp,
+                                "start_time_str": start_time_str,  # 添加格式化的开始时间
+                                "end_time_str": end_time_str  # 添加格式化的结束时间
                             }
                 except asyncio.TimeoutError:
                     # 超时错误 - 添加更详细的错误日志
-                    logger.warning(f"测试项 #{index} API调用超时: URL={api_url}, 超时阈值=30秒")
+                    logger.warning(f"测试项 #{index} API调用超时: URL={api_url}, 超时阈值={api_timeout}秒")
+                    # 获取格式化的时间字符串
+                    start_time_fmt = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_timestamp/1000))
+                    start_time_ms = start_timestamp % 1000
+                    start_time_str = f"{start_time_fmt}.{start_time_ms:03d}"
+                    
+                    current_time = int(time.time() * 1000)
+                    end_time_fmt = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(current_time/1000))
+                    end_time_ms = current_time % 1000
+                    end_time_str = f"{end_time_fmt}.{end_time_ms:03d}"
+                    
                     return {
                         "id": item_id,
                         "input": input_text,
                         "error": "API调用超时",
-                        "latency": 30.0,  # 使用超时时间作为延迟
+                        "latency": api_timeout if api_timeout is not None else 30.0,  # 使用从config中获取的超时设置
                         "throughput": 0,
                         "status": "timeout",
-                        "timestamp": int(time.time() * 1000)
+                        "timestamp": int(time.time() * 1000),
+                        "start_time": start_timestamp,
+                        "end_time": current_time,
+                        "start_time_str": start_time_str,  # 添加格式化的开始时间
+                        "end_time_str": end_time_str  # 添加格式化的结束时间
                     }
                 except Exception as e:
                     # 其他异常 - 添加更详细的错误日志
                     logger.error(f"测试项 #{index} 请求异常: URL={api_url}, 错误类型={type(e).__name__}, 错误={str(e)}")
+                    # 获取格式化的时间字符串
+                    start_time_fmt = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_timestamp/1000))
+                    start_time_ms = start_timestamp % 1000
+                    start_time_str = f"{start_time_fmt}.{start_time_ms:03d}"
+                    
+                    current_time = int(time.time() * 1000)
+                    end_time_fmt = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(current_time/1000))
+                    end_time_ms = current_time % 1000
+                    end_time_str = f"{end_time_fmt}.{end_time_ms:03d}"
+                    
                     return {
                         "id": item_id,
                         "input": input_text,
@@ -299,7 +360,11 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
                         "latency": time.time() - start_time,
                         "throughput": 0,
                         "status": "error",
-                        "timestamp": int(time.time() * 1000)
+                        "timestamp": int(time.time() * 1000),
+                        "start_time": start_timestamp,
+                        "end_time": current_time,
+                        "start_time_str": start_time_str,  # 添加格式化的开始时间
+                        "end_time_str": end_time_str  # 添加格式化的结束时间
                     }
         except Exception as e:
             logger.error(f"处理测试项 #{index} 失败: {e}")
@@ -311,7 +376,9 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
                 "latency": 0,
                 "throughput": 0,
                 "status": "error",
-                "timestamp": int(time.time() * 1000)
+                "timestamp": int(time.time() * 1000),
+                "start_time": 0,  # 添加开始时间
+                "end_time": 0  # 添加结束时间
             }
 
     # 采用分批执行的方式，避免一次创建过多协程
@@ -343,88 +410,213 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
     # 记录开始时间
     start_time = time.time()
 
-    # 分批处理所有测试项
-    for batch_start in range(0, total_items, batch_size):
-        if not running:
-            logger.info("测试已停止，中断执行")
-            break
-            
-        batch_end = min(batch_start + batch_size, total_items)
-        batch_items = test_items[batch_start:batch_end]
-        batch_indices = list(range(batch_start, batch_end))
+    # 创建一个进度更新协程，独立于测试任务
+    async def progress_updater(results_future, interval=1.0):
+        """
+        定期检查并更新测试进度
         
-        logger.info(f"处理批次 {batch_start//batch_size + 1}/{(total_items-1)//batch_size + 1}, 项目范围: {batch_start+1}-{batch_end}")
-        
-        # 如果批次大小较大，则分段处理并更新进度
-        if batch_size > update_frequency:
-            for segment_start in range(0, len(batch_items), update_frequency):
-                segment_end = min(segment_start + update_frequency, len(batch_items))
-                segment_items = batch_items[segment_start:segment_end]
-                segment_indices = batch_indices[segment_start:segment_end]
-                
-                # 创建当前段的所有测试协程
-                tasks = [process_item(i, item) for i, item in zip(segment_indices, segment_items)]
-                
-                # 并发执行当前段的所有测试
-                segment_results = await asyncio.gather(*tasks)
-                
-                # 过滤掉None结果并添加到结果列表
-                segment_valid_results = [r for r in segment_results if r is not None]
-                valid_results.extend(segment_valid_results)
-                
-                # 更新完成数量
-                completed += len(segment_valid_results)
-                
-                # 更新总体进度
-                progress = completed / total_items * 100
-                
-                # 如果有进度回调，更新进度
-                if progress_callback:
-                    progress_callback({
-                        "progress": progress,
-                        "current_item": completed,
-                        "total_items": total_items,
-                        "latency": sum(r.get("latency", 0) for r in segment_valid_results) / len(segment_valid_results) if segment_valid_results else 0,
-                        "throughput": sum(r.get("throughput", 0) for r in segment_valid_results) / len(segment_valid_results) if segment_valid_results else 0,
-                        "total_time": time.time() - start_time,
-                        "total_tokens": sum(r.get("tokens", 0) for r in segment_valid_results) if segment_valid_results else 0,
-                        "total_bytes": sum(len(r.get("input", "")) for r in segment_valid_results) if segment_valid_results else 0,
-                        "token_throughput": sum(r.get("token_throughput", 0) for r in segment_valid_results) / len(segment_valid_results) if segment_valid_results else 0
-                    })
-                
-                logger.info(f"完成段 {segment_start//update_frequency + 1}/{(len(batch_items)-1)//update_frequency + 1}, 总进度: {progress:.1f}%")
-        else:
-            # 创建当前批次的所有测试协程
-            tasks = [process_item(i, item) for i, item in zip(batch_indices, batch_items)]
+        Args:
+            results_future: 包含所有测试任务的Future对象
+            interval: 更新间隔（秒）
+        """
+        while not results_future.done():
+            # 等待指定的间隔时间
+            await asyncio.sleep(interval)
             
-            # 并发执行当前批次的所有测试
-            batch_results = await asyncio.gather(*tasks)
+            # 如果测试已经完成或已停止，退出循环
+            if not running or results_future.done():
+                break
+                
+            # 收集当前已完成的结果（不阻塞未完成的任务）
+            partial_results = []
+            for i, task in enumerate(all_tasks):
+                # 确保task是Task对象而不是协程
+                if not isinstance(task, asyncio.Task):
+                    continue
+                    
+                if task.done():
+                    try:
+                        result = task.result()
+                        if result is not None:
+                            partial_results.append(result)
+                    except Exception as e:
+                        logger.error(f"获取任务 {i} 结果时出错: {e}")
             
-            # 过滤掉None结果并添加到结果列表
-            batch_valid_results = [r for r in batch_results if r is not None]
-            valid_results.extend(batch_valid_results)
+            # 计算进度
+            completed_count = len(partial_results)
+            progress_percent = (completed_count / total_items) * 100
             
-            # 更新完成数量
-            completed += len(batch_valid_results)
+            logger.debug(f"进度更新: 已完成 {completed_count}/{total_items} ({progress_percent:.1f}%)")
             
-            # 更新总体进度
-            progress = completed / total_items * 100
-            
-            # 如果有进度回调，更新进度
-            if progress_callback:
+            # 如果有进度回调且有部分结果，更新进度
+            if progress_callback and partial_results:
+                # 计算总字符数：输入字符+输出字符
+                total_input_chars = sum(len(r.get("input", "")) for r in partial_results)
+                total_output_chars = sum(len(r.get("output", "")) for r in partial_results if r.get("status") == "success")
+                total_chars = total_input_chars + total_output_chars
+                
+                # 计算成功率
+                success_count = sum(1 for r in partial_results if r.get("status") == "success")
+                failed_count = sum(1 for r in partial_results if r.get("status") in ["error", "timeout"])  # 显式将timeout计算为失败
+                success_rate = success_count / len(partial_results)
+                
+                # 计算平均值 - 只考虑成功的请求
+                successful_latencies = [r.get("latency", 0) for r in partial_results if r.get("status") == "success"]
+                avg_latency = sum(successful_latencies) / len(successful_latencies) if successful_latencies else 0
+                
+                successful_throughputs = [r.get("throughput", 0) for r in partial_results if r.get("status") == "success"]
+                avg_throughput = sum(successful_throughputs) / len(successful_throughputs) if successful_throughputs else 0
+                
+                successful_token_throughputs = [r.get("token_throughput", 0) for r in partial_results if r.get("status") == "success"]
+                avg_token_throughput = sum(successful_token_throughputs) / len(successful_token_throughputs) if successful_token_throughputs else 0
+                
+                # 总tokens - 只考虑成功的请求
+                total_tokens = sum(r.get("tokens", 0) for r in partial_results if r.get("status") == "success")
+                
+                # 添加详细日志
+                elapsed = time.time() - start_time
+                logger.debug(f"累计平均: 延迟={avg_latency:.2f}s, 吞吐量={avg_throughput:.2f}字符/s, TPS={avg_token_throughput:.2f}")
+                logger.debug(f"总计: 字符={total_chars}, tokens={total_tokens}, 耗时={elapsed:.2f}s")
+                
+                # 记录成功率详细信息
+                logger.debug(f"当前成功率: {success_rate*100:.1f}% ({success_count}/{len(partial_results)})")
+                
+                # 记录每个测试项的延迟和吞吐量范围
+                if partial_results:
+                    min_latency = min(r.get("latency", float('inf')) for r in partial_results)
+                    max_latency = max(r.get("latency", 0) for r in partial_results)
+                    min_tps = min(r.get("token_throughput", float('inf')) for r in partial_results)
+                    max_tps = max(r.get("token_throughput", 0) for r in partial_results)
+                    logger.debug(f"延迟范围: {min_latency:.2f}s - {max_latency:.2f}s, TPS范围: {min_tps:.2f} - {max_tps:.2f}")
+                
+                # 获取状态统计信息
+                status_counts = {}
+                for r in partial_results:
+                    status = r.get("status", "unknown")
+                    status_counts[status] = status_counts.get(status, 0) + 1
+                
+                # 更新进度
                 progress_callback({
-                    "progress": progress,
-                    "current_item": completed,
+                    "progress": progress_percent,
+                    "current_item": completed_count,
                     "total_items": total_items,
-                    "latency": sum(r.get("latency", 0) for r in batch_valid_results) / len(batch_valid_results) if batch_valid_results else 0,
-                    "throughput": sum(r.get("throughput", 0) for r in batch_valid_results) / len(batch_valid_results) if batch_valid_results else 0,
-                    "total_time": time.time() - start_time,
-                    "total_tokens": sum(r.get("tokens", 0) for r in batch_valid_results) if batch_valid_results else 0,
-                    "total_bytes": sum(len(r.get("input", "")) for r in batch_valid_results) if batch_valid_results else 0,
-                    "token_throughput": sum(r.get("token_throughput", 0) for r in batch_valid_results) / len(batch_valid_results) if batch_valid_results else 0
+                    "latency": avg_latency,
+                    "throughput": avg_throughput,
+                    "total_time": elapsed,
+                    "total_tokens": total_tokens,
+                    "total_bytes": total_input_chars + total_output_chars,
+                    "total_chars": total_chars,
+                    "token_throughput": avg_token_throughput,
+                    "success_rate": success_rate,
+                    "status_counts": status_counts  # 添加状态统计信息
                 })
+
+    try:
+        # 同时创建所有测试任务 - 不再分批处理
+        logger.info(f"同时创建并启动 {total_items} 个测试任务...")
+        
+        # 创建所有测试任务的协程
+        all_coroutines = [process_item(i, item) for i, item in enumerate(test_items)]
+        
+        # 将协程转换为任务（这是关键修复 - 确保我们有Task对象而不是coroutine对象）
+        all_tasks = [asyncio.create_task(coro) for coro in all_coroutines]
+        
+        # 创建一个Future用于存储所有任务的结果
+        all_results_future = asyncio.gather(*all_tasks)
+        
+        # 启动进度更新协程
+        update_task = asyncio.create_task(progress_updater(all_results_future))
+        
+        # 等待所有测试任务完成
+        all_results = await all_results_future
+        
+        # 过滤掉None结果
+        valid_results = [r for r in all_results if r is not None]
+        
+        # 取消进度更新任务
+        update_task.cancel()
+        try:
+            await update_task
+        except asyncio.CancelledError:
+            logger.debug("进度更新任务已取消")
+        except Exception as e:
+            logger.error(f"取消进度更新任务时发生错误: {str(e)}")
             
-            logger.info(f"完成批次 {batch_start//batch_size + 1}/{(total_items-1)//batch_size + 1}, 进度: {progress:.1f}%")
+    except Exception as e:
+        logger.error(f"执行测试任务时发生错误: {e}")
+        logger.error(traceback.format_exc())
+        # 即使发生错误，也尝试收集一些结果
+        valid_results = []
+        for task in all_tasks:
+            if isinstance(task, asyncio.Task) and task.done() and not task.cancelled():
+                try:
+                    result = task.result()
+                    if result is not None:
+                        valid_results.append(result)
+                except Exception:
+                    pass
+        
+        if not valid_results:
+            logger.error("无法收集任何有效结果")
+            return []
+        
+    # 测试完成后进行最终进度更新
+    if progress_callback and valid_results:
+        completed_count = len(valid_results)
+        
+        # 计算总字符数：输入字符+输出字符
+        total_input_chars = sum(len(r.get("input", "")) for r in valid_results)
+        total_output_chars = sum(len(r.get("output", "")) for r in valid_results)
+        total_chars = total_input_chars + total_output_chars
+        
+        # 计算成功率
+        success_count = sum(1 for r in valid_results if r.get("status") == "success")
+        failed_count = sum(1 for r in valid_results if r.get("status") in ["error", "timeout"])  # 显式将timeout计算为失败
+        success_rate = success_count / len(valid_results) if valid_results else 1.0
+        
+        # 计算平均延迟 - 只考虑成功的请求
+        successful_latencies = [r.get("latency", 0) for r in valid_results if r.get("status") == "success"]
+        avg_latency = sum(successful_latencies) / len(successful_latencies) if successful_latencies else 0
+        
+        # 计算平均吞吐量 - 只考虑成功的请求
+        successful_throughputs = [r.get("throughput", 0) for r in valid_results if r.get("status") == "success"]
+        avg_throughput = sum(successful_throughputs) / len(successful_throughputs) if successful_throughputs else 0
+        
+        # 计算平均token吞吐量 - 只考虑成功的请求
+        successful_token_throughputs = [r.get("token_throughput", 0) for r in valid_results if r.get("status") == "success"]
+        avg_token_throughput = sum(successful_token_throughputs) / len(successful_token_throughputs) if successful_token_throughputs else 0
+
+        # 总tokens - 只计算成功的请求
+        total_tokens = sum(r.get("tokens", 0) for r in valid_results if r.get("status") == "success")
+        
+        # 获取状态统计信息
+        status_counts = {}
+        for r in valid_results:
+            status = r.get("status", "unknown")
+            status_counts[status] = status_counts.get(status, 0) + 1
+        
+        # 添加详细日志
+        elapsed = time.time() - start_time
+        logger.info(f"测试完成: 共执行 {completed_count}/{total_items} 个任务, 成功率 {success_rate*100:.1f}%, 成功 {success_count}, 失败 {failed_count} (包含超时)")
+        logger.info(f"平均延迟: {avg_latency:.2f}s, 吞吐量: {avg_throughput:.2f}字符/s, TPS: {avg_token_throughput:.2f}")
+        logger.info(f"总字符数: {total_chars}, 总tokens: {total_tokens}, 总耗时: {elapsed:.2f}s")
+        logger.info(f"状态统计: {status_counts}")
+        
+        # 发送最终进度更新 (100%)
+        progress_callback({
+            "progress": 100,
+            "current_item": completed_count,
+            "total_items": total_items,
+            "latency": avg_latency,
+            "throughput": avg_throughput,
+            "total_time": elapsed,
+            "total_tokens": total_tokens,
+            "total_bytes": total_input_chars + total_output_chars,
+            "total_chars": total_chars,
+            "token_throughput": avg_token_throughput,
+            "success_rate": success_rate,
+            "status_counts": status_counts
+        })
     
     return valid_results
 
@@ -446,12 +638,19 @@ def calculate_metrics(test_results: List[Dict[str, Any]]) -> Dict[str, Any]:
             "memory_utilization": 0
         }
     
-    # 计算平均延迟和吞吐量
-    latencies = [result.get("latency", 0) for result in test_results]
-    throughputs = [result.get("throughput", 0) for result in test_results]
+    # 过滤出成功的测试结果
+    successful_results = [result for result in test_results if result.get("status") == "success"]
     
-    avg_latency = sum(latencies) / len(latencies) if latencies else 0
-    avg_throughput = sum(throughputs) / len(throughputs) if throughputs else 0
+    # 计算平均延迟和吞吐量 - 只考虑成功的测试结果
+    if successful_results:
+        latencies = [result.get("latency", 0) for result in successful_results]
+        throughputs = [result.get("throughput", 0) for result in successful_results]
+        
+        avg_latency = sum(latencies) / len(latencies) if latencies else 0
+        avg_throughput = sum(throughputs) / len(throughputs) if throughputs else 0
+    else:
+        avg_latency = 0
+        avg_throughput = 0
     
     # 获取GPU利用率
     gpu_utilization = 0

@@ -114,19 +114,39 @@ class ProgressTracker:
             # 添加状态字段
             formatted_progress["status"] = status
             
+            # 获取总字符数，确保其正确传递
+            total_bytes = progress_info.get("total_bytes", 0)
+            total_chars = progress_info.get("total_chars", total_bytes)  # 优先使用total_chars，如果没有则使用total_bytes
+            
+            logger.debug(f"总字符数: {total_chars}, 总字节数: {total_bytes}")
+
+            # 获取成功率
+            success_rate = progress_info.get("success_rate", 1.0)
+            
+            # 获取状态计数信息
+            status_counts = progress_info.get("status_counts", {})
+            timeout_count = status_counts.get("timeout", 0)
+            error_count = status_counts.get("error", 0)
+            failed_count = timeout_count + error_count
+            
             # 添加datasets结构
             formatted_progress["datasets"] = {
                 dataset_name: {
-                    "completed": progress_info.get("current_item", 0),
+                    "completed": progress_info.get("current_item", 0) - failed_count,  # 减去失败任务数
                     "total": progress_info.get("total_items", 0),
-                    "success_rate": 1.0,  # 默认所有项目都成功
+                    "success_rate": success_rate,
                     "avg_response_time": progress_info.get("latency", 0),
-                    "avg_gen_speed": progress_info.get("throughput", 0),  # 字符生成速度
+                    "avg_generation_speed": progress_info.get("throughput", 0),  # 字符生成速度
                     "total_time": total_duration,  # 更新总用时
                     "total_duration": total_duration,  # 明确添加total_duration字段
                     "total_tokens": progress_info.get("total_tokens", 0),  # 总token数
-                    "total_bytes": progress_info.get("total_bytes", 0),  # 总字节数
-                    "avg_tps": progress_info.get("token_throughput", progress_info.get("throughput", 0))  # 使用token吞吐量作为TPS
+                    "total_chars": total_chars,  # 确保总字符数正确设置
+                    "total_bytes": total_bytes,  # 总字节数
+                    "avg_tps": progress_info.get("token_throughput", progress_info.get("throughput", 0)),  # 使用token吞吐量作为TPS
+                    "failed_count": failed_count,  # 失败任务总数
+                    "timeout_count": timeout_count,  # 超时任务数量 
+                    "error_count": error_count,  # 错误任务数量
+                    "status_counts": status_counts  # 详细状态统计
                 }
             }
             

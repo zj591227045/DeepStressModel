@@ -10,6 +10,9 @@ import traceback
 from datetime import datetime
 from typing import Dict, List, Any, Callable, Optional, Union
 import uuid
+import hashlib
+import random
+import string
 
 from src.utils.logger import setup_logger
 from src.utils.config import config
@@ -436,7 +439,7 @@ class BenchmarkManager:
         logger.debug(f"标准化API URL: {api_url}")
         return api_url
     
-    async def run_benchmark(self, model, precision="FP32", api_url=None, model_params=None, concurrency=1, test_mode=1, use_gpu=True):
+    async def run_benchmark(self, model, precision="FP32", api_url=None, model_params=None, concurrency=1, test_mode=1, use_gpu=True, api_timeout=None):
         """
         运行跑分测试
         
@@ -448,6 +451,7 @@ class BenchmarkManager:
             concurrency (int): 并发数
             test_mode (int): 测试模式，1=在线，2=离线
             use_gpu (bool): 是否启用GPU
+            api_timeout (float, optional): API请求超时时间（秒），如果为None则无超时限制
             
         Returns:
             dict: 测试结果
@@ -534,7 +538,8 @@ class BenchmarkManager:
                 "use_gpu": use_gpu,
                 "api_url": api_url,
                 "running": self.running,
-                "progress_callback": progress_tracker.update_progress
+                "progress_callback": progress_tracker.update_progress,
+                "api_timeout": api_timeout  # 添加API超时设置
             }
             
             test_results = await execute_test(self.test_data, config)
@@ -551,8 +556,8 @@ class BenchmarkManager:
             
             # 计算平均延迟和吞吐量
             if successful_tests > 0:
-                avg_latency = sum(r.get("latency", 0) for r in test_results) / successful_tests
-                avg_throughput = sum(r.get("throughput", 0) for r in test_results) / successful_tests
+                avg_latency = sum(r.get("latency", 0) for r in test_results if r.get("status") == "success") / successful_tests
+                avg_throughput = sum(r.get("throughput", 0) for r in test_results if r.get("status") == "success") / successful_tests
             else:
                 avg_latency = 0
                 avg_throughput = 0
@@ -590,30 +595,85 @@ class BenchmarkManager:
             # 计算性能指标
             metrics = calculate_metrics(test_results)
             
+            # 比较两种不同方式计算的平均延迟
+            logger.info(f"直接计算的avg_latency: {avg_latency:.2f}s, metrics['latency']: {metrics['latency']:.2f}s")
+            
             # 计算总持续时间
             duration = total_time
             
             # 计算总字节数（输入+输出字符总数）
             total_bytes = total_input_chars + total_output_chars
             
-            # 计算基于token的平均TPS
+            # 计算基于token的平均TPS (包括输入和输出token)
             avg_token_tps = 0
+            input_token_tps = 0
+            output_token_tps = 0
+            combined_token_tps = 0  # 输入+输出token的TPS
+            
             if successful_tests > 0:
+                # 获取成功测试项的token吞吐量
                 token_throughputs = [r.get("token_throughput", 0) for r in test_results if r.get("status") == "success"]
                 avg_token_tps = sum(token_throughputs) / len(token_throughputs) if token_throughputs else 0
+                
+                # 计算输入token的TPS
+                input_tokens = sum(r.get("input_tokens", 0) for r in test_results if r.get("status") == "success")
+                if total_time > 0:
+                    input_token_tps = input_tokens / total_time
+                
+                # 计算输出token的TPS
+                output_tokens = sum(r.get("output_tokens", 0) for r in test_results if r.get("status") == "success")
+                if total_time > 0:
+                    output_token_tps = output_tokens / total_time
+                
+                # 计算综合TPS (输入+输出)
+                if total_time > 0:
+                    combined_token_tps = (input_tokens + output_tokens) / total_time
+                
+                logger.info(f"TPS计算：输入TPS={input_token_tps:.2f}, 输出TPS={output_token_tps:.2f}, 综合TPS={combined_token_tps:.2f}")
+            
+            # 统计各状态数量
+            status_counts = {}
+            for r in test_results:
+                status = r.get("status", "unknown")
+                status_counts[status] = status_counts.get(status, 0) + 1
+                
+            # 计算不同状态的任务数量
+            timeout_count = status_counts.get("timeout", 0)
+            error_count = status_counts.get("error", 0)
+            failed_count = timeout_count + error_count
+            
+            # 生成更用户友好的会话ID
+            current_time = int(time.time())
+            time_str = time.strftime("%m-%d-%H-%M", time.localtime(current_time))
+            
+            # 生成短随机部分，确保唯一性
+            random_id = ''.join(random.choice(string.hexdigits.lower()) for _ in range(4))
+            
+            # 最终格式: MM-DD-HH-MM-xxxx (例如: 03-15-19-50-a7f3)
+            session_id = f"{time_str}-{random_id}"
+                
+            logger.info(f"生成测试会话ID: {session_id}")
             
             # 为UI创建datasets结构
             datasets = {
                 dataset_name: {
-                    "completed": len(test_results),
+                    "completed": successful_tests,  # 仅计算成功完成的任务数
                     "total": len(test_results),
                     "success_rate": success_rate,
-                    "avg_response_time": metrics["latency"],
-                    "avg_gen_speed": metrics["throughput"],  # 字符生成速度
+                    "avg_response_time": avg_latency,  # 使用直接计算的avg_latency而非metrics["latency"]
+                    "avg_gen_speed": avg_throughput,  # 使用直接计算的avg_throughput而非metrics["throughput"]
                     "total_time": duration,  # 总用时
                     "total_tokens": total_tokens,  # 总token数
                     "total_bytes": total_bytes,  # 总字节数
-                    "avg_tps": avg_token_tps  # 使用基于token的吞吐量作为TPS
+                    "avg_tps": combined_token_tps,  # 使用综合TPS (输入+输出token)
+                    "input_tps": input_token_tps,  # 添加输入TPS
+                    "output_tps": output_token_tps,  # 添加输出TPS
+                    "combined_tps": combined_token_tps,  # 添加综合TPS
+                    "failed_count": failed_count,  # 失败任务总数（含超时）
+                    "timeout_count": timeout_count,  # 超时任务数量 
+                    "error_count": error_count,  # 错误任务数量
+                    "status_counts": status_counts,  # 添加详细状态统计
+                    "session_id": session_id
                 }
             }
             
@@ -643,7 +703,10 @@ class BenchmarkManager:
                 "system_info": system_info,
                 "hardware_info": get_hardware_info(),
                 "total_duration": duration,
-                "avg_tps": avg_token_tps
+                "avg_tps": avg_token_tps,
+                "session_id": session_id,
+                "device_id": self.device_id,
+                "nickname": self.nickname
             }
             
             # 通知进度跟踪器测试完成

@@ -22,6 +22,7 @@ from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QFont
 from src.utils.logger import setup_logger
 from src.monitor.gpu_monitor import gpu_monitor
+from src.monitor.npu_monitor import npu_monitor
 from src.gui.i18n.language_manager import LanguageManager
 
 # 设置日志记录器
@@ -138,6 +139,8 @@ class GPUMonitorWidget(QGroupBox):
         self.mode_combo = QComboBox()
         self.mode_combo.addItem("", "single")  # 占位，将在update_ui_text中填充
         self.mode_combo.addItem("", "multi")
+        self.mode_combo.addItem("", "npu_single")  # 占位，将在update_ui_text中填充
+        self.mode_combo.addItem("", "npu_multi")
         self.mode_combo.currentIndexChanged.connect(self._on_mode_changed)
 
         # GPU选择下拉框（单GPU模式使用）
@@ -370,6 +373,8 @@ class GPUMonitorWidget(QGroupBox):
         current_mode_index = self.mode_combo.currentIndex()
         self.mode_combo.setItemText(0, self.tr('single_gpu'))
         self.mode_combo.setItemText(1, self.tr('multi_gpu'))
+        self.mode_combo.setItemText(2, self.tr('single_npu'))
+        self.mode_combo.setItemText(3, self.tr('multi_npu'))
         if current_mode_index >= 0:
             self.mode_combo.setCurrentIndex(current_mode_index)
 

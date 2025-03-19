@@ -6,6 +6,7 @@ import sys
 import asyncio
 from typing import Dict, Any, Callable, Optional, List
 from PyQt6.QtCore import QObject, pyqtSignal, QThread
+from datetime import datetime
 
 from src.utils.logger import setup_logger
 from src.utils.config import config
@@ -426,11 +427,22 @@ class BenchmarkIntegration(QObject):
         """
         self.running = False
         
+        # 添加调试日志，检查框架信息
+        logger.info(f"[_on_test_finished] 测试完成，framework_info存在: {'framework_info' in result}")
+        if 'framework_info' in result:
+            logger.info(f"[_on_test_finished] 信号发送前的framework_info: {result['framework_info']}")
+        
+        # 检查result对象属性
+        logger.info(f"[_on_test_finished] result对象id: {id(result)}, 类型: {type(result).__name__}")
+        logger.info(f"[_on_test_finished] result包含的键: {list(result.keys())}")
+        
         # 通知插件
         self.plugin_manager.notify_plugins("benchmark_complete", result)
         
         # 转发测试完成信号
+        logger.info(f"[_on_test_finished] 即将发送test_finished信号...")
         self.test_finished.emit(result)
+        logger.info(f"[_on_test_finished] test_finished信号已发送")
     
     def _on_test_error(self, error: str):
         """
@@ -590,6 +602,205 @@ class BenchmarkIntegration(QObject):
         except Exception as e:
             logger.error(f"设置API密钥失败: {str(e)}")
             return False
+    
+    def encrypt_result(self) -> Dict[str, Any]:
+        """
+        加密测试结果（不上传）
+        
+        Returns:
+            Dict[str, Any]: 加密结果，包含状态、消息和加密文件路径
+        """
+        try:
+            # 检查是否有测试结果
+            if not hasattr(self.benchmark_manager, 'latest_test_result') or self.benchmark_manager.latest_test_result is None:
+                return {
+                    "status": "error",
+                    "message": "没有可加密的测试结果",
+                    "ui_message": "加密失败",
+                    "ui_detail": "没有可加密的测试结果，请先运行测试。"
+                }
+            
+            # 获取API密钥
+            api_key = self.benchmark_manager.api_key
+            if not api_key:
+                return {
+                    "status": "error",
+                    "message": "缺少API密钥，无法加密测试结果",
+                    "ui_message": "加密失败",
+                    "ui_detail": "未设置API密钥，请先设置API密钥后再尝试加密。"
+                }
+            
+            # 添加检查和调试日志，确保framework_info被保留
+            latest_result = self.benchmark_manager.latest_test_result
+            logger.info(f"加密前检查latest_result中framework_info存在: {'framework_info' in latest_result}")
+            if 'framework_info' in latest_result:
+                logger.info(f"加密前latest_result中的framework_info: {latest_result['framework_info']}")
+            
+            # 检查是否已经有result_path
+            if "result_path" not in latest_result or not latest_result["result_path"]:
+                logger.warning("结果中没有result_path，需要先保存结果文件")
+                # 保存结果，获取result_path
+                from src.benchmark.utils.result_handler import result_handler
+                result_path = result_handler.save_result(latest_result)
+                if result_path:
+                    latest_result["result_path"] = result_path
+                    logger.info(f"创建了新的原始结果文件: {result_path}")
+            else:
+                logger.info(f"使用已有的原始结果文件: {latest_result['result_path']}")
+            
+            # 准备元数据
+            metadata = {
+                "device_id": self.benchmark_manager.device_id,
+                "nickname": self.benchmark_manager.nickname,
+                "submitter": self.benchmark_manager.nickname,
+                "model_name": latest_result.get("model_name", "未知模型"),
+                "hardware_info": latest_result.get("hardware_info", {}),
+                "notes": f"离线加密测试结果 - {datetime.now().isoformat()}"
+            }
+            
+            # 加密结果
+            from src.benchmark.utils.result_handler import result_handler
+            original_path, encrypted_path = result_handler.save_encrypted_result(
+                latest_result,
+                api_key
+            )
+            
+            if encrypted_path:
+                logger.info(f"测试结果加密成功: {encrypted_path}")
+                return {
+                    "status": "success",
+                    "message": "测试结果加密成功",
+                    "encrypted_path": encrypted_path,
+                    "original_path": original_path,
+                    "ui_message": "加密成功",
+                    "ui_detail": f"测试结果已加密并保存到本地:\n{encrypted_path}\n\n点击确定可以打开保存位置。"
+                }
+            else:
+                logger.error("测试结果加密失败")
+                return {
+                    "status": "error",
+                    "message": "测试结果加密失败",
+                    "ui_message": "加密失败",
+                    "ui_detail": "测试结果加密失败，请检查加密配置后重试。"
+                }
+        except Exception as e:
+            logger.error(f"加密测试结果失败: {str(e)}")
+            return {
+                "status": "error",
+                "message": f"加密测试结果失败: {str(e)}",
+                "ui_message": "加密失败",
+                "ui_detail": f"加密测试结果失败: {str(e)}\n\n请检查日志获取详细信息。",
+                "can_retry": True
+            }
+    
+    def encrypt_and_upload_result(self) -> Dict[str, Any]:
+        """
+        加密并上传测试结果
+        
+        Returns:
+            Dict[str, Any]: 上传结果，包含状态、消息和上传ID
+        """
+        try:
+            # 检查是否有测试结果
+            if not hasattr(self.benchmark_manager, 'latest_test_result') or self.benchmark_manager.latest_test_result is None:
+                return {
+                    "status": "error",
+                    "message": "没有可上传的测试结果",
+                    "ui_message": "上传失败",
+                    "ui_detail": "没有可上传的测试结果，请先运行测试。"
+                }
+            
+            # 获取API密钥和服务器URL
+            api_key = self.benchmark_manager.api_key
+            server_url = self.benchmark_manager.server_url
+            
+            # 检查API密钥
+            if not api_key:
+                return {
+                    "status": "error",
+                    "message": "缺少API密钥，无法上传测试结果",
+                    "ui_message": "上传失败",
+                    "ui_detail": "未设置API密钥，请先设置API密钥后再尝试上传。"
+                }
+            
+            # 检查服务器URL
+            if not server_url:
+                return {
+                    "status": "error",
+                    "message": "缺少服务器URL，无法上传测试结果",
+                    "ui_message": "上传失败",
+                    "ui_detail": "未设置服务器URL，请检查配置后再尝试上传。"
+                }
+            
+            # 添加检查和调试日志，确保framework_info被保留
+            latest_result = self.benchmark_manager.latest_test_result
+            logger.info(f"上传前检查latest_result中framework_info存在: {'framework_info' in latest_result}")
+            if 'framework_info' in latest_result:
+                logger.info(f"上传前latest_result中的framework_info: {latest_result['framework_info']}")
+            
+            # 检查是否已经有result_path
+            if "result_path" not in latest_result or not latest_result["result_path"]:
+                logger.warning("结果中没有result_path，需要先保存结果文件")
+                # 保存结果，获取result_path
+                from src.benchmark.utils.result_handler import result_handler
+                result_path = result_handler.save_result(latest_result)
+                if result_path:
+                    latest_result["result_path"] = result_path
+                    logger.info(f"创建了新的原始结果文件: {result_path}")
+            else:
+                logger.info(f"使用已有的原始结果文件: {latest_result['result_path']}")
+            
+            # 准备元数据
+            metadata = {
+                "device_id": self.benchmark_manager.device_id,
+                "nickname": self.benchmark_manager.nickname,
+                "submitter": self.benchmark_manager.nickname,
+                "model_name": self.benchmark_manager.latest_test_result.get("model_name", "未知模型"),
+                "hardware_info": self.benchmark_manager.latest_test_result.get("hardware_info", {}),
+                "notes": f"从客户端上传的测试结果 - {datetime.now().isoformat()}"
+            }
+            
+            # 构建API URL
+            api_url = f"{server_url}/api/v1/benchmark-result/upload"
+            
+            # 加密并上传结果
+            from src.benchmark.utils.result_handler import result_handler
+            upload_result = result_handler.upload_encrypted_result(
+                latest_result,
+                api_key=api_key,
+                server_url=api_url,
+                metadata=metadata
+            )
+            
+            if upload_result.get("status") == "success":
+                logger.info(f"测试结果上传成功，ID: {upload_result.get('upload_id', 'unknown')}")
+                return {
+                    "status": "success",
+                    "message": "测试结果上传成功",
+                    "upload_id": upload_result.get('upload_id', 'unknown'),
+                    "ui_message": "上传成功",
+                    "ui_detail": f"测试结果已成功上传到服务器。\n上传ID: {upload_result.get('upload_id', '未知')}"
+                }
+            else:
+                error_msg = upload_result.get("message", "未知错误")
+                logger.error(f"上传测试结果失败: {error_msg}")
+                return {
+                    "status": "error",
+                    "message": f"上传测试结果失败: {error_msg}",
+                    "error": error_msg,
+                    "ui_message": "上传失败",
+                    "ui_detail": f"上传测试结果失败: {error_msg}\n\n您可以稍后重试上传。",
+                    "can_retry": True
+                }
+        except Exception as e:
+            logger.error(f"加密并上传测试结果失败: {str(e)}")
+            return {
+                "status": "error", 
+                "message": f"加密并上传测试结果失败: {str(e)}",
+                "ui_message": "上传失败",
+                "ui_detail": f"加密并上传测试结果失败: {str(e)}\n\n请检查日志获取详细信息。",
+                "can_retry": True
+            }
 
     def get_offline_package(self, dataset_id: int, callback=None):
         """

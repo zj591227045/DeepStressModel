@@ -57,6 +57,11 @@ class ResultHandler:
             str: 结果文件路径
         """
         try:
+            # 添加调试日志，检查输入的framework_info
+            logger.info(f"[save_result] 开始保存测试结果，framework_info存在: {'framework_info' in result}")
+            if 'framework_info' in result:
+                logger.info(f"[save_result] 输入的framework_info: {result['framework_info']}")
+            
             # 生成结果文件名
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
             result_file = f"benchmark_result_{timestamp}.json"
@@ -106,7 +111,13 @@ class ResultHandler:
             
             # 保存结果
             with open(result_path, 'w', encoding='utf-8') as f:
+                # 保存前再次检查framework_info
+                logger.info(f"[save_result] 保存前检查，framework_info存在: {'framework_info' in result}")
+                if 'framework_info' in result:
+                    logger.info(f"[save_result] 保存前的framework_info: {result['framework_info']}")
+                
                 json.dump(result, f, ensure_ascii=False, indent=2)
+                logger.info(f"[save_result] 已写入JSON文件")
             
             logger.info(f"测试结果已保存到: {result_path}")
             return result_path
@@ -181,22 +192,70 @@ class ResultHandler:
             Tuple[str, str]: 原始结果文件路径和加密结果文件路径
         """
         try:
-            # 先保存原始结果
-            original_path = self.save_result(result)
+            # 检查framework_info
+            logger.info(f"[save_encrypted_result] 开始加密保存，framework_info存在: {'framework_info' in result}")
+            if 'framework_info' in result:
+                logger.info(f"[save_encrypted_result] 加密前framework_info: {result['framework_info']}")
+            else:
+                logger.warning("[save_encrypted_result] 加密前结果中不存在framework_info")
+            
+            # 获取原始结果文件路径，如果存在
+            original_path = result.get("result_path", "")
+            
+            # 如果原始结果已经存在，则使用它；否则创建一个新的
+            if original_path and os.path.exists(original_path):
+                logger.info(f"[save_encrypted_result] 使用已存在的原始结果文件: {original_path}")
+                # 文件已存在，可能需要更新framework_info
+                if 'framework_info' in result and result['framework_info']:
+                    # 使用update_result方法更新文件，而不是重新创建
+                    self.update_result(original_path, {"framework_info": result['framework_info']})
+                    logger.info(f"[save_encrypted_result] 更新了原始文件中的framework_info")
+                
+                # 读取更新后的文件内容
+                try:
+                    with open(original_path, 'r', encoding='utf-8') as f:
+                        result_to_encrypt = json.load(f)
+                        logger.info(f"[save_encrypted_result] 读取现有文件成功，framework_info存在: {'framework_info' in result_to_encrypt}")
+                except Exception as e:
+                    logger.error(f"[save_encrypted_result] 读取原始文件时出错: {str(e)}")
+                    # 回退到使用内存中的结果
+                    result_to_encrypt = result
+            else:
+                # 如果没有原始文件，或原始文件不存在，则创建一个新的
+                logger.info("[save_encrypted_result] 原始结果文件不存在，将创建新文件")
+                original_path = self.save_result(result)
+                # 使用刚创建的结果进行加密
+                result_to_encrypt = result
             
             # 生成加密结果文件名
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
             encrypted_file = f"encrypted_benchmark_result_{timestamp}.json"
             encrypted_path = os.path.join(self.result_dir, encrypted_file)
             
-            # 初始化加密器
-            encryptor = BenchmarkEncryption()
-            
-            # 加密并保存结果
-            encryptor.encrypt_and_save(result, encrypted_path, api_key)
-            
-            logger.info(f"加密结果已保存到: {encrypted_path}")
-            return original_path, encrypted_path
+            try:
+                # 初始化加密器
+                logger.debug("开始初始化加密器...")
+                encryptor = BenchmarkEncryption()
+                
+                # 确保加密器初始化成功
+                if not encryptor.public_key:
+                    error_msg = getattr(encryptor, 'init_error', {}).get('message', "公钥未初始化")
+                    logger.error(f"加密失败: {error_msg}")
+                    return original_path, ""
+                
+                # 加密并保存结果
+                logger.debug("开始加密测试结果...")
+                encrypted_path_result = encryptor.encrypt_and_save(result_to_encrypt, encrypted_path, api_key)
+                
+                if not encrypted_path_result:
+                    logger.error("加密保存失败，返回值为空")
+                    return original_path, ""
+                    
+                logger.info(f"加密结果已保存到: {encrypted_path}")
+                return original_path, encrypted_path
+            except Exception as e:
+                logger.error(f"加密过程中出错: {str(e)}")
+                return original_path, ""
         except Exception as e:
             logger.error(f"保存加密结果失败: {str(e)}")
             return "", ""

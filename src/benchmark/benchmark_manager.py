@@ -57,6 +57,9 @@ class BenchmarkManager:
         self.progress_callback = None
         self.dataset_updated = False  # 初始化数据集更新标志为False
         
+        # 新增：存储最新测试结果的变量
+        self.latest_test_result = None
+        
         # 设置API相关信息
         self.server_url = self.config.get("benchmark.server_url", "http://localhost:8083")
         self.api_key = self.config.get("benchmark.api_key", "")
@@ -94,7 +97,8 @@ class BenchmarkManager:
         
         # 导入数据加密工具
         try:
-            from src.data.crypto_utils import DataEncryptor, SignatureManager
+            from src.benchmark.crypto.data_encryptor import DataEncryptor
+            from src.benchmark.crypto.signature_manager import SignatureManager
             self.data_encryptor = DataEncryptor()
             self.signature_manager = SignatureManager()
         except ImportError:
@@ -574,7 +578,22 @@ class BenchmarkManager:
             
             # 获取数据集信息
             dataset_version = "unknown"
-            if isinstance(self.dataset_info, dict):
+            
+            # 首先尝试从dataset_manager获取版本信息
+            from src.data.dataset_manager import dataset_manager
+            offline_info = dataset_manager.get_offline_dataset_info()
+            if offline_info and isinstance(offline_info, dict):
+                # 检查元数据中的版本信息
+                if "metadata" in offline_info and "dataset_version" in offline_info["metadata"]:
+                    dataset_version = offline_info["metadata"]["dataset_version"]
+                    logger.info(f"从离线数据集元数据获取版本: {dataset_version}")
+                # 也尝试从直接属性中获取版本
+                elif "版本" in offline_info:
+                    dataset_version = offline_info["版本"]
+                    logger.info(f"从离线数据集属性获取版本: {dataset_version}")
+            
+            # 如果离线信息中没有找到版本，尝试从self.dataset_info中获取
+            if dataset_version == "unknown" and isinstance(self.dataset_info, dict):
                 if "version" in self.dataset_info:
                     dataset_version = self.dataset_info["version"]
                 elif "metadata" in self.dataset_info and "version" in self.dataset_info["metadata"]:
@@ -582,7 +601,14 @@ class BenchmarkManager:
             
             # 获取数据集名称
             dataset_name = "标准基准测试"
-            if self.dataset_info and isinstance(self.dataset_info, dict):
+            # 首先尝试从离线数据集信息中获取名称
+            if offline_info and isinstance(offline_info, dict):
+                if "metadata" in offline_info and "dataset_name" in offline_info["metadata"]:
+                    dataset_name = offline_info["metadata"]["dataset_name"]
+                elif "名称" in offline_info:
+                    dataset_name = offline_info["名称"]
+            # 如果离线信息中没有找到名称，尝试从self.dataset_info中获取
+            elif self.dataset_info and isinstance(self.dataset_info, dict):
                 if "名称" in self.dataset_info:
                     dataset_name = self.dataset_info["名称"]
                 elif "metadata" in self.dataset_info and "dataset_name" in self.dataset_info["metadata"]:
@@ -684,19 +710,26 @@ class BenchmarkManager:
             # 收集系统信息
             system_info = collect_system_info()
             
+            # 获取硬件信息，以便获取硬件ID
+            hardware_info = get_hardware_info()
+            
             # 构建结果
             result = {
                 "status": "success",
+                "session_id": session_id,
                 "dataset_version": dataset_version,
                 "start_time": start_time,
                 "end_time": end_time,
                 "total_time": total_time,
+                "total_duration": duration,
+                "avg_tps": avg_token_tps,
+                "device_id": hardware_info.get("id", self.device_id),  # 使用hardware_info的id值，如果不存在则回退到self.device_id
+                "nickname": self.nickname,
                 "total_tests": total_tests,
                 "successful_tests": successful_tests,
                 "success_rate": success_rate,
                 "avg_latency": avg_latency,
                 "avg_throughput": avg_throughput,
-                "tps": tps,
                 "total_input_chars": total_input_chars,
                 "total_output_chars": total_output_chars,
                 "total_chars": total_chars,
@@ -705,13 +738,21 @@ class BenchmarkManager:
                 "datasets": datasets,
                 "metrics": metrics,
                 "system_info": system_info,
-                "hardware_info": get_hardware_info(),
-                "total_duration": duration,
-                "avg_tps": avg_token_tps,
-                "session_id": session_id,
-                "device_id": self.device_id,
-                "nickname": self.nickname
+                "hardware_info": hardware_info,
+                # 添加模型信息
+                "model_info": {
+                    "name": model,
+                    "precision": precision,
+                    "params": model_params.get("params") if model_params else None,
+                    "quantization": model_params.get("quantization") if model_params else None,
+                    "api_url": api_url
+                },
+                # 框架信息初始值设为None而不是空字典，以便UI层能检测到它是空的并设置正确的值
+                "framework_info": None
             }
+            
+            # 添加调试日志
+            logger.info(f"构建结果完成，framework_info初始值设为None")
             
             # 通知进度跟踪器测试完成
             progress_tracker.complete_test(test_results)
@@ -721,7 +762,14 @@ class BenchmarkManager:
             if result_path:
                 result["result_path"] = result_path
             
-            # 如果需要，加密并上传结果
+            # 新增：保存测试结果到内存中
+            self.latest_test_result = result.copy()
+            
+            # 新增：添加提示用户是否上传测试记录的标志
+            result["show_upload_dialog"] = True
+            result["test_mode"] = test_mode  # 添加测试模式标志
+            
+            # 如果需要，加密并上传结果（保留原有的自动上传选项）
             if encrypt_and_upload and self.api_key:
                 encryption_result = self.encrypt_and_upload_result(result)
                 result["encryption_result"] = encryption_result
@@ -865,9 +913,14 @@ class BenchmarkManager:
             # 更新API密钥
             self.api_key = api_key
             self.api_client.api_key = api_key
-            self.data_encryptor.api_key = api_key
+            
+            # 更新数据加密器（如果存在）
+            if self.data_encryptor is not None:
+                self.data_encryptor.api_key = api_key
             
             # 更新签名管理器
+            if self.signature_manager is not None:
+                self.signature_manager = SignatureManager(api_key)
             self.api_client.signature_manager = SignatureManager(api_key)
             
             # 如果提供了设备ID，也更新
@@ -1021,4 +1074,116 @@ class BenchmarkManager:
         
         except Exception as e:
             logger.error(f"加密和上传结果时发生错误: {str(e)}")
-            return {"status": "error", "message": str(e)} 
+            return {"status": "error", "message": str(e)}
+    
+    async def handle_result_upload(self, retry=False):
+        """
+        处理测试结果上传
+        
+        Args:
+            retry: 是否是重试上传
+            
+        Returns:
+            Dict: 处理结果
+        """
+        if not self.latest_test_result:
+            return {"status": "error", "message": "没有可上传的测试结果"}
+        
+        result = self.latest_test_result
+        test_mode = self.test_mode  # 使用类的测试模式
+        
+        try:
+            # 准备元数据
+            metadata = {
+                "device_id": self.device_id,
+                "nickname": self.nickname,
+                "submitter": self.nickname,
+                "model_name": result.get("model_name", "未知模型"),
+                "hardware_info": result.get("hardware_info", {}),
+                "notes": f"从客户端上传的测试结果 - {datetime.now().isoformat()}"
+            }
+            
+            # 根据测试模式处理
+            if test_mode == 0:  # 联网模式
+                # 检查API密钥
+                if not self.api_key:
+                    return {
+                        "status": "error", 
+                        "message": "缺少API密钥，无法上传测试结果",
+                        "ui_message": "上传失败",
+                        "ui_detail": "未设置API密钥，请先设置API密钥后再尝试上传。"
+                    }
+                
+                # 检查服务器URL
+                if not self.server_url:
+                    return {
+                        "status": "error", 
+                        "message": "缺少服务器URL，无法上传测试结果",
+                        "ui_message": "上传失败",
+                        "ui_detail": "未设置服务器URL，请检查配置后再尝试上传。"
+                    }
+                
+                # 使用benchmark_api_usage.md中的API上传
+                server_url = f"{self.server_url}/api/v1/benchmark-result/upload"
+                
+                # 加密并上传结果
+                upload_result = self.encrypt_and_upload_result(
+                    result,
+                    api_key=self.api_key,
+                    server_url=server_url,
+                    save_encrypted=True,
+                    metadata=metadata
+                )
+                
+                if upload_result.get("status") == "success":
+                    # 上传成功
+                    return {
+                        "status": "success",
+                        "message": "测试结果上传成功",
+                        "upload_id": upload_result.get("upload_result", {}).get("upload_id", "unknown"),
+                        "ui_message": "上传成功",
+                        "ui_detail": f"测试结果已成功上传到服务器。\n上传ID: {upload_result.get('upload_result', {}).get('upload_id', '未知')}"
+                    }
+                else:
+                    # 上传失败
+                    error_msg = upload_result.get("message", "未知错误")
+                    return {
+                        "status": "error",
+                        "message": f"测试结果上传失败: {error_msg}",
+                        "error": error_msg,
+                        "can_retry": True,
+                        "ui_message": "上传失败",
+                        "ui_detail": f"测试结果上传失败: {error_msg}\n\n您可以稍后重试上传。"
+                    }
+            
+            else:  # 离线模式
+                # 仅加密结果并保存到本地
+                original_path, encrypted_path = result_handler.save_encrypted_result(result, self.api_key)
+                
+                if encrypted_path:
+                    return {
+                        "status": "success",
+                        "message": "测试结果加密成功",
+                        "encrypted_path": encrypted_path,
+                        "original_path": original_path,
+                        "ui_message": "加密成功",
+                        "ui_detail": f"测试结果已加密并保存到本地:\n{encrypted_path}\n\n点击确定可以打开保存位置。"
+                    }
+                else:
+                    return {
+                        "status": "error",
+                        "message": "测试结果加密失败",
+                        "ui_message": "加密失败",
+                        "ui_detail": "测试结果加密失败，请检查加密配置后重试。"
+                    }
+                    
+        except Exception as e:
+            logger.error(f"处理测试结果上传时发生错误: {str(e)}")
+            logger.error(traceback.format_exc())
+            return {
+                "status": "error",
+                "message": f"处理测试结果上传时发生错误: {str(e)}",
+                "can_retry": True,
+                "ui_message": "上传失败",
+                "ui_detail": f"处理测试结果上传时发生错误: {str(e)}\n\n您可以稍后重试上传。"
+            } 

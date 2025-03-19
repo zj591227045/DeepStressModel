@@ -160,16 +160,44 @@ class BenchmarkEncryption:
         # 在初始化时获取公钥
         self.public_key = None
         try:
+            # 添加额外的调试信息
+            logger.debug("开始加载公钥...")
+            
             # 使用Cython编译的模块获取公钥
             self.public_key = get_public_key()
-            logger.debug("公钥加载成功")
+            
+            # 验证公钥格式
+            if self.public_key and isinstance(self.public_key, bytes):
+                # 尝试解析公钥以验证其有效性
+                try:
+                    from cryptography.hazmat.primitives.serialization import load_pem_public_key
+                    from cryptography.hazmat.backends import default_backend
+                    
+                    _ = load_pem_public_key(self.public_key, backend=default_backend())
+                    logger.debug("公钥加载成功且格式有效")
+                except Exception as parse_error:
+                    logger.error(f"公钥格式无效: {str(parse_error)}")
+                    # 不抛出异常，而是设置错误状态
+                    self.public_key = None
+                    self.init_error = {
+                        "code": ERRORS["PUBLIC_KEY_ERROR"]["code"],
+                        "message": f"公钥格式无效: {str(parse_error)}"
+                    }
+            else:
+                logger.error(f"公钥格式错误或为空: {type(self.public_key)}")
+                self.public_key = None
+                self.init_error = {
+                    "code": ERRORS["PUBLIC_KEY_ERROR"]["code"],
+                    "message": "公钥格式错误或为空"
+                }
         except Exception as e:
             logger.error(f"公钥加载失败: {str(e)}")
-            raise EncryptionError(
-                ERRORS["PUBLIC_KEY_ERROR"]["code"],
-                ERRORS["PUBLIC_KEY_ERROR"]["message"],
-                {"details": str(e)}
-            )
+            # 不抛出异常，而是设置错误状态
+            self.public_key = None
+            self.init_error = {
+                "code": ERRORS["PUBLIC_KEY_ERROR"]["code"],
+                "message": f"公钥加载失败: {str(e)}"
+            }
     
     def _generate_api_key_hash(self, session_key: bytes, api_key: str) -> bytes:
         """
@@ -219,6 +247,17 @@ class BenchmarkEncryption:
             Dict[str, Any]: 加密后的数据包
         """
         try:
+            # 检查初始化是否成功
+            if not self.public_key:
+                error_msg = getattr(self, 'init_error', {}).get('message', "公钥未初始化")
+                logger.error(f"加密失败: {error_msg}")
+                return {
+                    "status": "error",
+                    "message": error_msg,
+                    "ui_message": "加密失败",
+                    "ui_detail": f"无法加密数据: {error_msg}\n\n请检查应用程序安装是否完整。"
+                }
+            
             # 验证输入数据
             if not isinstance(log_data, dict):
                 raise ValueError("测试数据必须是字典类型")
@@ -300,11 +339,22 @@ class BenchmarkEncryption:
             api_key: API密钥
             
         Returns:
-            str: 保存的文件路径
+            str: 保存的文件路径，如果失败则返回空字符串
         """
         try:
             # 加密测试记录
             encrypted_package = self.encrypt_benchmark_log(log_data, api_key)
+            
+            # 检查加密是否成功
+            if encrypted_package.get("status") == "error":
+                logger.error(f"加密失败: {encrypted_package.get('message', '未知错误')}")
+                return ""
+            
+            # 确保输出目录存在
+            output_dir = os.path.dirname(output_path)
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir, exist_ok=True)
+                logger.debug(f"创建输出目录: {output_dir}")
             
             # 将加密数据包保存到文件
             with open(output_path, 'w', encoding='utf-8') as f:
@@ -312,13 +362,15 @@ class BenchmarkEncryption:
             
             logger.info(f"加密数据已保存到: {output_path}")
             return output_path
+        except EncryptionError as e:
+            # 处理已知的加密错误
+            logger.error(f"加密错误: [{e.code}] {e.message}")
+            return ""
         except Exception as e:
+            # 处理其他未预期的错误
             logger.error(f"保存加密数据失败: {str(e)}")
-            raise EncryptionError(
-                ERRORS["ENCRYPTION_FAILED"]["code"],
-                ERRORS["ENCRYPTION_FAILED"]["message"],
-                {"details": str(e)}
-            )
+            # 不再抛出异常，而是返回空字符串表示失败
+            return ""
     
     def encrypt_and_upload(self, log_data: Dict[str, Any], api_key: str, 
                           server_url: str, metadata: Dict[str, Any] = None) -> Dict[str, Any]:

@@ -92,7 +92,7 @@ class GPUMonitorWidget(QGroupBox):
             self._update_server_config)
         self._monitor_initialized = False
         self.current_gpu_index = 0  # 当前选中的GPU索引
-        self.display_mode = "single"  # 显示模式：single或multi
+        self.display_mode = "multi"  # 显示模式：默认为多GPU模式
         self.gpu_cards = []  # 存储GPU卡片组件
         self.init_ui()
         self.update_ui_text()
@@ -348,32 +348,29 @@ class GPUMonitorWidget(QGroupBox):
 
         self.setLayout(main_layout)
 
-        # 默认显示单GPU模式
-        self.stacked_layout.setCurrentIndex(0)
+        # 默认显示多GPU模式
+        self.stacked_layout.setCurrentIndex(1)
         self.gpu_selector_label.setVisible(True)
         self.gpu_selector.setVisible(True)
 
     def update_ui_text(self):
         """更新UI文本"""
-        # 设置组标题
         self.setTitle(self.tr('gpu_monitor'))
-
+        
         # 服务器选择区域
-        self.server_label.setText(self.tr('select_server'))
+        self.server_label.setText(self.tr('server'))
         self.refresh_button.setText(self.tr('refresh'))
         self.add_button.setText(self.tr('add'))
 
-        # 显示模式区域
+        # 显示模式切换区域
         self.mode_label.setText(self.tr('display_mode'))
-
-        # 更新显示模式下拉框内容
-        current_mode_index = self.mode_combo.currentIndex()
-        self.mode_combo.setItemText(0, self.tr('single_gpu'))
-        self.mode_combo.setItemText(1, self.tr('multi_gpu'))
-        if current_mode_index >= 0:
-            self.mode_combo.setCurrentIndex(current_mode_index)
-
-        # GPU选择区域
+        self.mode_combo.setItemText(0, self.tr('single_gpu_mode'))
+        self.mode_combo.setItemText(1, self.tr('multi_gpu_mode'))
+        
+        # 设置默认选择多GPU模式
+        if self.mode_combo.currentIndex() == 0 and self.display_mode == "multi":
+            self.mode_combo.setCurrentIndex(1)
+        
         self.gpu_selector_label.setText(self.tr('select_gpu'))
 
         # GPU信息组

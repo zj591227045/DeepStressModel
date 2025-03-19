@@ -148,6 +148,20 @@ class DatabaseManager:
                 )
             ''')
             
+            # 创建跑分设置表
+            self.cursor.execute('''
+                CREATE TABLE IF NOT EXISTS benchmark_settings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    device_id TEXT UNIQUE NOT NULL,
+                    api_key TEXT,
+                    device_name TEXT NOT NULL,
+                    is_enabled BOOLEAN DEFAULT 1,
+                    mode INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            
             # 创建数据集表
             self.cursor.execute('''
                 CREATE TABLE IF NOT EXISTS datasets (
@@ -748,6 +762,64 @@ class DatabaseManager:
             return True
         except Exception as e:
             logger.error(f"保存GPU统计数据失败: {e}")
+            return False
+
+    def get_benchmark_settings(self) -> Dict:
+        """获取跑分设置"""
+        try:
+            self.cursor.execute("SELECT * FROM benchmark_settings ORDER BY updated_at DESC LIMIT 1")
+            row = self.cursor.fetchone()
+            if row:
+                return dict(row)
+            return {}
+        except Exception as e:
+            logger.error(f"获取跑分设置失败: {e}")
+            return {}
+
+    def save_benchmark_settings(self, settings: Dict) -> bool:
+        """保存跑分设置
+        
+        Args:
+            settings: 包含device_id, api_key, device_name, is_enabled, mode的字典
+        """
+        try:
+            # 检查是否已存在设置
+            self.cursor.execute("SELECT id FROM benchmark_settings WHERE device_id = ?", (settings["device_id"],))
+            row = self.cursor.fetchone()
+            
+            if row:
+                # 更新现有设置
+                self.cursor.execute('''
+                    UPDATE benchmark_settings 
+                    SET api_key = ?, device_name = ?, is_enabled = ?, mode = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE device_id = ?
+                ''', (
+                    settings.get("api_key", ""),
+                    settings.get("device_name", "未命名设备"),
+                    settings.get("is_enabled", True),
+                    settings.get("mode", 0),
+                    settings["device_id"]
+                ))
+            else:
+                # 插入新设置
+                self.cursor.execute('''
+                    INSERT INTO benchmark_settings 
+                    (device_id, api_key, device_name, is_enabled, mode)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (
+                    settings["device_id"],
+                    settings.get("api_key", ""),
+                    settings.get("device_name", "未命名设备"),
+                    settings.get("is_enabled", True),
+                    settings.get("mode", 0)
+                ))
+            
+            self.conn.commit()
+            logger.info("跑分设置已保存")
+            return True
+        except Exception as e:
+            logger.error(f"保存跑分设置失败: {e}")
+            self.conn.rollback()
             return False
 
 # 创建全局数据库管理器实例

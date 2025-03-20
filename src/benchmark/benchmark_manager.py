@@ -753,7 +753,8 @@ class BenchmarkManager:
                     "total": len(test_results),
                     "success_rate": success_rate,
                     "avg_response_time": avg_latency,  # 使用直接计算的avg_latency而非metrics["latency"]
-                    "avg_gen_speed": avg_throughput,  # 使用直接计算的avg_throughput而非metrics["throughput"]
+                    "avg_gen_speed": (total_chars / total_time / concurrency) if total_time > 0 else 0,  # 真正的字符生成速度：总字符数/(总时间*并发数)
+                    "avg_throughput": avg_throughput,  # 保留原来的吞吐量指标（每秒请求数）
                     "total_time": duration,  # 总用时
                     "total_tokens": total_tokens,  # 总token数
                     "total_bytes": total_bytes,  # 总字节数
@@ -761,6 +762,12 @@ class BenchmarkManager:
                     "input_tps": input_token_tps,  # 添加输入TPS
                     "output_tps": output_token_tps,  # 添加输出TPS
                     "combined_tps": combined_token_tps,  # 添加综合TPS
+                    
+                    # 添加考虑并发数的TPS值
+                    "avg_tps_per_instance": combined_token_tps / concurrency if concurrency > 0 else 0,  # 平均每个实例的TPS (综合)
+                    "input_tps_per_instance": input_token_tps / concurrency if concurrency > 0 else 0,  # 平均每个实例的输入TPS
+                    "output_tps_per_instance": output_token_tps / concurrency if concurrency > 0 else 0,  # 平均每个实例的输出TPS
+                    
                     "failed_count": failed_count,  # 失败任务总数（含超时）
                     "timeout_count": timeout_count,  # 超时任务数量 
                     "error_count": error_count,  # 错误任务数量
@@ -787,6 +794,7 @@ class BenchmarkManager:
                 "success_rate": success_rate,
                 "avg_latency": avg_latency,
                 "avg_throughput": avg_throughput,
+                "avg_gen_speed": (total_chars / total_time / concurrency) if total_time > 0 else 0,  # 真正的字符生成速度，考虑并发数
                 "tps": tps,
                 "total_input_chars": total_input_chars,
                 "total_output_chars": total_output_chars,

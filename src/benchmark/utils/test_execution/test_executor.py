@@ -395,6 +395,9 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
     
     # 在开始执行测试前先更新一次进度为1%，确保显示"测试进行中"状态
     if progress_callback:
+        # 获取当前并发数
+        current_concurrency = config.get("concurrency", 1)
+        
         progress_callback({
             "progress": 1,  # 设为1%而不是0%，确保显示"测试进行中"
             "current_item": 0,
@@ -404,7 +407,9 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
             "total_time": 0,
             "total_tokens": 0,
             "total_bytes": 0,
-            "token_throughput": 0
+            "total_chars": 0,
+            "token_throughput": 0,
+            "concurrency": current_concurrency  # 添加并发数信息
         })
 
     # 记录开始时间
@@ -470,30 +475,23 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
                 successful_token_throughputs = [r.get("token_throughput", 0) for r in partial_results if r.get("status") == "success"]
                 avg_token_throughput = sum(successful_token_throughputs) / len(successful_token_throughputs) if successful_token_throughputs else 0
                 
-                # 总tokens - 只考虑成功的请求
+                # 计算总tokens - 只考虑成功的请求
                 total_tokens = sum(r.get("tokens", 0) for r in partial_results if r.get("status") == "success")
                 
                 # 添加详细日志
                 elapsed = time.time() - start_time
-                logger.debug(f"累计平均: 延迟={avg_latency:.2f}s, 吞吐量={avg_throughput:.2f}字符/s, TPS={avg_token_throughput:.2f}")
-                logger.debug(f"总计: 字符={total_chars}, tokens={total_tokens}, 耗时={elapsed:.2f}s")
                 
-                # 记录成功率详细信息
-                logger.debug(f"当前成功率: {success_rate*100:.1f}% ({success_count}/{len(partial_results)})")
-                
-                # 记录每个测试项的延迟和吞吐量范围
-                if partial_results:
-                    min_latency = min(r.get("latency", float('inf')) for r in partial_results)
-                    max_latency = max(r.get("latency", 0) for r in partial_results)
-                    min_tps = min(r.get("token_throughput", float('inf')) for r in partial_results)
-                    max_tps = max(r.get("token_throughput", 0) for r in partial_results)
-                    logger.debug(f"延迟范围: {min_latency:.2f}s - {max_latency:.2f}s, TPS范围: {min_tps:.2f} - {max_tps:.2f}")
-                
-                # 获取状态统计信息
+                # 统计状态信息
                 status_counts = {}
                 for r in partial_results:
                     status = r.get("status", "unknown")
                     status_counts[status] = status_counts.get(status, 0) + 1
+                
+                # 添加日志
+                logger.debug(f"进度更新详情: 成功率={success_rate*100:.1f}%, 平均延迟={avg_latency:.2f}s, 平均吞吐量={avg_throughput:.2f}字符/s")
+                
+                # 获取并发数
+                current_concurrency = config.get("concurrency", 1)
                 
                 # 更新进度
                 progress_callback({
@@ -508,7 +506,8 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
                     "total_chars": total_chars,
                     "token_throughput": avg_token_throughput,
                     "success_rate": success_rate,
-                    "status_counts": status_counts  # 添加状态统计信息
+                    "status_counts": status_counts,  # 添加状态统计信息
+                    "concurrency": current_concurrency  # 添加并发数信息
                 })
 
     try:
@@ -582,40 +581,40 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
         successful_throughputs = [r.get("throughput", 0) for r in valid_results if r.get("status") == "success"]
         avg_throughput = sum(successful_throughputs) / len(successful_throughputs) if successful_throughputs else 0
         
-        # 计算平均token吞吐量 - 只考虑成功的请求
-        successful_token_throughputs = [r.get("token_throughput", 0) for r in valid_results if r.get("status") == "success"]
-        avg_token_throughput = sum(successful_token_throughputs) / len(successful_token_throughputs) if successful_token_throughputs else 0
-
-        # 总tokens - 只计算成功的请求
-        total_tokens = sum(r.get("tokens", 0) for r in valid_results if r.get("status") == "success")
+        # 计算基于token的吞吐量 - 只考虑成功的请求
+        token_throughputs = [r.get("token_throughput", 0) for r in valid_results if r.get("status") == "success"]
+        avg_token_throughput = sum(token_throughputs) / len(token_throughputs) if token_throughputs else 0
         
-        # 获取状态统计信息
-        status_counts = {}
+        # 获取并发数
+        current_concurrency = config.get("concurrency", 1)
+        
+        # 计算测试耗时
+        end_time = time.time()
+        total_time = end_time - start_time
+        
+        # 更新每个结果以包含并发数信息
         for r in valid_results:
-            status = r.get("status", "unknown")
-            status_counts[status] = status_counts.get(status, 0) + 1
+            r["concurrency"] = current_concurrency
         
-        # 添加详细日志
-        elapsed = time.time() - start_time
-        logger.info(f"测试完成: 共执行 {completed_count}/{total_items} 个任务, 成功率 {success_rate*100:.1f}%, 成功 {success_count}, 失败 {failed_count} (包含超时)")
-        logger.info(f"平均延迟: {avg_latency:.2f}s, 吞吐量: {avg_throughput:.2f}字符/s, TPS: {avg_token_throughput:.2f}")
-        logger.info(f"总字符数: {total_chars}, 总tokens: {total_tokens}, 总耗时: {elapsed:.2f}s")
-        logger.info(f"状态统计: {status_counts}")
-        
-        # 发送最终进度更新 (100%)
+        # 更新进度
         progress_callback({
             "progress": 100,
             "current_item": completed_count,
             "total_items": total_items,
             "latency": avg_latency,
             "throughput": avg_throughput,
-            "total_time": elapsed,
-            "total_tokens": total_tokens,
-            "total_bytes": total_input_chars + total_output_chars,
-            "total_chars": total_chars,
             "token_throughput": avg_token_throughput,
+            "total_time": total_time,
+            "total_tokens": sum(r.get("tokens", 0) for r in valid_results),
+            "total_bytes": total_chars,
+            "total_chars": total_chars,
             "success_rate": success_rate,
-            "status_counts": status_counts
+            "status_counts": {
+                "success": success_count,
+                "error": sum(1 for r in valid_results if r.get("status") == "error"),
+                "timeout": sum(1 for r in valid_results if r.get("status") == "timeout")
+            },
+            "concurrency": current_concurrency  # 添加并发数信息
         })
     
     return valid_results

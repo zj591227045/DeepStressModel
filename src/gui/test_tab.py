@@ -582,6 +582,8 @@ class TestTab(QWidget):
             
             # 初始化每个数据集的显示状态
             for dataset_name, dataset_stats in records["datasets"].items():
+                # 确保初始状态也正确显示并发数
+                dataset_stats["avg_generation_speed"] = 0  # 初始速度为0
                 self.info_widget.update_dataset_info(
                     dataset_name, dataset_stats)
             
@@ -648,6 +650,10 @@ class TestTab(QWidget):
                 # 只在每10个任务完成时同步一次记录
                 if completed % 10 == 0:
                     self._sync_test_records()
+                
+                # 每次进度更新时，实时更新数据集信息显示
+                for dataset_name, dataset_stats in current_records["datasets"].items():
+                    self.info_widget.update_dataset_info(dataset_name, dataset_stats)
             
             # 更新详细信息
             detail_text = ""

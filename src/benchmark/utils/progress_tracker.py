@@ -64,6 +64,7 @@ class ProgressTracker:
             "total_items": 0,
             "latency": 0,
             "throughput": 0,
+            "concurrency": 1,  # 添加默认并发数
             "status": "准备测试中..."
         })
     
@@ -116,33 +117,52 @@ class ProgressTracker:
             
             # 获取总字符数，确保其正确传递
             total_bytes = progress_info.get("total_bytes", 0)
-            total_chars = progress_info.get("total_chars", total_bytes)  # 优先使用total_chars，如果没有则使用total_bytes
+            total_chars = progress_info.get("total_chars", total_bytes)
             
-            logger.debug(f"总字符数: {total_chars}, 总字节数: {total_bytes}")
-
-            # 获取成功率
-            success_rate = progress_info.get("success_rate", 1.0)
+            # 获取并发数
+            concurrency = progress_info.get("concurrency", 1)
             
-            # 获取状态计数信息
+            # 计算真实的字符生成速度和token生成速度
+            avg_gen_speed = 0
+            if total_duration > 0:
+                # 使用总字符数除以(总时间*并发数)计算真实的平均生成速度
+                avg_gen_speed = (total_chars / total_duration / concurrency) if total_duration > 0 else 0
+            
+            # 获取状态统计
             status_counts = progress_info.get("status_counts", {})
+            # 计算失败数量
+            failed_count = status_counts.get("error", 0) + status_counts.get("timeout", 0)
             timeout_count = status_counts.get("timeout", 0)
             error_count = status_counts.get("error", 0)
-            failed_count = timeout_count + error_count
             
-            # 添加datasets结构
+            # 添加datasets结构，封装数据集级别的统计信息
             formatted_progress["datasets"] = {
                 dataset_name: {
-                    "completed": progress_info.get("current_item", 0) - failed_count,  # 减去失败任务数
-                    "total": progress_info.get("total_items", 0),
-                    "success_rate": success_rate,
+                    "completed": completed,
+                    "total": total,
+                    "progress": progress_percent,
+                    "success_rate": progress_info.get("success_rate", 1.0),
                     "avg_response_time": progress_info.get("latency", 0),
-                    "avg_generation_speed": progress_info.get("throughput", 0),  # 字符生成速度
-                    "total_time": total_duration,  # 更新总用时
-                    "total_duration": total_duration,  # 明确添加total_duration字段
-                    "total_tokens": progress_info.get("total_tokens", 0),  # 总token数
-                    "total_chars": total_chars,  # 确保总字符数正确设置
-                    "total_bytes": total_bytes,  # 总字节数
-                    "avg_tps": progress_info.get("token_throughput", progress_info.get("throughput", 0)),  # 使用token吞吐量作为TPS
+                    "avg_generation_speed": progress_info.get("throughput", 0),
+                    "avg_gen_speed": avg_gen_speed,  # 添加真实的字符生成速度
+                    "total_time": total_duration,
+                    "total_duration": total_duration,  # 保持兼容性
+                    "total_tokens": progress_info.get("total_tokens", 0),
+                    "total_chars": total_chars,
+                    "concurrency": concurrency,  # 添加并发数信息
+                    
+                    # 传递TPS相关字段
+                    "tps": progress_info.get("token_throughput", 0),  # 使用token吞吐量作为TPS
+                    "token_throughput": progress_info.get("token_throughput", 0),  # 显式传递token吞吐量
+                    "input_tps": progress_info.get("input_tps", 0),  # 传递输入TPS
+                    "output_tps": progress_info.get("output_tps", 0),  # 传递输出TPS
+                    "avg_tps": progress_info.get("token_throughput", 0),  # 设置avg_tps等同于token吞吐量
+                    
+                    # 添加考虑并发数的TPS值 (每个实例的平均TPS)
+                    "avg_tps_per_instance": progress_info.get("token_throughput", 0) / concurrency if concurrency > 0 else 0,  # 平均每个实例的TPS
+                    "input_tps_per_instance": progress_info.get("input_tps", 0) / concurrency if concurrency > 0 else 0,  # 平均每个实例的输入TPS
+                    "output_tps_per_instance": progress_info.get("output_tps", 0) / concurrency if concurrency > 0 else 0,  # 平均每个实例的输出TPS
+                    
                     "failed_count": failed_count,  # 失败任务总数
                     "timeout_count": timeout_count,  # 超时任务数量 
                     "error_count": error_count,  # 错误任务数量
@@ -152,6 +172,10 @@ class ProgressTracker:
             
             # 记录发送的数据
             logger.debug(f"发送格式化进度数据: {formatted_progress}")
+            # 记录TPS相关的详细日志
+            logger.debug(f"TPS数据 - token_throughput: {progress_info.get('token_throughput', 0)}, "
+                        f"input_tps: {progress_info.get('input_tps', 0)}, "
+                        f"output_tps: {progress_info.get('output_tps', 0)}")
             
             # 调用回调函数
             self.callback(formatted_progress)
@@ -179,13 +203,35 @@ class ProgressTracker:
             if successful_tests > 0:
                 avg_latency = sum(r.get("latency", 0) for r in test_results) / successful_tests
                 avg_throughput = sum(r.get("throughput", 0) for r in test_results) / successful_tests
+                
                 # 计算基于token的平均TPS
                 token_throughputs = [r.get("token_throughput", 0) for r in test_results if r.get("status") == "success"]
                 avg_token_tps = sum(token_throughputs) / len(token_throughputs) if token_throughputs else 0
+                
+                # 计算输入和输出TPS
+                total_input_tokens = sum(r.get("input_tokens", 0) for r in test_results if r.get("status") == "success")
+                total_output_tokens = sum(r.get("output_tokens", 0) for r in test_results if r.get("status") == "success")
+                input_tps = total_input_tokens / total_duration if total_duration > 0 else 0
+                output_tps = total_output_tokens / total_duration if total_duration > 0 else 0
+                
+                # 尝试从第一个测试结果中获取并发数
+                concurrency = 1
+                if test_results and len(test_results) > 0:
+                    concurrency = test_results[0].get("concurrency", 1)
+                
+                # 计算每个实例的平均TPS (考虑并发数)
+                avg_token_tps_per_instance = avg_token_tps / concurrency if concurrency > 0 else 0
+                input_tps_per_instance = input_tps / concurrency if concurrency > 0 else 0
+                output_tps_per_instance = output_tps / concurrency if concurrency > 0 else 0
+                
+                logger.debug(f"TPS计算 - avg_token_tps: {avg_token_tps}, input_tps: {input_tps}, output_tps: {output_tps}")
+                logger.debug(f"每实例TPS计算 - avg_tps_per_instance: {avg_token_tps_per_instance}, input_tps_per_instance: {input_tps_per_instance}, output_tps_per_instance: {output_tps_per_instance}, 并发数: {concurrency}")
             else:
                 avg_latency = 0
                 avg_throughput = 0
                 avg_token_tps = 0
+                input_tps = 0
+                output_tps = 0
                 
             # 统计文本信息
             total_input_chars = sum(len(r.get("input", "")) for r in test_results)
@@ -203,9 +249,16 @@ class ProgressTracker:
                 "latency": avg_latency,
                 "throughput": avg_throughput,
                 "token_throughput": avg_token_tps,
+                "input_tps": input_tps,  # 添加输入TPS
+                "output_tps": output_tps,  # 添加输出TPS
+                "avg_token_tps_per_instance": avg_token_tps_per_instance,  # 添加考虑并发数的平均TPS
+                "input_tps_per_instance": input_tps_per_instance,  # 添加考虑并发数的输入TPS
+                "output_tps_per_instance": output_tps_per_instance,  # 添加考虑并发数的输出TPS
                 "total_time": total_duration,
                 "total_tokens": total_tokens,
                 "total_bytes": total_chars,
+                "total_chars": total_chars,  # 明确添加总字符数
+                "concurrency": concurrency,  # 添加并发数信息
                 "status": "测试完成",
                 "success_rate": success_rate
             })

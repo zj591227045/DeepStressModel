@@ -45,7 +45,7 @@ from src.gui.i18n.language_manager import LanguageManager
 from src.gui.widgets.gpu_monitor import GPUMonitorWidget
 from src.gui.widgets.test_progress import TestProgressWidget  # 导入测试进度组件
 from src.gui.benchmark_history_tab import BenchmarkHistoryTab
-from src.benchmark.integration import benchmark_integration  # 导入跑分模块集成
+from src.benchmark.integration import benchmark_integration  # 导入跑分模块集成实例
 from src.data.db_manager import db_manager  # 导入数据库管理器
 from datetime import datetime
 
@@ -603,7 +603,7 @@ class BenchmarkTab(QWidget):
         self.result_table = QTableWidget()
         self.result_table.setColumnCount(9)
         self.result_table.setHorizontalHeaderLabels([
-            "会话ID", "数据集名称", "成功/总数", "成功率", "平均响应时间", "平均生成速度", "总字符数", "总时间", "平均输出TPS"
+            "会话ID", "数据集名称", "成功/总数", "成功率", "平均响应时间", "平均生成速度", "总字符数", "总时间", "平均每实例TPS"
         ])
         self.result_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         result_layout.addWidget(self.result_table)
@@ -1351,6 +1351,9 @@ class BenchmarkTab(QWidget):
         """
         logger.debug("停止基准测试")
         
+        # 重置结果处理标志
+        self._result_processed = False
+        
         if hasattr(self, 'benchmark_thread') and self.benchmark_thread.isRunning():
             self.benchmark_thread.stop()
             logger.debug("已发送停止信号到测试线程")
@@ -1378,6 +1381,15 @@ class BenchmarkTab(QWidget):
         """处理测试完成"""
         try:
             logger.info("基准测试完成")
+            
+            # 检查结果是否已处理，避免重复处理
+            if self._result_processed:
+                logger.info("测试结果已处理，跳过重复处理")
+                return
+                
+            # 标记结果已处理
+            self._result_processed = True
+            
             logger.info(f"测试结果初始状态 - framework_info存在: {'framework_info' in result}, 值类型: {type(result.get('framework_info', None)).__name__}")
             
             # 获取框架信息
@@ -1472,6 +1484,8 @@ class BenchmarkTab(QWidget):
                 "错误",
                 f"处理测试结果时出错: {str(e)}"
             )
+            # 即使发生错误，也标记为已处理，防止重复触发
+            self._result_processed = True
 
     def save_config(self):
         """
@@ -1484,7 +1498,7 @@ class BenchmarkTab(QWidget):
         # 其他代码保持不变... 
 
     def _open_server_link(self):
-        """打开服务器网站"""
+        """打开排行榜网站"""
         try:
             import webbrowser
             server_url = config.get("benchmark.server_url", "http://localhost:8083")
@@ -1492,10 +1506,10 @@ class BenchmarkTab(QWidget):
             if not server_url.startswith("http://") and not server_url.startswith("https://"):
                 server_url = "http://" + server_url
             webbrowser.open(server_url)
-            logger.info(f"已打开服务器网站: {server_url}")
+            logger.info(f"已打开排行榜网站: {server_url}")
         except Exception as e:
-            logger.error(f"打开服务器网站失败: {str(e)}")
-            QMessageBox.critical(self, "错误", f"打开服务器网站失败: {str(e)}")
+            logger.error(f"打开排行榜网站失败: {str(e)}")
+            QMessageBox.critical(self, "错误", f"打开排行榜网站失败: {str(e)}")
 
     def _show_settings_dialog(self):
         """显示用户配置对话框"""
@@ -1605,8 +1619,8 @@ class BenchmarkTab(QWidget):
         # 更新按钮文本
         self.start_button.setText("开始测试")
         self.stop_button.setText("停止测试")
-        self.settings_button.setText("设置")
-        self.server_link_button.setText("打开服务器")
+        self.settings_button.setText("跑分设置")
+        self.server_link_button.setText("打开排行榜")
         
         # 更新标签文本
         if hasattr(self, 'model_label'):

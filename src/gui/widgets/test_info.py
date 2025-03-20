@@ -132,12 +132,17 @@ class TestInfoWidget(QWidget):
         self.info_table.setItem(
             row, 2, QTableWidgetItem(f"{success_rate:.1f}%"))
 
-        avg_time = stats['total_time'] / \
-            stats['successful'] if stats['successful'] > 0 else 0
+        # 使用安全的方式计算平均响应时间，避免除零错误
+        # 优先使用stats中提供的avg_response_time
+        avg_time = stats.get('avg_response_time', 0)
+        if avg_time == 0 and stats['successful'] > 0:
+            # 如果未提供，则计算，但避免除零
+            avg_time = stats['total_time'] / stats['successful'] if stats['successful'] > 0 else 0
         self.info_table.setItem(row, 3, QTableWidgetItem(f"{avg_time:.1f}s"))
         
-        avg_speed = stats['total_chars'] / \
-            stats['total_time'] if stats['total_time'] > 0 else 0
+        # 使用stats中提供的avg_generation_speed值，而不是自行计算
+        # 这样可以确保考虑了并发数的计算结果
+        avg_speed = stats.get('avg_generation_speed', 0)
         self.info_table.setItem(
             row, 4, QTableWidgetItem(f"{avg_speed:.1f}字/秒"))
         

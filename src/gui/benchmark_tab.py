@@ -147,17 +147,19 @@ class ResultWorker(QThread):
     finished_signal = pyqtSignal(dict)  # 完成信号
     error_signal = pyqtSignal(str)      # 错误信号
     
-    def __init__(self, test_mode, integration):
+    def __init__(self, test_mode, integration, should_upload=False):
         """
         初始化结果处理工作线程
         
         Args:
             test_mode: 测试模式，0=联网模式，1=离线模式
             integration: BenchmarkIntegration实例
+            should_upload: 是否应该上传结果（联网模式下使用）
         """
         super().__init__()
         self.test_mode = test_mode
         self.integration = integration
+        self.should_upload = should_upload
         
     def run(self):
         """运行处理逻辑"""
@@ -172,30 +174,56 @@ class ResultWorker(QThread):
             else:
                 logger.warning("ResultWorker: benchmark_manager.latest_test_result不存在")
             
-            # 执行上传/加密逻辑
             # 模拟初始进度更新
             for i in range(0, 90, 5):
                 self.progress_updated.emit(i)
                 time.sleep(0.05)  # 短暂延迟，使进度显示更平滑
             
-            # 根据模式执行不同操作
-            if self.test_mode == 0:  # 联网模式
-                logger.info("开始加密并上传测试记录")
-                result = self.integration.encrypt_and_upload_result()
-            else:  # 离线模式
-                logger.info("开始加密测试记录")
-                result = self.integration.encrypt_result()
+            # 检查结果中是否已有加密文件路径
+            encrypt_result = {}
+            latest_result = self.integration.benchmark_manager.latest_test_result
+            
+            if "encrypted_path" in latest_result and os.path.exists(latest_result["encrypted_path"]):
+                logger.info(f"ResultWorker: 使用已存在的加密文件: {latest_result['encrypted_path']}")
+                encrypt_result = {
+                    "status": "success",
+                    "message": "使用已存在的加密文件",
+                    "encrypted_path": latest_result["encrypted_path"],
+                    "original_path": latest_result.get("result_path", "")
+                }
+            else:
+                # 需要加密并保存记录
+                logger.info("ResultWorker: 开始加密测试记录")
+                encrypt_result = self.integration.encrypt_result()
+                
+                # 将加密文件路径添加到测试结果中，以便后续使用
+                if encrypt_result.get("status") == "success" and "encrypted_path" in encrypt_result:
+                    self.integration.benchmark_manager.latest_test_result["encrypted_path"] = encrypt_result["encrypted_path"]
+            
+            # 如果是联网模式且用户选择上传
+            if self.test_mode == 0 and self.should_upload:
+                logger.info("ResultWorker: 联网模式，开始上传加密测试记录")
+                upload_result = self.integration.upload_result()
+                
+                # 将上传结果合并到加密结果中
+                if upload_result:
+                    encrypt_result.update({
+                        "upload_status": upload_result.get("status", "error"),
+                        "upload_message": upload_result.get("message", "未知错误"),
+                        "upload_id": upload_result.get("upload_id", ""),
+                        "upload_result": upload_result
+                    })
             
             # 完成进度更新
             self.progress_updated.emit(100)
             
             # 检查加密结果
-            logger.info(f"ResultWorker: 加密结果状态: {result.get('status', '未知')}")
-            if result.get('status') == 'error':
-                logger.error(f"ResultWorker: 加密错误: {result.get('message', '未知错误')}")
+            logger.info(f"ResultWorker: 加密结果状态: {encrypt_result.get('status', '未知')}")
+            if encrypt_result.get('status') == 'error':
+                logger.error(f"ResultWorker: 加密错误: {encrypt_result.get('message', '未知错误')}")
             
             # 发送完成信号
-            self.finished_signal.emit(result)
+            self.finished_signal.emit(encrypt_result)
             
         except Exception as e:
             logger.error(f"处理测试结果时出错: {str(e)}")
@@ -217,7 +245,6 @@ class BenchmarkTab(QWidget):
         # 初始化成员变量
         self.is_testing = False
         self._result_processed = False  # 添加结果处理标志位
-        self.test_mode = 1  # 添加测试模式属性，默认为离线模式
         
         # 获取语言管理器实例
         self.language_manager = LanguageManager()
@@ -230,8 +257,12 @@ class BenchmarkTab(QWidget):
         self.test_task_id = None
         self.dataset_updated = False  # 添加 dataset_updated 属性
         
+        logger.info("开始从数据库加载跑分设置")
+        
         # 从数据库加载设置
         self._load_settings_from_db()
+        
+        logger.info(f"从数据库加载设置完成，当前测试模式: {self.test_mode} ({'联网模式' if self.test_mode == 0 else '离线模式'})")
         
         # 初始化界面
         self.init_ui()
@@ -248,12 +279,12 @@ class BenchmarkTab(QWidget):
         if not device_id:
             # 生成新的设备ID
             device_id = str(uuid.uuid4())
-            # 保存到数据库
+            # 保存到数据库，默认使用联网模式(0)
             db_manager.save_benchmark_settings({
                 "device_id": device_id,
                 "device_name": "未命名设备",
                 "is_enabled": True,
-                "mode": 0
+                "mode": 0  # 默认为联网模式
             })
         
         return device_id
@@ -261,15 +292,29 @@ class BenchmarkTab(QWidget):
     def _load_settings_from_db(self):
         """从数据库加载设置"""
         settings = db_manager.get_benchmark_settings()
+        logger.info(f"从数据库获取的设置: {settings}")
+        
         if settings:
             # 设置设备ID
             self.device_id = settings.get("device_id", self.device_id)
+            
+            # 获取测试模式，默认为联网模式(0)
+            self.test_mode = settings.get("mode", 0)
+            logger.info(f"从数据库加载的测试模式: {self.test_mode}")
+            
+            # 更新配置
+            config.set("benchmark.mode", self.test_mode)
             
             # 如果有API密钥，设置到benchmark_integration
             api_key = settings.get("api_key", "")
             device_name = settings.get("device_name", "未命名设备")
             if api_key:
                 benchmark_integration.set_api_key(api_key, self.device_id, device_name)
+        else:
+            # 如果没有保存的设置，默认为联网模式
+            logger.info("数据库中没有设置，使用默认联网模式(0)")
+            self.test_mode = 0
+            config.set("benchmark.mode", self.test_mode)
     
     def _register_device_if_needed(self):
         """如果需要，注册设备"""
@@ -587,6 +632,9 @@ class BenchmarkTab(QWidget):
         # 初始化UI状态
         self._update_mode_ui()
         
+        # 更新数据集按钮可见性
+        self._update_dataset_buttons()
+        
         # 更新状态标签
         self._update_status_label()
     
@@ -711,9 +759,6 @@ class BenchmarkTab(QWidget):
         
         # 设置布局
         dataset_group.setLayout(layout)
-        
-        # 根据当前模式更新按钮显示状态
-        self._update_dataset_buttons()
         
         return dataset_group
     
@@ -885,15 +930,38 @@ class BenchmarkTab(QWidget):
             db_manager.save_benchmark_settings(settings)
     
     def _on_mode_changed(self):
-        """当运行模式改变时的处理函数"""
-        # 保存到数据库
-        settings = db_manager.get_benchmark_settings()
-        if settings:
-            settings["mode"] = self.mode_select.currentIndex()
-            db_manager.save_benchmark_settings(settings)
+        """模式切换处理"""
+        # 获取当前选择的模式
+        mode = self.mode_select.currentIndex()  # 0=联网模式，1=离线模式
+        logger.info(f"模式切换: {'联网模式' if mode == 0 else '离线模式'}")
+        
+        # 更新成员变量
+        self.test_mode = mode
+        
+        # 保存设置到数据库
+        settings = db_manager.get_benchmark_settings() or {}
+        settings["mode"] = mode
+        db_manager.save_benchmark_settings(settings)
+        
+        # 更新配置
+        config.set("benchmark.mode", mode)
+        
+        # 更新benchmark_integration的测试模式
+        if hasattr(benchmark_integration, 'benchmark_manager'):
+            # 调用benchmark_manager的set_test_mode方法
+            try:
+                benchmark_integration.benchmark_manager.set_test_mode(mode)
+                logger.info(f"测试模式已更新为: {mode} ({'联网模式' if mode == 0 else '离线模式'})")
+            except Exception as e:
+                logger.error(f"更新测试模式时出错: {str(e)}")
+        else:
+            logger.error("无法更新测试模式：benchmark_manager不存在")
         
         # 更新UI状态
         self._update_mode_ui()
+        
+        # 更新数据集按钮状态和可见性
+        self._update_dataset_buttons()
     
     def _update_mode_ui(self):
         """根据模式更新UI"""
@@ -1216,8 +1284,10 @@ class BenchmarkTab(QWidget):
             api_timeout = self.api_timeout_spin.value()
             logger.debug(f"API超时设置: {api_timeout}秒")
             
-            # 固定使用联网模式(1)作为测试模式，移除运行方式选择后
-            test_mode = 1
+            # 从数据库获取当前测试模式
+            settings = db_manager.get_benchmark_settings()
+            test_mode = settings.get("mode", 0) if settings else 0
+            logger.info(f"使用测试模式: {test_mode} ({'联网模式' if test_mode == 0 else '离线模式'})")
             
             # 更新UI状态 - 设置为测试中
             self.is_testing = True
@@ -1354,13 +1424,6 @@ class BenchmarkTab(QWidget):
                 if 'framework_info' in result and result['framework_info']:
                     logger.info(f"确保latest_test_result中包含framework_info: {result['framework_info']}")
             
-            # 不再创建新的结果文件
-            # 原来的代码：
-            # if "result_path" in result and result["result_path"]:
-            #     from src.benchmark.utils.result_handler import result_handler
-            #     result_path = result_handler.save_result(result)
-            #     logger.info(f"更新后的测试结果已重新保存到: {result_path}")
-            
             # 更新UI状态
             self.is_testing = False
             self.update_ui_buttons()
@@ -1368,8 +1431,11 @@ class BenchmarkTab(QWidget):
             # 保存最新的测试结果
             self.latest_test_result = result
             
-            # 显示测试完成对话框
-            reply = QMessageBox.question(
+            # 根据当前模式显示不同的对话框
+            should_upload = False
+            
+            # 首先询问是否要加密测试记录
+            encrypt_reply = QMessageBox.question(
                 self,
                 "测试完成",
                 "是否要加密测试记录？",
@@ -1377,10 +1443,21 @@ class BenchmarkTab(QWidget):
                 QMessageBox.StandardButton.Yes
             )
             
-            if reply == QMessageBox.StandardButton.Yes:
-                logger.info("开始加密测试记录")
+            # 如果用户选择加密，并且是联网模式，再询问是否上传到服务器
+            if encrypt_reply == QMessageBox.StandardButton.Yes:
+                if self.test_mode == 0:  # 联网模式
+                    upload_reply = QMessageBox.question(
+                        self,
+                        "上传确认",
+                        "检测到您正在使用联网模式。是否同时将加密测试记录上传到服务器？",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                        QMessageBox.StandardButton.Yes
+                    )
+                    should_upload = upload_reply == QMessageBox.StandardButton.Yes
+                
+                logger.info(f"开始加密测试记录，是否上传: {should_upload}")
                 # 创建结果处理线程
-                self.result_worker = ResultWorker(self.test_mode, benchmark_integration)
+                self.result_worker = ResultWorker(self.test_mode, benchmark_integration, should_upload)
                 self.result_worker.progress_updated.connect(self._on_encryption_progress)
                 self.result_worker.finished_signal.connect(self._on_encryption_finished)
                 self.result_worker.error_signal.connect(self._on_encryption_error)
@@ -1502,9 +1579,26 @@ class BenchmarkTab(QWidget):
 
     def _update_dataset_buttons(self):
         """根据当前模式更新按钮显示状态"""
-        mode = config.get("benchmark.mode", 0)  # 0=联网模式，1=离线模式
-        self.dataset_download_button.setEnabled(mode == 0)
-        self.dataset_upload_button.setEnabled(mode == 1)
+        # 从数据库获取当前模式
+        settings = db_manager.get_benchmark_settings()
+        if settings:
+            mode = settings.get("mode", 0)  # 默认为联网模式(0)
+        else:
+            mode = 0  # 默认为联网模式
+        
+        # 保存到配置中
+        config.set("benchmark.mode", mode)
+        
+        # 添加跟踪日志
+        logger.info(f"_update_dataset_buttons: 当前模式={mode}，联网模式按钮将设为可见={mode == 0}，离线模式按钮将设为可见={mode == 1}")
+        
+        # 根据模式设置按钮的可见性
+        self.dataset_download_button.setVisible(mode == 0)  # 联网模式显示下载按钮
+        self.dataset_upload_button.setVisible(mode == 1)    # 离线模式显示上传按钮
+        
+        # 确保按钮在相应模式下可用
+        self.dataset_download_button.setEnabled(mode == 0 and not self.is_testing)
+        self.dataset_upload_button.setEnabled(mode == 1 and not self.is_testing)
 
     def update_ui_text(self):
         """更新UI文本"""
@@ -1563,8 +1657,7 @@ class BenchmarkTab(QWidget):
         self.stop_button.setEnabled(self.is_testing)
         
         # 更新数据集按钮状态
-        self.dataset_download_button.setEnabled(not self.is_testing)
-        self.dataset_upload_button.setEnabled(not self.is_testing)
+        self._update_dataset_buttons()
         
         # 更新模型选择是否启用
         self.model_combo.setEnabled(not self.is_testing)
@@ -1799,9 +1892,18 @@ class BenchmarkTab(QWidget):
                     
                     # 如果点击了重试按钮
                     if error_dialog.clickedButton() == retry_button:
-                        # 重试时使用当前测试模式
-                        current_mode = config.get("benchmark.mode", 1)  # 0=联网模式，1=离线模式
-                        self._handle_result_upload(current_mode)
+                        # 重试加密和上传过程
+                        should_upload = self.test_mode == 0
+                        logger.info(f"重试加密和上传过程，是否上传: {should_upload}")
+                        
+                        # 创建结果处理线程
+                        self.result_worker = ResultWorker(self.test_mode, benchmark_integration, should_upload)
+                        self.result_worker.progress_updated.connect(self._on_encryption_progress)
+                        self.result_worker.finished_signal.connect(self._on_encryption_finished)
+                        self.result_worker.error_signal.connect(self._on_encryption_error)
+                        
+                        # 启动加密和上传过程
+                        self.result_worker.start()
                         return
                 else:
                     # 普通显示

@@ -220,6 +220,28 @@ class ProgressTracker:
         # 重置开始时间
         self.test_start_time = None
 
+    def reset(self):
+        """
+        重置进度跟踪器状态
+        """
+        logger.debug("重置进度跟踪器状态")
+        self.test_start_time = None
+        self.current_progress = {
+            "progress": 0,
+            "current_item": 0,
+            "total_items": 0,
+            "latency": 0,
+            "throughput": 0,
+            "total_time": 0,
+            "total_tokens": 0,
+            "total_bytes": 0,
+            "token_throughput": 0,
+            "status": "未开始"
+        }
+        # 发送重置状态
+        if self.callback:
+            self.callback(self.current_progress)
+
 
 # 创建一个全局的进度跟踪器实例
 progress_tracker = ProgressTracker() 

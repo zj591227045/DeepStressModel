@@ -62,6 +62,12 @@ class ResultHandler:
             if 'framework_info' in result:
                 logger.info(f"[save_result] 输入的framework_info: {result['framework_info']}")
             
+            # 保存前先更新model字段，确保它使用model_info中的model_name
+            if 'model_info' in result and isinstance(result['model_info'], dict) and 'model_name' in result['model_info']:
+                model_name = result['model_info']['model_name']
+                logger.info(f"[save_result] 从model_info.model_name更新顶级model字段: {model_name}")
+                result['model'] = model_name
+            
             # 生成结果文件名
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
             result_file = f"benchmark_result_{timestamp}.json"
@@ -170,6 +176,12 @@ class ResultHandler:
             # 更新字段
             result.update(updates)
             
+            # 如果更新中包含model_info且model_info中有model_name，更新顶级model字段
+            if 'model_info' in updates and isinstance(updates['model_info'], dict) and 'model_name' in updates['model_info']:
+                model_name = updates['model_info']['model_name']
+                logger.info(f"[update_result] 从model_info.model_name更新顶级model字段: {model_name}")
+                result['model'] = model_name
+            
             # 保存结果
             with open(result_path, 'w', encoding='utf-8') as f:
                 json.dump(result, f, ensure_ascii=False, indent=2)
@@ -192,6 +204,12 @@ class ResultHandler:
             Tuple[str, str]: 原始结果文件路径和加密结果文件路径
         """
         try:
+            # 确保model字段使用model_info中的model_name（如果存在）
+            if 'model_info' in result and isinstance(result['model_info'], dict) and 'model_name' in result['model_info']:
+                model_name = result['model_info']['model_name']
+                logger.info(f"[save_encrypted_result] 从model_info.model_name更新顶级model字段: {model_name}")
+                result['model'] = model_name
+            
             # 检查framework_info
             logger.info(f"[save_encrypted_result] 开始加密保存，framework_info存在: {'framework_info' in result}")
             if 'framework_info' in result:
@@ -205,11 +223,21 @@ class ResultHandler:
             # 如果原始结果已经存在，则使用它；否则创建一个新的
             if original_path and os.path.exists(original_path):
                 logger.info(f"[save_encrypted_result] 使用已存在的原始结果文件: {original_path}")
-                # 文件已存在，可能需要更新framework_info
+                # 文件已存在，可能需要更新framework_info和model字段
+                updates = {}
                 if 'framework_info' in result and result['framework_info']:
-                    # 使用update_result方法更新文件，而不是重新创建
-                    self.update_result(original_path, {"framework_info": result['framework_info']})
-                    logger.info(f"[save_encrypted_result] 更新了原始文件中的framework_info")
+                    updates["framework_info"] = result['framework_info']
+                    logger.info(f"[save_encrypted_result] 需要更新原始文件中的framework_info")
+                
+                if 'model_info' in result and result['model_info'] and 'model_name' in result['model_info']:
+                    updates["model_info"] = result['model_info']
+                    updates["model"] = result['model_info']['model_name']
+                    logger.info(f"[save_encrypted_result] 需要更新原始文件中的model和model_info")
+                
+                # 使用update_result方法更新文件，而不是重新创建
+                if updates:
+                    self.update_result(original_path, updates)
+                    logger.info(f"[save_encrypted_result] 已更新原始文件")
                 
                 # 读取更新后的文件内容
                 try:
@@ -227,81 +255,207 @@ class ResultHandler:
                 # 使用刚创建的结果进行加密
                 result_to_encrypt = result
             
+            # 获取结果文件所在的目录
+            result_dir = os.path.dirname(original_path) if original_path and os.path.exists(original_path) else self.result_dir
+            # 确保目录存在
+            os.makedirs(result_dir, exist_ok=True)
+            
             # 生成加密结果文件名
             timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-            encrypted_file = f"encrypted_benchmark_result_{timestamp}.json"
-            encrypted_path = os.path.join(self.result_dir, encrypted_file)
+            encrypted_file = f"benchmark_encrypted_{timestamp}.dat"
+            encrypted_path = os.path.join(result_dir, encrypted_file)
+            
+            # 确保加密路径的目录存在
+            encrypted_dir = os.path.dirname(encrypted_path)
+            if encrypted_dir and not os.path.exists(encrypted_dir):
+                logger.info(f"[save_encrypted_result] 创建加密文件目录: {encrypted_dir}")
+                os.makedirs(encrypted_dir, exist_ok=True)
+            
+            # 创建加密器
+            encryptor = BenchmarkEncryption()
+            
+            # 检查API密钥是否有效
+            if not api_key:
+                logger.error("[save_encrypted_result] API密钥为空，无法加密")
+                return original_path, ""
+            
+            if len(api_key) < 32:
+                logger.error(f"[save_encrypted_result] API密钥长度不足32字符 ({len(api_key)})")
+                return original_path, ""
             
             try:
-                # 初始化加密器
-                logger.debug("开始初始化加密器...")
-                encryptor = BenchmarkEncryption()
-                
-                # 确保加密器初始化成功
-                if not encryptor.public_key:
-                    error_msg = getattr(encryptor, 'init_error', {}).get('message', "公钥未初始化")
-                    logger.error(f"加密失败: {error_msg}")
-                    return original_path, ""
-                
                 # 加密并保存结果
-                logger.debug("开始加密测试结果...")
+                logger.info(f"[save_encrypted_result] 开始加密测试结果到: {encrypted_path}")
                 encrypted_path_result = encryptor.encrypt_and_save(result_to_encrypt, encrypted_path, api_key)
                 
                 if not encrypted_path_result:
-                    logger.error("加密保存失败，返回值为空")
+                    logger.error(f"[save_encrypted_result] 加密测试结果失败，返回路径为空")
                     return original_path, ""
-                    
-                logger.info(f"加密结果已保存到: {encrypted_path}")
+                
+                # 确认加密文件是否已创建
+                if not os.path.exists(encrypted_path):
+                    logger.error(f"[save_encrypted_result] 加密文件没有被创建: {encrypted_path}")
+                    return original_path, ""
+                
+                logger.info(f"[save_encrypted_result] 测试结果已加密并保存到: {encrypted_path}")
                 return original_path, encrypted_path
+            
             except Exception as e:
-                logger.error(f"加密过程中出错: {str(e)}")
+                logger.error(f"[save_encrypted_result] 加密测试结果时发生错误: {str(e)}")
                 return original_path, ""
+        
         except Exception as e:
-            logger.error(f"保存加密结果失败: {str(e)}")
+            logger.error(f"[save_encrypted_result] 加密并保存测试结果失败: {str(e)}")
             return "", ""
     
     def upload_encrypted_result(self, result: Dict[str, Any], api_key: str, 
                               server_url: str, metadata: Dict[str, Any] = None) -> Dict[str, Any]:
         """
-        加密并上传测试结果到服务器
+        上传加密的测试结果，如果已有加密文件则使用已有文件
         
         Args:
             result: 测试结果
             api_key: API密钥
             server_url: 服务器URL
-            metadata: 元数据，如提交者信息、模型信息等
+            metadata: 元数据
             
         Returns:
-            Dict[str, Any]: 服务器响应结果
+            Dict[str, Any]: 上传结果，包含状态和消息
         """
         try:
-            # 初始化加密器
-            encryptor = BenchmarkEncryption()
+            # 确保model字段使用model_info中的model_name（如果存在）
+            if 'model_info' in result and isinstance(result['model_info'], dict) and 'model_name' in result['model_info']:
+                model_name = result['model_info']['model_name']
+                logger.info(f"[upload_encrypted_result] 从model_info.model_name更新顶级model字段: {model_name}")
+                result['model'] = model_name
+                # 同时更新metadata中的model_name
+                if metadata and isinstance(metadata, dict) and 'model_name' in metadata:
+                    metadata['model_name'] = model_name
+                    logger.info(f"[upload_encrypted_result] 从model_info.model_name更新metadata.model_name: {model_name}")
             
-            # 准备元数据
-            if not metadata:
-                metadata = {}
+            # 检查是否已有加密文件
+            encrypted_path = ""
+            if "encrypted_path" in result and os.path.exists(result["encrypted_path"]):
+                logger.info(f"[upload_encrypted_result] 使用已存在的加密文件: {result['encrypted_path']}")
+                encrypted_path = result["encrypted_path"]
+                original_path = result.get("result_path", "")
+            else:
+                # 否则重新加密并保存结果
+                logger.info(f"[upload_encrypted_result] 未找到已有加密文件，开始加密保存")
+                original_path, encrypted_path = self.save_encrypted_result(result, api_key)
             
-            # 添加硬件信息到元数据
-            if "hardware_info" in result:
-                metadata["hardware_info"] = result["hardware_info"]
+            if not encrypted_path or not os.path.exists(encrypted_path):
+                logger.error(f"找不到加密的测试结果文件，无法上传: {encrypted_path}")
+                return {
+                    "status": "error",
+                    "message": "找不到加密的测试结果文件，无法上传"
+                }
             
-            if "model" in result:
-                metadata["model_name"] = result["model"]
+            # 检查服务器URL
+            if not server_url:
+                logger.error("服务器URL为空，无法上传")
+                return {
+                    "status": "error",
+                    "message": "服务器URL为空，无法上传"
+                }
             
-            # 加密并上传结果
-            response = encryptor.encrypt_and_upload(
-                result, 
-                api_key=api_key,
-                server_url=server_url,
-                metadata=metadata
-            )
+            # 开始上传
+            import requests
+            import json
             
-            logger.info(f"加密结果已上传，ID: {response.get('upload_id', 'unknown')}")
-            return response
+            # 准备上传数据
+            upload_data = {}
+            
+            # 添加API密钥（在请求头使用，这里只做备份）
+            if api_key:
+                upload_data["api_key"] = api_key
+            
+            # 添加元数据 - 确保是JSON格式的字符串
+            if metadata and isinstance(metadata, dict):
+                # 将元数据转换为JSON字符串
+                metadata_json = json.dumps(metadata, ensure_ascii=False)
+                upload_data["metadata"] = metadata_json
+                logger.info(f"[upload_encrypted_result] 元数据已转换为JSON字符串，长度: {len(metadata_json)}")
+            else:
+                # 创建基本元数据
+                basic_metadata = {
+                    "submitter": result.get("nickname", "未命名用户"),
+                    "model_name": result.get("model", "未知模型"),
+                    "timestamp": datetime.now().isoformat()
+                }
+                metadata_json = json.dumps(basic_metadata, ensure_ascii=False)
+                upload_data["metadata"] = metadata_json
+                logger.info(f"[upload_encrypted_result] 已创建基本元数据: {basic_metadata}")
+            
+            # 准备文件
+            try:
+                files = {
+                    "file": open(encrypted_path, "rb")
+                }
+                
+                # 请求头设置
+                headers = {
+                    "X-API-Key": api_key if api_key else ""
+                }
+                
+                logger.info(f"[upload_encrypted_result] 开始上传到: {server_url}")
+                logger.info(f"[upload_encrypted_result] 上传数据包含字段: {list(upload_data.keys())}")
+                
+                # 上传
+                response = requests.post(server_url, data=upload_data, files=files, headers=headers)
+                
+                # 关闭文件
+                files["file"].close()
+                
+                # 解析响应
+                if response.status_code == 200:
+                    # 尝试解析JSON响应
+                    try:
+                        response_data = response.json()
+                        
+                        # 检查响应状态
+                        if response_data.get("status") == "success":
+                            upload_id = response_data.get("id", "unknown")
+                            logger.info(f"测试结果上传成功，ID: {upload_id}")
+                            return {
+                                "status": "success",
+                                "message": "测试结果上传成功",
+                                "upload_id": upload_id,
+                                "upload_result": response_data
+                            }
+                        else:
+                            error_msg = response_data.get("message", "上传失败，服务器返回错误")
+                            logger.error(f"测试结果上传失败: {error_msg}")
+                            return {
+                                "status": "error",
+                                "message": error_msg
+                            }
+                    except json.JSONDecodeError:
+                        # 响应不是JSON格式
+                        logger.error("服务器返回的不是JSON格式")
+                        return {
+                            "status": "error",
+                            "message": f"服务器返回的不是JSON格式: {response.text[:100]}"
+                        }
+                else:
+                    # 响应状态码不是200
+                    logger.error(f"服务器返回错误状态码: {response.status_code}, 响应: {response.text}")
+                    return {
+                        "status": "error",
+                        "message": f"服务器返回错误状态码: {response.status_code}, 响应: {response.text}"
+                    }
+            except Exception as file_error:
+                logger.error(f"处理文件上传时出错: {str(file_error)}")
+                return {
+                    "status": "error",
+                    "message": f"处理文件上传时出错: {str(file_error)}"
+                }
         except Exception as e:
-            logger.error(f"上传加密结果失败: {str(e)}")
-            return {"status": "error", "message": str(e)}
+            logger.error(f"上传测试结果失败: {str(e)}")
+            return {
+                "status": "error",
+                "message": f"上传测试结果失败: {str(e)}"
+            }
 
 
 # 创建一个全局的结果处理器实例

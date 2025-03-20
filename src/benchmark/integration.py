@@ -69,11 +69,15 @@ class BenchmarkIntegration(QObject):
         """初始化跑分模块集成"""
         super().__init__()
         
+        # 导入配置
+        from src.utils.config import config as global_config
+        self.config = global_config  # 保存配置引用
+        
         # 初始化跑分管理器
-        self.benchmark_manager = BenchmarkManager(config)
+        self.benchmark_manager = BenchmarkManager(self.config)
         
         # 初始化插件管理器
-        self.plugin_manager = PluginManager(config)
+        self.plugin_manager = PluginManager(self.config)
         
         # 加载插件
         self.plugin_manager.load_all_plugins()
@@ -436,6 +440,9 @@ class BenchmarkIntegration(QObject):
         logger.info(f"[_on_test_finished] result对象id: {id(result)}, 类型: {type(result).__name__}")
         logger.info(f"[_on_test_finished] result包含的键: {list(result.keys())}")
         
+        # 保存测试结果
+        self.benchmark_manager.latest_test_result = result
+        
         # 通知插件
         self.plugin_manager.notify_plugins("benchmark_complete", result)
         
@@ -591,24 +598,42 @@ class BenchmarkIntegration(QObject):
         
         Args:
             api_key: API密钥
-            device_id: 设备ID（可选）
-            nickname: 设备名称（可选）
+            device_id: 设备ID，如果为None则使用当前设备ID
+            nickname: 设备昵称，如果为None则使用当前昵称
             
         Returns:
             bool: 设置是否成功
         """
         try:
-            return self.benchmark_manager.set_api_key(api_key, device_id, nickname)
+            # 保存到全局配置
+            self.config.set("benchmark.api_key", api_key)
+            
+            # 设置API密钥到benchmark_manager
+            self.benchmark_manager.api_key = api_key
+            self.benchmark_manager.api_client.api_key = api_key
+            
+            # 设置设备ID和昵称（如果提供）
+            if device_id:
+                self.config.set("benchmark.device_id", device_id)
+                self.benchmark_manager.device_id = device_id
+                self.benchmark_manager.api_client.device_id = device_id
+            
+            if nickname:
+                self.config.set("benchmark.nickname", nickname)
+                self.benchmark_manager.nickname = nickname
+            
+            logger.info(f"API密钥设置成功: {api_key[:4]}...")
+            return True
         except Exception as e:
             logger.error(f"设置API密钥失败: {str(e)}")
             return False
     
     def encrypt_result(self) -> Dict[str, Any]:
         """
-        加密测试结果（不上传）
+        仅加密当前测试结果并保存到本地，如果已有加密文件则直接使用
         
         Returns:
-            Dict[str, Any]: 加密结果，包含状态、消息和加密文件路径
+            Dict[str, Any]: 加密结果，包含状态和消息
         """
         try:
             # 检查是否有测试结果
@@ -622,6 +647,8 @@ class BenchmarkIntegration(QObject):
             
             # 获取API密钥
             api_key = self.benchmark_manager.api_key
+            
+            # 检查API密钥
             if not api_key:
                 return {
                     "status": "error",
@@ -630,8 +657,20 @@ class BenchmarkIntegration(QObject):
                     "ui_detail": "未设置API密钥，请先设置API密钥后再尝试加密。"
                 }
             
-            # 添加检查和调试日志，确保framework_info被保留
+            # 检查测试结果中是否已有加密文件路径
             latest_result = self.benchmark_manager.latest_test_result
+            if "encrypted_path" in latest_result and os.path.exists(latest_result["encrypted_path"]):
+                logger.info(f"测试结果已有加密文件，直接使用: {latest_result['encrypted_path']}")
+                return {
+                    "status": "success",
+                    "message": "使用已存在的加密文件",
+                    "encrypted_path": latest_result["encrypted_path"],
+                    "original_path": latest_result.get("result_path", ""),
+                    "ui_message": "加密状态",
+                    "ui_detail": f"测试结果已有加密文件:\n{latest_result['encrypted_path']}\n\n点击确定可以打开保存位置。"
+                }
+            
+            # 添加检查和调试日志，确保framework_info被保留
             logger.info(f"加密前检查latest_result中framework_info存在: {'framework_info' in latest_result}")
             if 'framework_info' in latest_result:
                 logger.info(f"加密前latest_result中的framework_info: {latest_result['framework_info']}")
@@ -648,25 +687,14 @@ class BenchmarkIntegration(QObject):
             else:
                 logger.info(f"使用已有的原始结果文件: {latest_result['result_path']}")
             
-            # 准备元数据
-            metadata = {
-                "device_id": self.benchmark_manager.device_id,
-                "nickname": self.benchmark_manager.nickname,
-                "submitter": self.benchmark_manager.nickname,
-                "model_name": latest_result.get("model_name", "未知模型"),
-                "hardware_info": latest_result.get("hardware_info", {}),
-                "notes": f"离线加密测试结果 - {datetime.now().isoformat()}"
-            }
-            
             # 加密结果
             from src.benchmark.utils.result_handler import result_handler
-            original_path, encrypted_path = result_handler.save_encrypted_result(
-                latest_result,
-                api_key
-            )
+            original_path, encrypted_path = result_handler.save_encrypted_result(latest_result, api_key)
             
-            if encrypted_path:
-                logger.info(f"测试结果加密成功: {encrypted_path}")
+            if encrypted_path and os.path.exists(encrypted_path):
+                logger.info(f"测试结果已加密并保存到: {encrypted_path}")
+                # 更新测试结果中的加密文件路径
+                latest_result["encrypted_path"] = encrypted_path
                 return {
                     "status": "success",
                     "message": "测试结果加密成功",
@@ -692,10 +720,10 @@ class BenchmarkIntegration(QObject):
                 "ui_detail": f"加密测试结果失败: {str(e)}\n\n请检查日志获取详细信息。",
                 "can_retry": True
             }
-    
-    def encrypt_and_upload_result(self) -> Dict[str, Any]:
+            
+    def upload_result(self) -> Dict[str, Any]:
         """
-        加密并上传测试结果
+        上传加密的测试结果，优先使用已加密的文件
         
         Returns:
             Dict[str, Any]: 上传结果，包含状态、消息和上传ID
@@ -732,24 +760,6 @@ class BenchmarkIntegration(QObject):
                     "ui_detail": "未设置服务器URL，请检查配置后再尝试上传。"
                 }
             
-            # 添加检查和调试日志，确保framework_info被保留
-            latest_result = self.benchmark_manager.latest_test_result
-            logger.info(f"上传前检查latest_result中framework_info存在: {'framework_info' in latest_result}")
-            if 'framework_info' in latest_result:
-                logger.info(f"上传前latest_result中的framework_info: {latest_result['framework_info']}")
-            
-            # 检查是否已经有result_path
-            if "result_path" not in latest_result or not latest_result["result_path"]:
-                logger.warning("结果中没有result_path，需要先保存结果文件")
-                # 保存结果，获取result_path
-                from src.benchmark.utils.result_handler import result_handler
-                result_path = result_handler.save_result(latest_result)
-                if result_path:
-                    latest_result["result_path"] = result_path
-                    logger.info(f"创建了新的原始结果文件: {result_path}")
-            else:
-                logger.info(f"使用已有的原始结果文件: {latest_result['result_path']}")
-            
             # 准备元数据
             metadata = {
                 "device_id": self.benchmark_manager.device_id,
@@ -763,10 +773,21 @@ class BenchmarkIntegration(QObject):
             # 构建API URL
             api_url = f"{server_url}/api/v1/benchmark-result/upload"
             
-            # 加密并上传结果
+            # 检查是否已经有加密文件
+            if "encrypted_path" not in self.benchmark_manager.latest_test_result or not os.path.exists(self.benchmark_manager.latest_test_result["encrypted_path"]):
+                logger.info("测试结果中没有加密文件路径，需要先进行加密")
+                # 尝试加密
+                encrypt_result = self.encrypt_result()
+                if encrypt_result.get("status") != "success":
+                    logger.error(f"无法加密测试结果: {encrypt_result.get('message', '未知错误')}")
+                    return encrypt_result
+            else:
+                logger.info(f"使用已有的加密文件: {self.benchmark_manager.latest_test_result['encrypted_path']}")
+            
+            # 上传结果 (使用可能已经存在的加密文件)
             from src.benchmark.utils.result_handler import result_handler
             upload_result = result_handler.upload_encrypted_result(
-                latest_result,
+                self.benchmark_manager.latest_test_result,
                 api_key=api_key,
                 server_url=api_url,
                 metadata=metadata
@@ -793,12 +814,12 @@ class BenchmarkIntegration(QObject):
                     "can_retry": True
                 }
         except Exception as e:
-            logger.error(f"加密并上传测试结果失败: {str(e)}")
+            logger.error(f"上传测试结果失败: {str(e)}")
             return {
                 "status": "error", 
-                "message": f"加密并上传测试结果失败: {str(e)}",
+                "message": f"上传测试结果失败: {str(e)}",
                 "ui_message": "上传失败",
-                "ui_detail": f"加密并上传测试结果失败: {str(e)}\n\n请检查日志获取详细信息。",
+                "ui_detail": f"上传测试结果失败: {str(e)}\n\n请检查日志获取详细信息。",
                 "can_retry": True
             }
 
@@ -897,36 +918,65 @@ class BenchmarkIntegration(QObject):
             package_path: 离线包文件路径
             callback: 回调函数，接收成功标志和消息
         """
-        # 获取API密钥
-        api_key = self.config.get("benchmark.api_key", "")
-        if not api_key:
-            logger.error("未配置API密钥，无法解密离线包")
+        try:
+            # 检查文件是否存在
+            if not os.path.exists(package_path):
+                logger.error(f"离线包文件不存在: {package_path}")
+                if callback:
+                    callback(False, f"离线包文件不存在: {package_path}")
+                return
+            
+            # 获取API密钥
+            api_key = self.config.get("benchmark.api_key", "")
+            if not api_key:
+                logger.error("未配置API密钥，无法解密离线包")
+                if callback:
+                    callback(False, "未配置API密钥，请先在设置中配置API密钥")
+                return
+            
+            logger.info(f"开始加载离线包: {package_path}")
+            
+            # 创建异步工作线程，先初始化异步资源，再加载离线包
+            async def load_offline_package_with_init():
+                logger.debug("离线包加载 - 初始化异步资源")
+                # 先初始化异步资源
+                if not self.async_initialized:
+                    init_success = await self.initialize_async()
+                    if not init_success:
+                        logger.error("初始化异步资源失败，无法加载离线包")
+                        return False
+                
+                # 加载离线包
+                logger.debug(f"离线包加载 - 调用benchmark_manager.load_offline_package, API密钥: {api_key[:4]}...")
+                return await self.benchmark_manager.load_offline_package(package_path, api_key)
+            
+            # 创建异步工作线程
+            worker = AsyncWorker(load_offline_package_with_init)
+            
+            # 连接信号
             if callback:
-                callback(False, "未配置API密钥，请先在设置中配置API密钥")
+                def on_finished(result):
+                    success = bool(result)
+                    message = "离线包加载成功" if success else "离线包加载失败，请检查文件格式或API密钥是否正确"
+                    logger.info(f"离线包加载结果: {'成功' if success else '失败'}")
+                    callback(success, message)
+                
+                def on_error(error):
+                    logger.error(f"离线包加载错误: {error}")
+                    callback(False, f"离线包加载失败: {error}")
+                
+                worker.finished.connect(on_finished)
+                worker.error.connect(on_error)
+            
+            # 保存工作线程引用并启动
+            self.async_workers.append(worker)
+            worker.start()
+            
+        except Exception as e:
+            logger.error(f"加载离线包出错: {str(e)}")
+            if callback:
+                callback(False, f"加载离线包出错: {str(e)}")
             return
-            
-        # 创建异步工作线程，先初始化异步资源，再加载离线包
-        async def load_offline_package_with_init():
-            # 先初始化异步资源
-            if not self.async_initialized:
-                init_success = await self.initialize_async()
-                if not init_success:
-                    return False
-            
-            # 加载离线包
-            return await self.benchmark_manager.load_offline_package(package_path, api_key)
-        
-        # 创建异步工作线程
-        worker = AsyncWorker(load_offline_package_with_init)
-        
-        # 连接信号
-        if callback:
-            worker.finished.connect(lambda result: callback(result, "离线包加载成功" if result else "离线包加载失败"))
-            worker.error.connect(lambda error: callback(False, f"离线包加载失败: {error}"))
-        
-        # 保存工作线程引用并启动
-        self.async_workers.append(worker)
-        worker.start()
 
 
 # 创建全局实例

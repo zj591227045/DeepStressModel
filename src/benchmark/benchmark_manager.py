@@ -67,7 +67,14 @@ class BenchmarkManager:
         self.nickname = self.config.get("benchmark.nickname", "未命名设备")
         
         # 设置测试模式：0 = 联网模式，1 = 离线模式
-        self.test_mode = self.config.get("benchmark.mode", 1)
+        # 注意：在初始化时不直接赋值，而是通过set_test_mode方法设置
+        self._test_mode = None
+        # 从配置读取模式，如果没有则默认为离线模式
+        mode = self.config.get("benchmark.mode", 1)
+        # 使用set_test_mode方法设置模式，确保执行相关初始化逻辑
+        self.set_test_mode(mode)
+        # 输出当前测试模式
+        logger.info(f"当前测试模式: {self._test_mode} ({'联网模式' if self._test_mode == 0 else '离线模式'})")
         
         # 设置结果目录
         self.result_dir = os.path.join(os.path.expanduser("~"), ".deepstressmodel", "benchmark_results")
@@ -108,6 +115,35 @@ class BenchmarkManager:
         
         logger.info("跑分管理器初始化完成")
     
+    def set_test_mode(self, mode: int) -> None:
+        """
+        设置测试模式
+        
+        Args:
+            mode: 测试模式，0=联网模式，1=离线模式
+        """
+        if mode not in [0, 1]:
+            logger.error(f"无效的测试模式: {mode}")
+            return
+            
+        # 如果模式没有变化，直接返回
+        if self._test_mode == mode:
+            return
+            
+        # 更新测试模式
+        self._test_mode = mode
+        self.test_mode = mode  # 保持向后兼容
+        
+        # 更新配置
+        self.config.set("benchmark.mode", mode)
+        
+        # 记录模式变更
+        logger.info(f"测试模式已更改为: {'联网模式' if mode == 0 else '离线模式'}")
+        
+        # 如果切换到联网模式，检查服务器URL
+        if mode == 0 and not self.server_url:
+            logger.warning("切换到联网模式，但未设置服务器URL")
+    
     async def initialize_async(self):
         """
         异步初始化
@@ -121,13 +157,33 @@ class BenchmarkManager:
             os.makedirs(self.datasets_dir, exist_ok=True)
             
             # 根据测试模式执行不同的初始化逻辑
-            if self.test_mode == 0 and self.server_url:  # 联网测试模式且服务器URL已设置
-                logger.info(f"初始化联网测试模式，服务器URL: {self.server_url}")
-                # 在这里不进行服务器连接和设备注册，等待用户手动输入API密钥后再进行
+            if self._test_mode == 0:  # 联网测试模式
+                # 检查服务器URL是否设置
+                if not self.server_url:
+                    logger.warning("联网测试模式但服务器URL未设置，将切换到离线模式")
+                    self.set_test_mode(1)  # 切换到离线模式
+                else:
+                    logger.info(f"初始化联网测试模式，服务器URL: {self.server_url}")
+                    # 检查API密钥是否设置
+                    if self.api_key:
+                        logger.info("API密钥已设置，尝试与服务器建立连接")
+                        try:
+                            # 尝试与服务器建立连接，测试API密钥有效性
+                            is_connected = await self.api_client.test_connection()
+                            if is_connected:
+                                logger.info("与服务器连接成功，API密钥有效")
+                                # 同步时间
+                                await self._sync_time()
+                            else:
+                                logger.warning("与服务器连接失败或API密钥无效，但仍保持联网模式")
+                        except Exception as e:
+                            logger.warning(f"测试服务器连接时出错: {str(e)}")
+                    else:
+                        logger.info("API密钥未设置，等待用户手动输入")
             else:  # 离线测试模式
                 logger.info("初始化离线测试模式，不进行服务器连接")
             
-            logger.info("跑分管理器初始化完成")
+            logger.info(f"跑分管理器初始化完成，当前模式: {'联网模式' if self._test_mode == 0 else '离线模式'}")
             return True
         except Exception as e:
             logger.error(f"跑分管理器初始化失败: {str(e)}")
@@ -451,19 +507,26 @@ class BenchmarkManager:
         运行基准测试
         
         Args:
-            model: 模型或模型名称
-            precision: 精度，可以是"FP32"、"FP16"或"INT8"等
-            api_url: API的URL（如果是API模式）
+            model: 要测试的模型名称或配置
+            precision: 精度设置，默认为"FP32"
+            api_url: API URL，如果使用API模式则需要提供
             model_params: 模型参数
-            concurrency: 并发数
+            concurrency: 并发数，默认为1
             test_mode: 测试模式，0=联网模式，1=离线模式
-            use_gpu: 是否使用GPU
-            api_timeout: API超时时间（秒）
-            encrypt_and_upload: 是否加密并上传结果
+            use_gpu: 是否使用GPU，默认为True
+            api_timeout: API超时设置（秒）
+            encrypt_and_upload: 是否加密并上传结果，默认为False
             
         Returns:
-            Dict[str, Any]: 测试结果
+            Dict: 测试结果
         """
+        # 重置进度跟踪器
+        progress_tracker.reset()
+        progress_tracker.test_start_time = time.time()
+        
+        # 获取数据集信息
+        dataset_info = self.get_dataset_info()
+        
         # 添加数据集验证逻辑 - 严格要求必须更新或上传测试数据集
         if not hasattr(self, 'dataset_updated') or not self.dataset_updated:
             error_msg = "测试未开始：请先联网更新数据集或上传测试集，确保使用最新的测试数据"
@@ -496,7 +559,6 @@ class BenchmarkManager:
         progress_tracker.set_callback(self._handle_progress_update)
         
         # 设置当前数据集名称给进度跟踪器
-        dataset_info = self.get_dataset_info()
         if dataset_info and isinstance(dataset_info, dict):
             if "名称" in dataset_info:
                 progress_tracker.set_dataset_name(dataset_info["名称"])
@@ -713,68 +775,35 @@ class BenchmarkManager:
             # 获取硬件信息，以便获取硬件ID
             hardware_info = get_hardware_info()
             
-            # 构建结果
-            result = {
+            # 生成最终结果
+            final_result = {
                 "status": "success",
-                "session_id": session_id,
                 "dataset_version": dataset_version,
                 "start_time": start_time,
                 "end_time": end_time,
                 "total_time": total_time,
-                "total_duration": duration,
-                "avg_tps": avg_token_tps,
-                "device_id": hardware_info.get("id", self.device_id),  # 使用hardware_info的id值，如果不存在则回退到self.device_id
-                "nickname": self.nickname,
                 "total_tests": total_tests,
                 "successful_tests": successful_tests,
                 "success_rate": success_rate,
                 "avg_latency": avg_latency,
                 "avg_throughput": avg_throughput,
+                "tps": tps,
                 "total_input_chars": total_input_chars,
                 "total_output_chars": total_output_chars,
                 "total_chars": total_chars,
                 "total_tokens": total_tokens,
                 "results": test_results,
+                "session_id": session_id,
                 "datasets": datasets,
-                "metrics": metrics,
-                "system_info": system_info,
+                "model": model,
                 "hardware_info": hardware_info,
-                # 添加模型信息
-                "model_info": {
-                    "name": model,
-                    "precision": precision,
-                    "params": model_params.get("params") if model_params else None,
-                    "quantization": model_params.get("quantization") if model_params else None,
-                    "api_url": api_url
-                },
-                # 框架信息初始值设为None而不是空字典，以便UI层能检测到它是空的并设置正确的值
-                "framework_info": None
+                "test_mode": test_mode  # 保存测试模式，以便后续处理
             }
             
-            # 添加调试日志
-            logger.info(f"构建结果完成，framework_info初始值设为None")
+            # 保存测试模式，以便确定用户后续的询问是否上传
+            self.latest_test_result = final_result
             
-            # 通知进度跟踪器测试完成
-            progress_tracker.complete_test(test_results)
-            
-            # 保存结果
-            result_path = result_handler.save_result(result)
-            if result_path:
-                result["result_path"] = result_path
-            
-            # 新增：保存测试结果到内存中
-            self.latest_test_result = result.copy()
-            
-            # 新增：添加提示用户是否上传测试记录的标志
-            result["show_upload_dialog"] = True
-            result["test_mode"] = test_mode  # 添加测试模式标志
-            
-            # 如果需要，加密并上传结果（保留原有的自动上传选项）
-            if encrypt_and_upload and self.api_key:
-                encryption_result = self.encrypt_and_upload_result(result)
-                result["encryption_result"] = encryption_result
-            
-            return result
+            return final_result
         except Exception as e:
             logger.error(f"运行基准测试出错: {str(e)}")
             logger.error(traceback.format_exc())
@@ -1052,25 +1081,45 @@ class BenchmarkManager:
             })
             
             # 先保存加密结果（如果需要）
+            encrypted_path = None
             if save_encrypted:
                 original_path, encrypted_path = result_handler.save_encrypted_result(result, api_key)
                 if encrypted_path:
                     logger.info(f"加密结果已保存到: {encrypted_path}")
             
-            # 上传加密结果
-            upload_result = result_handler.upload_encrypted_result(
-                result,
-                api_key=api_key,
-                server_url=server_url,
-                metadata=metadata
-            )
-            
-            if upload_result.get("status") == "success":
-                logger.info(f"加密结果上传成功，ID: {upload_result.get('upload_id', 'unknown')}")
-                return {"status": "success", "upload_result": upload_result}
+            # 如果提供了服务器URL，则上传加密结果
+            if server_url:
+                # 上传加密结果
+                upload_result = result_handler.upload_encrypted_result(
+                    result,
+                    api_key=api_key,
+                    server_url=server_url,
+                    metadata=metadata
+                )
+                
+                if upload_result.get("status") == "success":
+                    logger.info(f"加密结果上传成功，ID: {upload_result.get('upload_id', 'unknown')}")
+                    return {
+                        "status": "success", 
+                        "upload_result": upload_result,
+                        "encrypted_path": encrypted_path
+                    }
+                else:
+                    error_msg = upload_result.get("message", "未知错误")
+                    logger.error(f"上传加密结果失败: {error_msg}")
+                    return {
+                        "status": "error", 
+                        "message": error_msg, 
+                        "upload_result": upload_result,
+                        "encrypted_path": encrypted_path
+                    }
             else:
-                logger.error(f"上传加密结果失败: {upload_result.get('message', '未知错误')}")
-                return {"status": "error", "message": upload_result.get("message", "上传失败"), "upload_result": upload_result}
+                # 仅保存到本地
+                return {
+                    "status": "success",
+                    "message": "加密结果已保存到本地",
+                    "encrypted_path": encrypted_path
+                }
         
         except Exception as e:
             logger.error(f"加密和上传结果时发生错误: {str(e)}")

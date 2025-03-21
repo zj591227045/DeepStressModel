@@ -47,9 +47,6 @@ DEFAULT_CONFIG = {
     },
     "benchmark": {
         "server_url": "http://localhost:8083",  # 跑分服务器地址
-        "api_key": "",                                          # API密钥
-        "device_id": "",                                        # 设备ID
-        "nickname": "未命名设备",                                # 设备名称
         "connect_timeout": 10,                                  # 连接超时时间（秒）
         "max_retries": 3,                                       # 最大重试次数
         "enabled": True,                                        # 是否启用跑分功能

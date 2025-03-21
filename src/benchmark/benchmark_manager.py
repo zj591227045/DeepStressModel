@@ -805,7 +805,8 @@ class BenchmarkManager:
                 "datasets": datasets,
                 "model": model,
                 "hardware_info": hardware_info,
-                "test_mode": test_mode  # 保存测试模式，以便后续处理
+                "test_mode": test_mode,  # 保存测试模式，以便后续处理
+                "nickname": self.nickname  # 添加设备名称
             }
             
             # 保存测试模式，以便确定用户后续的询问是否上传

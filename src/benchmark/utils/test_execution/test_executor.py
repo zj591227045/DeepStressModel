@@ -478,6 +478,20 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
                 # 计算总tokens - 只考虑成功的请求
                 total_tokens = sum(r.get("tokens", 0) for r in partial_results if r.get("status") == "success")
                 
+                # 计算输入和输出TPS
+                input_tokens = sum(r.get("input_tokens", 0) for r in partial_results if r.get("status") == "success")
+                output_tokens = sum(r.get("output_tokens", 0) for r in partial_results if r.get("status") == "success")
+                
+                # 计算实时TPS
+                elapsed = time.time() - start_time
+                input_tps = input_tokens / elapsed if elapsed > 0 else 0
+                output_tps = output_tokens / elapsed if elapsed > 0 else 0
+                combined_tps = (input_tokens + output_tokens) / elapsed if elapsed > 0 else 0
+                
+                # 记录TPS信息
+                logger.debug(f"实时TPS计算 - 输入Token: {input_tokens}, 输出Token: {output_tokens}, 总Token: {input_tokens + output_tokens}")
+                logger.debug(f"实时TPS计算 - 输入TPS={input_tps:.2f}, 输出TPS={output_tps:.2f}, 综合TPS={combined_tps:.2f}")
+                
                 # 添加详细日志
                 elapsed = time.time() - start_time
                 
@@ -505,6 +519,11 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
                     "total_bytes": total_input_chars + total_output_chars,
                     "total_chars": total_chars,
                     "token_throughput": avg_token_throughput,
+                    "input_tps": input_tps,  # 添加输入TPS
+                    "output_tps": output_tps,  # 添加输出TPS
+                    "combined_tps": combined_tps,  # 添加综合TPS
+                    "input_tokens": input_tokens,  # 添加总输入token数
+                    "output_tokens": output_tokens,  # 添加总输出token数
                     "success_rate": success_rate,
                     "status_counts": status_counts,  # 添加状态统计信息
                     "concurrency": current_concurrency  # 添加并发数信息
@@ -585,6 +604,19 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
         token_throughputs = [r.get("token_throughput", 0) for r in valid_results if r.get("status") == "success"]
         avg_token_throughput = sum(token_throughputs) / len(token_throughputs) if token_throughputs else 0
         
+        # 计算输入和输出TPS
+        input_tokens = sum(r.get("input_tokens", 0) for r in valid_results if r.get("status") == "success")
+        output_tokens = sum(r.get("output_tokens", 0) for r in valid_results if r.get("status") == "success")
+        
+        # 计算实时TPS
+        total_time = time.time() - start_time
+        input_tps = input_tokens / total_time if total_time > 0 else 0
+        output_tps = output_tokens / total_time if total_time > 0 else 0
+        combined_tps = (input_tokens + output_tokens) / total_time if total_time > 0 else 0
+        
+        # 记录TPS信息
+        logger.debug(f"最终TPS计算 - 输入TPS={input_tps:.2f}, 输出TPS={output_tps:.2f}, 综合TPS={combined_tps:.2f}")
+        
         # 获取并发数
         current_concurrency = config.get("concurrency", 1)
         
@@ -604,6 +636,11 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
             "latency": avg_latency,
             "throughput": avg_throughput,
             "token_throughput": avg_token_throughput,
+            "input_tps": input_tps,  # 添加输入TPS
+            "output_tps": output_tps,  # 添加输出TPS
+            "combined_tps": combined_tps,  # 添加综合TPS
+            "input_tokens": input_tokens,  # 添加总输入token数
+            "output_tokens": output_tokens,  # 添加总输出token数
             "total_time": total_time,
             "total_tokens": sum(r.get("tokens", 0) for r in valid_results),
             "total_bytes": total_chars,

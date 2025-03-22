@@ -128,6 +128,21 @@ class ProgressTracker:
                 # 使用总字符数除以(总时间*并发数)计算真实的平均生成速度
                 avg_gen_speed = (total_chars / total_duration / concurrency) if total_duration > 0 else 0
             
+            # 计算实时的输入、输出和综合TPS
+            total_input_tokens = progress_info.get("input_tokens", 0)
+            total_output_tokens = progress_info.get("output_tokens", 0)
+            
+            # 记录token信息
+            logger.debug(f"Token信息 - 输入Token: {total_input_tokens}, 输出Token: {total_output_tokens}, 总Token: {total_input_tokens + total_output_tokens}")
+            
+            # 使用已有的总耗时计算TPS
+            input_tps = total_input_tokens / total_duration if total_duration > 0 else 0
+            output_tps = total_output_tokens / total_duration if total_duration > 0 else 0
+            combined_tps = (total_input_tokens + total_output_tokens) / total_duration if total_duration > 0 else 0
+            
+            # 记录TPS计算日志
+            logger.debug(f"实时TPS计算 - input_tps: {input_tps:.2f}, output_tps: {output_tps:.2f}, combined_tps: {combined_tps:.2f}")
+            
             # 获取状态统计
             status_counts = progress_info.get("status_counts", {})
             # 计算失败数量
@@ -154,9 +169,9 @@ class ProgressTracker:
                     # 传递TPS相关字段
                     "tps": progress_info.get("token_throughput", 0),  # 使用token吞吐量作为TPS
                     "token_throughput": progress_info.get("token_throughput", 0),  # 显式传递token吞吐量
-                    "input_tps": progress_info.get("input_tps", 0),  # 传递输入TPS
-                    "output_tps": progress_info.get("output_tps", 0),  # 传递输出TPS
-                    "combined_tps": progress_info.get("combined_tps", 0),  # 传递综合TPS (输入+输出)
+                    "input_tps": input_tps,  # 传递计算的输入TPS
+                    "output_tps": output_tps,  # 传递计算的输出TPS
+                    "combined_tps": combined_tps,  # 传递计算的综合TPS
                     "avg_tps": progress_info.get("token_throughput", 0),  # 设置avg_tps等同于token吞吐量
                     
                     # 添加考虑并发数的TPS值 (每个实例的平均TPS)

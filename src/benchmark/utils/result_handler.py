@@ -24,7 +24,9 @@ class ResultHandler:
         """
         # 如果没有指定结果目录，使用默认目录
         if not result_dir:
-            self.result_dir = os.path.join(os.path.expanduser("~"), ".deepstressmodel", "benchmark_results")
+            # 修改为使用data/benchmark/results作为默认目录
+            # 相对于当前工作目录
+            self.result_dir = os.path.join("data", "benchmark", "results")
         else:
             self.result_dir = result_dir
         

@@ -60,3 +60,4 @@ key_storage.pyx
 # 预编译二进制文件例外 - 允许追踪
 # 注意：这里使用 ! 表示不忽略匹配的文件
 !src/benchmark/crypto/key_module/prebuilt/macos/python3.13/key_storage.cpython-313-darwin.so 
+!src/benchmark/crypto/key_module/prebuilt/windows/python3.11/key_storage.cp311-win_amd64.pyd

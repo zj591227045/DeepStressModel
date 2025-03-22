@@ -1806,8 +1806,18 @@ class BenchmarkTab(QWidget):
                     self.result_table.setItem(row, 7, QTableWidgetItem(duration_text))  # 总时间
                     
                     # 平均TPS（如果可用）
-                    avg_tps = dataset_stats.get('combined_tps', dataset_stats.get('avg_tps', 0))  # 优先使用综合TPS，如果没有则用平均TPS
-                    self.result_table.setItem(row, 8, QTableWidgetItem(f"{avg_tps:.2f}"))  # 综合TPS
+                    combined_tps = dataset_stats.get('combined_tps')
+                    avg_tps = dataset_stats.get('avg_tps', 0)
+                    
+                    # 确定使用哪个值
+                    display_tps = combined_tps if combined_tps is not None else avg_tps
+                    
+                    # 添加日志，查看是否正确获取到了combined_tps值
+                    logger.debug(f"综合TPS信息 - combined_tps: {combined_tps}, avg_tps: {avg_tps}, 最终使用: {display_tps}")
+                    
+                    # 格式化为两位小数并显示
+                    tps_text = f"{display_tps:.2f}" if isinstance(display_tps, (int, float)) else "0.00"
+                    self.result_table.setItem(row, 8, QTableWidgetItem(tps_text))  # 综合TPS
                 
                 # 计算总进度百分比
                 if total_items > 0:

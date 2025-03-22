@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from src.utils.logger import setup_logger
 from src.utils.config import config
+from src.monitor.gpu_monitor import gpu_monitor  # 导入GPU监控器实例
 
 # 设置日志记录器
 logger = setup_logger("benchmark_tab")
@@ -41,6 +42,97 @@ class BenchmarkThread(QThread):
             # 执行跑分测试
             result = self.benchmark_manager.run_benchmark(self.config)
             if self.running:  # 确保没有被中途停止
+                # 先检查是否存在result，并且不是error状态
+                if not result or result.get("status") == "error":
+                    error_msg = result.get("message", "未知错误") if result else "测试未返回结果"
+                    logger.error(f"测试失败: {error_msg}")
+                    self.test_error.emit(error_msg)
+                    return
+                
+                # 检查测试结果中的任务状态
+                if "results" in result:
+                    # 获取所有测试任务的状态
+                    all_tasks = result.get("results", [])
+                    
+                    if all_tasks:  # 确保有测试任务
+                        # 计算成功任务数
+                        successful_tasks = sum(1 for r in all_tasks if r.get("status") == "success")
+                        
+                        # 当成功任务数为0且总任务数大于0时，认为所有任务都失败
+                        if successful_tasks == 0 and len(all_tasks) > 0:
+                            # 所有任务都失败，触发错误信号
+                            failed_count = len(all_tasks)
+                            
+                            # 尝试获取错误原因，首先检查是否有error_type字段
+                            error_info = {}
+                            error_messages = {}
+                            
+                            for task in all_tasks:
+                                # 检查不同可能的错误字段名
+                                error_type = None
+                                error_msg = None
+                                
+                                # 检查error_type字段
+                                if "error_type" in task:
+                                    error_type = task["error_type"]
+                                # 检查error字段
+                                elif "error" in task:
+                                    if isinstance(task["error"], str):
+                                        error_type = task["error"].split(':')[0] if ':' in task["error"] else task["error"]
+                                    else:
+                                        error_type = str(type(task["error"]).__name__)
+                                # 检查exception_type字段
+                                elif "exception_type" in task:
+                                    error_type = task["exception_type"]
+                                
+                                # 如果找到了错误类型，记录它
+                                if error_type:
+                                    error_info[error_type] = error_info.get(error_type, 0) + 1
+                                
+                                # 尝试获取错误消息
+                                if "message" in task:
+                                    error_msg = task["message"]
+                                elif "error_message" in task:
+                                    error_msg = task["error_message"]
+                                elif "exception" in task:
+                                    error_msg = str(task["exception"])
+                                
+                                if error_msg:
+                                    error_messages[error_msg] = error_messages.get(error_msg, 0) + 1
+                            
+                            # 获取最常见的错误类型
+                            most_common_error = "未知错误类型"
+                            if error_info:
+                                most_common_error = max(error_info.items(), key=lambda x: x[1])[0]
+                            
+                            # 获取最常见的错误消息
+                            most_common_msg = ""
+                            if error_messages:
+                                most_common_msg = max(error_messages.items(), key=lambda x: x[1])[0]
+                                # 截断过长的错误消息
+                                if len(most_common_msg) > 100:
+                                    most_common_msg = most_common_msg[:100] + "..."
+                            
+                            error_desc = f"{most_common_error}"
+                            if most_common_msg:
+                                error_desc += f": {most_common_msg}"
+                            
+                            # 检查是否是连接错误
+                            if "ClientConnectorError" in most_common_error or "Connection" in most_common_error:
+                                error_desc = f"API连接失败: {error_desc}"
+                            
+                            error_msg = f"所有测试任务均失败（共{failed_count}个任务）。常见错误: {error_desc}。请检查API连接或模型配置。"
+                            logger.error(f"测试失败: {error_msg}")
+                            
+                            # 确保记录到日志中，以便调试
+                            logger.debug(f"原始错误信息统计: {error_info}")
+                            logger.debug(f"原始错误消息统计: {error_messages}")
+                            
+                            self.test_error.emit(error_msg)
+                            return
+                
+                # 正常情况下触发测试完成信号
+                logger.info("测试完成，发送test_finished信号")
                 self.test_finished.emit(result)
         except Exception as e:
             logger.error(f"跑分测试错误: {str(e)}")
@@ -65,10 +157,28 @@ class BenchmarkTab(QWidget):
         self.benchmark_thread = None
         self.device_id = self._generate_device_id()
         
+        # 初始化GPU监控器
+        self._init_gpu_monitor()
+        
         # 初始化界面
         self.init_ui()
         
         logger.info("跑分标签页初始化完成")
+    
+    def _init_gpu_monitor(self):
+        """初始化GPU监控器"""
+        try:
+            # 确保GPU监控器已初始化
+            gpu_monitor.init_monitor()
+            
+            # 尝试获取数据，检查是否连接成功
+            stats = gpu_monitor.get_stats()
+            if stats:
+                logger.info("GPU监控器连接成功")
+            else:
+                logger.warning("GPU监控器连接失败或未获取到数据")
+        except Exception as e:
+            logger.error(f"初始化GPU监控器失败: {str(e)}")
     
     def init_ui(self):
         """初始化界面"""

@@ -446,10 +446,19 @@ class BenchmarkIntegration(QObject):
         # 通知插件
         self.plugin_manager.notify_plugins("benchmark_complete", result)
         
-        # 转发测试完成信号
-        logger.info(f"[_on_test_finished] 即将发送test_finished信号...")
-        self.test_finished.emit(result)
-        logger.info(f"[_on_test_finished] test_finished信号已发送")
+        # 检查result的status字段
+        if result and isinstance(result, dict) and result.get("status") == "error":
+            # 如果status为error，则发送test_error信号
+            error_msg = result.get("message", "未知错误")
+            logger.warning(f"[_on_test_finished] 检测到测试失败，错误信息: {error_msg}")
+            logger.info(f"[_on_test_finished] 即将发送test_error信号...")
+            self.test_error.emit(error_msg)
+            logger.info(f"[_on_test_finished] test_error信号已发送")
+        else:
+            # 如果status为success或未指定，则发送test_finished信号
+            logger.info(f"[_on_test_finished] 测试成功，即将发送test_finished信号...")
+            self.test_finished.emit(result)
+            logger.info(f"[_on_test_finished] test_finished信号已发送")
     
     def _on_test_error(self, error: str):
         """

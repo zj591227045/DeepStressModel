@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QMessageBox
 )
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer
 from PyQt6.QtGui import QFont
 from src.utils.logger import setup_logger
 from src.monitor.gpu_monitor import gpu_monitor
@@ -94,11 +94,19 @@ class GPUMonitorWidget(QGroupBox):
         self.current_gpu_index = 0  # 当前选中的GPU索引
         self.display_mode = "multi"  # 显示模式：默认为多GPU模式
         self.gpu_cards = []  # 存储GPU卡片组件
+        
+        # 自动连接设置
+        self._auto_connect_first_server = True
+        
         self.init_ui()
         self.update_ui_text()
         
         # 连接语言改变信号
         self.language_manager.language_changed.connect(self.update_ui_text)
+        
+        # 自动刷新服务器列表并启动监控
+        # 使用Qt定时器，以便让UI有时间完全初始化
+        QTimer.singleShot(500, self._auto_init_monitoring)
     
     def init_ui(self):
         """初始化UI"""
@@ -130,6 +138,10 @@ class GPUMonitorWidget(QGroupBox):
         server_layout.addWidget(self.refresh_button)
         server_layout.addWidget(self.add_button)
         top_controls.addLayout(server_layout, 3)  # 分配比例为3
+        
+        # 自动连接第一个可用的GPU服务器
+        # 这个功能会在refresh_servers完成后触发
+        self._auto_connect_first_server = True
 
         # 显示模式切换区域
         mode_layout = QHBoxLayout()
@@ -452,6 +464,7 @@ class GPUMonitorWidget(QGroupBox):
             
             active_server = db_manager.get_active_gpu_server()
             active_index = -1
+            found_server = False
 
             for i, server in enumerate(servers):
                 # 安全地获取名称，如果alias不存在则使用name或host
@@ -462,11 +475,31 @@ class GPUMonitorWidget(QGroupBox):
                 if active_server and server.get(
                         'id') == active_server.get('id'):
                     active_index = i
+                    found_server = True
 
-            if active_index >= 0:
+            # 如果需要自动连接且有服务器可用
+            if self._auto_connect_first_server and servers:
+                if active_index >= 0:
+                    # 已有活动服务器，直接选择
+                    self.server_selector.setCurrentIndex(active_index)
+                    logger.info(f"自动连接到已配置的活动GPU服务器: {servers[active_index].get('name', servers[active_index].get('host', '未知'))}")
+                else:
+                    # 没有活动服务器，选择第一个
+                    self.server_selector.setCurrentIndex(0)
+                    active_index = 0
+                    logger.info(f"自动连接到第一个可用的GPU服务器: {servers[0].get('name', servers[0].get('host', '未知'))}")
+                
+                # 标记为已自动连接，避免重复连接
+                self._auto_connect_first_server = False
+                
+                # 触发连接事件
+                if active_index >= 0:
+                    self.on_server_changed(active_index)
+            elif found_server:
+                # 有活动服务器但不需要自动连接
                 self.server_selector.setCurrentIndex(active_index)
-            elif servers:
-                # 如果没有活动服务器但有服务器列表，选择第一个
+            elif servers and not found_server and not self._auto_connect_first_server:
+                # 如果没有活动服务器但有服务器列表，且不需要自动连接，选择第一个但不连接
                 self.server_selector.setCurrentIndex(0)
 
             if not servers:
@@ -475,6 +508,7 @@ class GPUMonitorWidget(QGroupBox):
         except Exception as e:
             logger.error(f"刷新服务器列表失败: {e}")
             self.hint_label.setText(self.tr('refresh_error') + f": {str(e)}")
+            self._auto_connect_first_server = False  # 失败时重置标志
 
     def add_server(self):
         """添加服务器处理"""
@@ -878,4 +912,9 @@ class GPUMonitorWidget(QGroupBox):
         """停止监控"""
         if self.monitor_thread.isRunning():
             self.monitor_thread.stop()
-        self.monitor_thread.wait() 
+        self.monitor_thread.wait()
+
+    def _auto_init_monitoring(self):
+        """自动初始化监控"""
+        self.refresh_servers()
+        self.start_monitoring() 

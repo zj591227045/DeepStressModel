@@ -814,6 +814,38 @@ class BenchmarkManager:
             # 获取硬件信息，以便获取硬件ID
             hardware_info = get_hardware_info()
             
+            # 检查是否所有测试都失败
+            if successful_tests == 0 and total_tests > 0:
+                # 所有测试都失败，返回错误状态
+                error_msg = f"所有测试任务均失败（共{total_tests}个任务）。请检查API连接或模型配置。"
+                logger.error(error_msg)
+                
+                # 收集常见错误类型
+                error_types = {}
+                for r in test_results:
+                    error_type = None
+                    if "error_type" in r:
+                        error_type = r["error_type"]
+                    elif "error" in r and isinstance(r["error"], str):
+                        error_type = r["error"].split(":")[0] if ":" in r["error"] else r["error"]
+                    
+                    if error_type:
+                        error_types[error_type] = error_types.get(error_type, 0) + 1
+                
+                # 找出最常见的错误类型
+                most_common_error = "未知错误"
+                if error_types:
+                    most_common_error = max(error_types.items(), key=lambda x: x[1])[0]
+                
+                return {
+                    "status": "error",
+                    "message": f"{error_msg} 最常见错误: {most_common_error}",
+                    "total_tests": total_tests,
+                    "successful_tests": 0,
+                    "session_id": session_id,
+                    "results": test_results
+                }
+            
             # 生成最终结果
             final_result = {
                 "status": "success",

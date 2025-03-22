@@ -1411,9 +1411,9 @@ class BenchmarkTab(QWidget):
                 else:
                     logger.warning("无法更新原始结果文件，因为result_path不存在")
             else:
-                logger.warning("未能获取框架信息")
+                logger.warning("未能自动识别框架信息，将提示用户手动输入")
             
-            # 显示模型信息对话框
+            # 显示模型信息对话框 - 即使framework_info为None也显示
             model_info = self._show_model_info_dialog(framework_info)
             if model_info:
                 # 更新结果中的模型信息
@@ -1422,6 +1422,19 @@ class BenchmarkTab(QWidget):
                 logger.info(f"更新前的model_info: {result.get('model_info')}")
                 result["model_info"].update(model_info)
                 logger.info(f"更新后的model_info: {result.get('model_info')}")
+                
+                # 如果未能自动识别框架但用户手动输入了框架信息，创建framework_info
+                if not framework_info and "framework" in model_info:
+                    logger.info("用户手动输入了框架信息，创建framework_info")
+                    result["framework_info"] = {
+                        "framework": model_info["framework"],
+                        "manually_entered": True
+                    }
+                    
+                    # 更新原始结果文件
+                    if "result_path" in result and result["result_path"]:
+                        from src.benchmark.utils.result_handler import result_handler
+                        result_handler.update_result(result["result_path"], {"framework_info": result["framework_info"]})
                 
                 # 更新原始结果文件中的model_info
                 if "result_path" in result and result["result_path"]:
@@ -1997,76 +2010,148 @@ class BenchmarkTab(QWidget):
                 
                 logger.info(f"找到GPU进程: {gpu_pids}")
                 
-                # 步骤2: 检查进程名称，直接识别已知框架
-                for pid, command in gpu_pids:
-                    if command.lower() == "ollama":
-                        logger.info(f"检测到Ollama进程: {pid}")
-                        return {
-                            'framework': 'Ollama',
-                            'pid': pid
-                        }
-                    elif "llama.cpp" in command.lower() or "llama-cpp" in command.lower():
-                        logger.info(f"检测到llama.cpp进程: {pid}")
-                        return {
-                            'framework': 'llama.cpp',
-                            'pid': pid
-                        }
+                # 定义主流框架关键字列表
+                known_frameworks = {
+                    'ollama': 'Ollama',
+                    'llama.cpp': 'llama.cpp',
+                    'llama-cpp': 'llama.cpp',
+                    'llamacpp': 'llama.cpp',
+                    'text-generation-server': 'text-generation-inference',
+                    'tgi': 'text-generation-inference',
+                    'xinference': 'Xinference',
+                    'ctc': '赤兔',
+                    'chitu': '赤兔',
+                    'triton': 'Triton',
+                    'tensorrt': 'TensorRT',
+                    'onnx': 'ONNX Runtime'
+                }
                 
-                # 步骤3: 对于Python进程，获取详细信息和父进程
+                # 步骤2: 首先检查是否有明确的框架进程
+                for pid, command in gpu_pids:
+                    cmd_lower = command.lower()
+                    
+                    # 检查是否匹配已知框架
+                    for keyword, framework_name in known_frameworks.items():
+                        if keyword in cmd_lower:
+                            logger.info(f"检测到{framework_name}进程: {pid}")
+                            return {
+                                'framework': framework_name,
+                                'pid': pid,
+                                'raw_command': command
+                            }
+                
+                # 步骤3: 对于Python进程，获取详细信息和命令行
+                python_processes = []
                 for pid, command in gpu_pids:
                     if "python" in command.lower():
                         logger.info(f"检测到Python进程: {pid}，获取详细信息")
+                        python_processes.append((pid, command))
+                
+                for pid, command in python_processes:
+                    # 获取进程详细信息
+                    stdin, stdout, stderr = ssh.exec_command(f'ps -ef | grep {pid} | grep -v grep')
+                    ps_output = stdout.read().decode()
+                    logger.debug(f"进程{pid}详细信息: {ps_output}")
+                    
+                    if not ps_output.strip():
+                        continue
                         
-                        # 获取进程详细信息
-                        stdin, stdout, stderr = ssh.exec_command(f'ps -ef | grep {pid}')
-                        ps_output = stdout.read().decode()
-                        logger.debug(f"进程{pid}详细信息: {ps_output}")
+                    # 检查命令行是否包含框架信息
+                    cmd_lower = ps_output.lower()
+                    
+                    # 首先检查Python进程命令行是否包含框架关键字
+                    for keyword, framework_name in known_frameworks.items():
+                        if keyword in cmd_lower:
+                            logger.info(f"从命令行检测到{framework_name}框架: {pid}")
+                            return {
+                                'framework': framework_name,
+                                'pid': pid,
+                                'raw_command': ps_output.strip()
+                            }
+                    
+                    # 检查特定的Python框架
+                    if 'vllm' in cmd_lower:
+                        logger.info(f"从命令行检测到vLLM框架: {pid}")
+                        return self._parse_vllm_info(ps_output)
+                    elif 'sglang' in cmd_lower:
+                        logger.info(f"从命令行检测到SGLang框架: {pid}")
+                        return {
+                            'framework': 'SGLang',
+                            'raw_command': ps_output.strip(),
+                            'pid': pid
+                        }
+                    elif 'api_server.py' in cmd_lower and ('baichuan' in cmd_lower or 'qwen' in cmd_lower or 'chatglm' in cmd_lower):
+                        # 检测常见模型服务器
+                        framework = 'Unknown API Server'
+                        if 'baichuan' in cmd_lower:
+                            framework = 'Baichuan API'
+                        elif 'qwen' in cmd_lower:
+                            framework = 'Qwen API'
+                        elif 'chatglm' in cmd_lower:
+                            framework = 'ChatGLM API'
+                            
+                        logger.info(f"从命令行检测到{framework}框架: {pid}")
+                        return {
+                            'framework': framework,
+                            'raw_command': ps_output.strip(),
+                            'pid': pid
+                        }
+                    
+                    # 检查父进程
+                    parent_pid = None
+                    parts = ps_output.split()
+                    if len(parts) >= 3:
+                        parent_pid = parts[2]
+                        logger.info(f"获取进程{pid}的父进程: {parent_pid}")
                         
-                        # 分析进程命令行
-                        for line in ps_output.split('\n'):
-                            if str(pid) in line and 'grep' not in line:
-                                logger.debug(f"分析命令行: {line}")
+                        if parent_pid and parent_pid != "1":
+                            stdin, stdout, stderr = ssh.exec_command(f'ps -ef | grep {parent_pid} | grep -v grep')
+                            parent_output = stdout.read().decode()
+                            logger.debug(f"父进程{parent_pid}详细信息: {parent_output}")
+                            
+                            if parent_output.strip():
+                                parent_cmd_lower = parent_output.lower()
                                 
-                                # 检查命令行是否包含框架信息
-                                cmd_lower = line.lower()
-                                if 'vllm' in cmd_lower:
-                                    logger.info(f"从命令行检测到vLLM框架: {pid}")
-                                    return self._parse_vllm_info(line)
-                                elif 'sglang' in cmd_lower:
-                                    logger.info(f"从命令行检测到SGLang框架: {pid}")
+                                # 检查父进程是否是已知框架
+                                for keyword, framework_name in known_frameworks.items():
+                                    if keyword in parent_cmd_lower:
+                                        logger.info(f"从父进程检测到{framework_name}框架: {parent_pid}")
+                                        return {
+                                            'framework': framework_name,
+                                            'pid': parent_pid,
+                                            'raw_command': parent_output.strip()
+                                        }
+                                
+                                # 检查特定Python框架
+                                if 'vllm' in parent_cmd_lower:
+                                    logger.info(f"从父进程命令行检测到vLLM框架: {parent_pid}")
+                                    return self._parse_vllm_info(parent_output)
+                                elif 'sglang' in parent_cmd_lower:
+                                    logger.info(f"从父进程命令行检测到SGLang框架: {parent_pid}")
                                     return {
                                         'framework': 'SGLang',
-                                        'raw_command': line.strip(),
-                                        'pid': pid
+                                        'raw_command': parent_output.strip(),
+                                        'pid': parent_pid
                                     }
-                                
-                                # 如果直接检查命令行没找到，获取父进程
-                                parent_pid = None
-                                parts = line.split()
-                                if len(parts) >= 3:
-                                    parent_pid = parts[2]
-                                    logger.info(f"获取进程{pid}的父进程: {parent_pid}")
-                                    
-                                    if parent_pid and parent_pid != "1":
-                                        stdin, stdout, stderr = ssh.exec_command(f'ps -ef | grep {parent_pid}')
-                                        parent_output = stdout.read().decode()
-                                        logger.debug(f"父进程{parent_pid}详细信息: {parent_output}")
-                                        
-                                        # 分析父进程命令行
-                                        for parent_line in parent_output.split('\n'):
-                                            if str(parent_pid) in parent_line and 'grep' not in parent_line:
-                                                parent_cmd_lower = parent_line.lower()
-                                                
-                                                if 'vllm' in parent_cmd_lower:
-                                                    logger.info(f"从父进程命令行检测到vLLM框架: {parent_pid}")
-                                                    return self._parse_vllm_info(parent_line)
-                                                elif 'sglang' in parent_cmd_lower:
-                                                    logger.info(f"从父进程命令行检测到SGLang框架: {parent_pid}")
-                                                    return {
-                                                        'framework': 'SGLang',
-                                                        'raw_command': parent_line.strip(),
-                                                        'pid': parent_pid
-                                                    }
+                
+                # 如果未能识别框架，尝试获取更多进程信息
+                logger.info("常规方法未能识别框架，尝试获取所有GPU进程的完整命令行")
+                for pid, command in gpu_pids:
+                    stdin, stdout, stderr = ssh.exec_command(f'ps -o cmd= -p {pid}')
+                    cmd_output = stdout.read().decode().strip()
+                    if cmd_output:
+                        logger.debug(f"进程{pid}完整命令: {cmd_output}")
+                        cmd_lower = cmd_output.lower()
+                        
+                        # 再次检查已知框架关键字
+                        for keyword, framework_name in known_frameworks.items():
+                            if keyword in cmd_lower:
+                                logger.info(f"在完整命令行中检测到{framework_name}框架: {pid}")
+                                return {
+                                    'framework': framework_name,
+                                    'pid': pid,
+                                    'raw_command': cmd_output
+                                }
                 
                 # 如果未能识别框架，返回None
                 logger.warning("未能识别框架类型")
@@ -2142,7 +2227,7 @@ class BenchmarkTab(QWidget):
             
             # 框架类型设置
             framework_combo = QComboBox()
-            framework_options = ["Ollama", "llama.cpp", "vLLM", "SGLang", "Xinference", "赤兔", "其他"]
+            framework_options = ["Ollama", "llama.cpp", "vLLM", "SGLang", "Xinference", "赤兔", "text-generation-inference", "其他"]
             framework_combo.addItems(framework_options)
             
             # 框架命令行展示
@@ -2158,10 +2243,18 @@ class BenchmarkTab(QWidget):
                 
                 if framework_name:
                     detected_framework = framework_name
+                    # 检查框架是否在预定义选项中，如果不在，选择"其他"
+                    found = False
                     for i, option in enumerate(framework_options):
                         if option.lower() == framework_name.lower():
                             framework_combo.setCurrentIndex(i)
+                            found = True
                             break
+                    
+                    if not found and framework_name != "其他":
+                        # 如果没有匹配项，添加到列表中
+                        framework_combo.addItem(framework_name)
+                        framework_combo.setCurrentText(framework_name)
                 
                 # 显示原始命令
                 if 'raw_command' in framework_info:
@@ -2179,7 +2272,16 @@ class BenchmarkTab(QWidget):
                     cmd_text.setPlainText(model_info_text)
             
             # 添加框架选择和命令显示到布局
-            detected_label = QLabel(f"检测到的框架: {detected_framework if detected_framework else '未检测到'}")
+            if detected_framework:
+                detected_label = QLabel(f"检测到的框架: {detected_framework}")
+                detected_label.setStyleSheet("color: green; font-weight: bold;")
+            else:
+                detected_label = QLabel("未检测到框架，请手动选择")
+                detected_label.setStyleSheet("color: red; font-weight: bold;")
+                # 如果没有检测到框架，在命令行文本框中显示提示
+                cmd_text.setPlainText("系统未能自动识别GPU上运行的框架类型，请手动选择框架类型并完善模型信息。")
+                cmd_text.setStyleSheet("color: #666;")
+            
             framework_layout.addRow(detected_label)
             framework_layout.addRow("框架类型:", framework_combo)
             framework_layout.addRow("框架详情:", cmd_text)
@@ -2235,6 +2337,11 @@ class BenchmarkTab(QWidget):
             button_box.accepted.connect(dialog.accept)
             button_box.rejected.connect(dialog.reject)
             layout.addRow(button_box)
+            
+            # 添加提示标签，说明手动输入的重要性
+            note_label = QLabel("注意：所有信息都将记录在测试结果中，请确保信息准确。")
+            note_label.setStyleSheet("color: #666; font-style: italic;")
+            layout.addRow(note_label)
             
             if dialog.exec() == QDialog.DialogCode.Accepted:
                 return {

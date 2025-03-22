@@ -641,6 +641,18 @@ class BenchmarkManager:
                 avg_latency = 0
                 avg_throughput = 0
             
+            # 为每个测试结果添加字符数量信息和截断标志
+            for r in test_results:
+                # 添加输入和输出字符数量
+                input_text = r.get("input", "")
+                output_text = r.get("output", "")
+                r["input_chars"] = len(input_text)
+                r["output_chars"] = len(output_text)
+                
+                # 检查是否截断了输出（基于max_tokens=500的限制）
+                output_tokens = r.get("output_tokens", 0)
+                r["truncated"] = output_tokens >= 500  # 如果输出token数达到或接近500，认为被截断
+            
             # 计算每秒事务数（TPS）
             if total_time > 0:
                 tps = total_tests / total_time
@@ -704,6 +716,17 @@ class BenchmarkManager:
             
             # 计算总字节数（输入+输出字符总数）
             total_bytes = total_input_chars + total_output_chars
+            
+            # 计算截断的任务数量
+            truncated_tasks = sum(1 for r in test_results if r.get("truncated", False))
+            truncated_rate = truncated_tasks / total_tests if total_tests > 0 else 0
+            
+            # 计算字符/token比例
+            char_token_ratio = {
+                "input_ratio": total_input_chars / sum(r.get("input_tokens", 0) for r in test_results) if sum(r.get("input_tokens", 0) for r in test_results) > 0 else 0,
+                "output_ratio": total_output_chars / sum(r.get("output_tokens", 0) for r in test_results) if sum(r.get("output_tokens", 0) for r in test_results) > 0 else 0,
+                "total_ratio": total_chars / total_tokens if total_tokens > 0 else 0
+            }
             
             # 计算基于token的平均TPS (包括输入和输出token)
             avg_token_tps = 0
@@ -815,7 +838,10 @@ class BenchmarkManager:
                 "model": model,
                 "hardware_info": hardware_info,
                 "test_mode": test_mode,  # 保存测试模式，以便后续处理
-                "nickname": self.nickname  # 添加设备名称
+                "nickname": self.nickname,  # 添加设备名称
+                "truncated_tasks": truncated_tasks,
+                "truncated_rate": truncated_rate,
+                "char_token_ratio": char_token_ratio
             }
             
             # 保存测试模式，以便确定用户后续的询问是否上传

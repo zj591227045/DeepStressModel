@@ -527,6 +527,15 @@ class BenchmarkManager:
         # 获取数据集信息
         dataset_info = self.get_dataset_info()
         
+        # 确保model_params是字典类型
+        if model_params is None:
+            model_params = {}
+        elif not isinstance(model_params, dict):
+            model_params = dict(model_params)
+            
+        # 添加max_tokens限制
+        model_params["max_tokens"] = 500  # 限制返回token数量为500
+        
         # 添加数据集验证逻辑 - 严格要求必须更新或上传测试数据集
         if not hasattr(self, 'dataset_updated') or not self.dataset_updated:
             error_msg = "测试未开始：请先联网更新数据集或上传测试集，确保使用最新的测试数据"

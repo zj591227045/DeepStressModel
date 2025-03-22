@@ -156,6 +156,7 @@ class ProgressTracker:
                     "token_throughput": progress_info.get("token_throughput", 0),  # 显式传递token吞吐量
                     "input_tps": progress_info.get("input_tps", 0),  # 传递输入TPS
                     "output_tps": progress_info.get("output_tps", 0),  # 传递输出TPS
+                    "combined_tps": progress_info.get("combined_tps", 0),  # 传递综合TPS (输入+输出)
                     "avg_tps": progress_info.get("token_throughput", 0),  # 设置avg_tps等同于token吞吐量
                     
                     # 添加考虑并发数的TPS值 (每个实例的平均TPS)
@@ -214,6 +215,9 @@ class ProgressTracker:
                 input_tps = total_input_tokens / total_duration if total_duration > 0 else 0
                 output_tps = total_output_tokens / total_duration if total_duration > 0 else 0
                 
+                # 计算综合TPS (输入+输出tokens)
+                combined_tps = (total_input_tokens + total_output_tokens) / total_duration if total_duration > 0 else 0
+                
                 # 尝试从第一个测试结果中获取并发数
                 concurrency = 1
                 if test_results and len(test_results) > 0:
@@ -224,7 +228,7 @@ class ProgressTracker:
                 input_tps_per_instance = input_tps / concurrency if concurrency > 0 else 0
                 output_tps_per_instance = output_tps / concurrency if concurrency > 0 else 0
                 
-                logger.debug(f"TPS计算 - avg_token_tps: {avg_token_tps}, input_tps: {input_tps}, output_tps: {output_tps}")
+                logger.debug(f"TPS计算 - avg_token_tps: {avg_token_tps}, input_tps: {input_tps}, output_tps: {output_tps}, combined_tps: {combined_tps}")
                 logger.debug(f"每实例TPS计算 - avg_tps_per_instance: {avg_token_tps_per_instance}, input_tps_per_instance: {input_tps_per_instance}, output_tps_per_instance: {output_tps_per_instance}, 并发数: {concurrency}")
             else:
                 avg_latency = 0
@@ -232,6 +236,7 @@ class ProgressTracker:
                 avg_token_tps = 0
                 input_tps = 0
                 output_tps = 0
+                combined_tps = 0
                 
             # 统计文本信息
             total_input_chars = sum(len(r.get("input", "")) for r in test_results)
@@ -251,6 +256,7 @@ class ProgressTracker:
                 "token_throughput": avg_token_tps,
                 "input_tps": input_tps,  # 添加输入TPS
                 "output_tps": output_tps,  # 添加输出TPS
+                "combined_tps": combined_tps,  # 添加综合TPS
                 "avg_token_tps_per_instance": avg_token_tps_per_instance,  # 添加考虑并发数的平均TPS
                 "input_tps_per_instance": input_tps_per_instance,  # 添加考虑并发数的输入TPS
                 "output_tps_per_instance": output_tps_per_instance,  # 添加考虑并发数的输出TPS
@@ -289,6 +295,9 @@ class ProgressTracker:
             "total_tokens": 0,
             "total_bytes": 0,
             "token_throughput": 0,
+            "input_tps": 0,
+            "output_tps": 0, 
+            "combined_tps": 0,
             "status": "未开始"
         }
         # 发送重置状态

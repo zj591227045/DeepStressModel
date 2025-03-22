@@ -603,7 +603,7 @@ class BenchmarkTab(QWidget):
         self.result_table = QTableWidget()
         self.result_table.setColumnCount(9)
         self.result_table.setHorizontalHeaderLabels([
-            "会话ID", "数据集名称", "成功/总数", "成功率", "平均响应时间", "平均生成速度", "总字符数", "总时间", "平均每实例TPS"
+            "会话ID", "数据集名称", "成功/总数", "成功率", "平均响应时间", "平均生成速度", "总字符数", "总时间", "综合TPS"
         ])
         self.result_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         result_layout.addWidget(self.result_table)
@@ -1674,7 +1674,7 @@ class BenchmarkTab(QWidget):
                 "平均生成速度", 
                 "总字符数", 
                 "总时间", 
-                "平均输出TPS"
+                "综合TPS"
             ])
 
     def update_ui_buttons(self):
@@ -1806,8 +1806,8 @@ class BenchmarkTab(QWidget):
                     self.result_table.setItem(row, 7, QTableWidgetItem(duration_text))  # 总时间
                     
                     # 平均TPS（如果可用）
-                    avg_tps = dataset_stats.get('output_tps', dataset_stats.get('avg_tps', 0))  # 优先使用输出TPS，如果没有则用平均TPS
-                    self.result_table.setItem(row, 8, QTableWidgetItem(f"{avg_tps:.2f}"))  # 平均输出TPS
+                    avg_tps = dataset_stats.get('combined_tps', dataset_stats.get('avg_tps', 0))  # 优先使用综合TPS，如果没有则用平均TPS
+                    self.result_table.setItem(row, 8, QTableWidgetItem(f"{avg_tps:.2f}"))  # 综合TPS
                 
                 # 计算总进度百分比
                 if total_items > 0:

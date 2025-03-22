@@ -46,7 +46,7 @@ DEFAULT_CONFIG = {
         }
     },
     "benchmark": {
-        "server_url": "http://localhost:8083",  # 跑分服务器地址
+        "server_url": "https://tops.ginease.cn:4433",  # 跑分服务器地址
         "connect_timeout": 10,                                  # 连接超时时间（秒）
         "max_retries": 3,                                       # 最大重试次数
         "enabled": True,                                        # 是否启用跑分功能

@@ -217,6 +217,21 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
             # 实际调用API
             async with aiohttp.ClientSession() as session:
                 try:
+                    # 获取API密钥
+                    api_key = model_config.get("api_key", "")
+                    
+                    # 构建请求头，包含认证信息
+                    headers = {
+                        "Content-Type": "application/json"
+                    }
+                    
+                    # 如果有API密钥，添加认证头部
+                    if api_key:
+                        headers["Authorization"] = f"Bearer {api_key}"
+                        logger.debug(f"测试项 #{index} 使用API密钥认证: {api_key[:4]}***")
+                    else:
+                        logger.warning(f"测试项 #{index} 未提供API密钥，API请求可能会被拒绝")
+                    
                     # 记录更详细的API调用信息
                     logger.debug(f"测试项 #{index} 发送请求到: {api_url}")
                     logger.debug(f"测试项 #{index} 请求数据: {json.dumps(request_data)[:100]}...")
@@ -224,7 +239,7 @@ async def execute_test(test_data: List[Dict[str, Any]], config: Dict[str, Any]) 
                     async with session.post(
                         api_url, 
                         json=request_data,
-                        headers={"Content-Type": "application/json"},
+                        headers=headers,  # 使用包含认证信息的请求头
                         timeout=api_timeout  # 使用从config中获取的超时设置
                     ) as response:
                         # 记录结束时间

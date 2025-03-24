@@ -5,8 +5,10 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGroupBox,
     QLabel, QLineEdit, QSpinBox, QPushButton,
     QListWidget, QMessageBox, QFormLayout,
-    QDialog, QCheckBox, QDoubleSpinBox, QListWidgetItem
+    QDialog, QCheckBox, QDoubleSpinBox, QListWidgetItem,
+    QPushButton,QTabWidget,QFileDialog
 )
+from PyQt6.QtGui import QAction
 from PyQt6.QtCore import Qt, pyqtSignal
 from src.utils.logger import setup_logger
 from src.utils.config import config
@@ -14,6 +16,7 @@ from src.monitor.gpu_monitor import GPUMonitorManager
 from src.data.db_manager import db_manager
 from src.monitor.gpu_monitor import gpu_monitor
 from src.gui.i18n.language_manager import LanguageManager
+import os
 
 logger = setup_logger("gpu_settings")
 
@@ -50,11 +53,23 @@ class ServerEditDialog(QDialog):
         # 用户名
         self.username_input = QLineEdit()
         layout.addRow(self.tr('username') + ":", self.username_input)
+
+        
+        # 认证方式
+        tab_layout = QTabWidget()
         
         # 密码
         self.password_input = QLineEdit()
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
-        layout.addRow(self.tr('password') + ":", self.password_input)
+        tab_layout.addTab(self.password_input, self.tr('pwd_auth'))
+
+        # 私钥文件路径
+        self.pkey_path_btn = QPushButton()
+        self.pkey_path_btn.setText(self.tr('sel_pkey_file'))  # 设置按钮文本
+        self.pkey_path_btn.clicked.connect(self.get_pkey_path)
+        
+        tab_layout.addTab(self.pkey_path_btn, self.tr('pkey_auth'))
+        layout.addRow(self.tr('auth_mode') + ":", tab_layout)
         
         # 按钮
         button_box = QHBoxLayout()
@@ -67,6 +82,15 @@ class ServerEditDialog(QDialog):
         layout.addRow("", button_box)
         
         self.setLayout(layout)
+
+    def get_pkey_path(self):
+        """获取私钥文件路径"""
+        file_dialog = QFileDialog()
+        file_dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
+        file_dialog.setNameFilter("All Files (*.*)")
+        if file_dialog.exec():
+            self.pkey_path_btn.setText(file_dialog.selectedFiles()[0])
+        
     
     def load_server_data(self):
         """加载服务器数据"""
@@ -75,15 +99,21 @@ class ServerEditDialog(QDialog):
         self.port_input.setValue(self.server_data.get("port", 22))
         self.username_input.setText(self.server_data.get("username", ""))
         self.password_input.setText(self.server_data.get("password", ""))
+        self.pkey_path_btn.setText(self.server_data.get("pkey_path", ""))
     
     def get_server_data(self) -> dict:
         """获取服务器数据"""
+        pkey_path = self.pkey_path_btn.text().strip()
+        if pkey_path and not os.path.exists(pkey_path):
+            logger.warning(f"私钥文件不存在: {pkey_path}")
+            pkey_path = ""
         return {
             "name": self.name_input.text().strip(),
             "host": self.host_input.text().strip(),
             "port": self.port_input.value(),
             "username": self.username_input.text().strip(),
-            "password": self.password_input.text().strip()
+            "password": self.password_input.text().strip(),
+            "pkey_path": pkey_path,
         }
     
     def tr(self, key):
@@ -95,7 +125,7 @@ class ServerEditDialog(QDialog):
         try:
             data = self.get_server_data()
             monitor = GPUMonitorManager()
-            monitor.setup_monitor(data["host"], data["username"], data["password"], data["port"])
+            monitor.setup_monitor(data["host"], data["username"], data["password"], data["port"], data["pkey_path"])
             stats = monitor.get_stats()
             
             if stats:

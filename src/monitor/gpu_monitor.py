@@ -105,11 +105,12 @@ class GPUStats:
 
 class GPUMonitor:
     """远程GPU监控类"""
-    def __init__(self, host: str, username: str, password: str, port: int = 22):
+    def __init__(self, host: str, username: str, password: str, port: int = 22, pkey: str = ""):
         self.host = host
         self.username = username
         self.password = password
         self.port = port
+        self.pkey = pkey
         self.client = None
         self.max_retries = 3  # 最大重试次数
         self.retry_interval = 2  # 重试间隔（秒）
@@ -130,13 +131,26 @@ class GPUMonitor:
                 
                 self.client = paramiko.SSHClient()
                 self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-                self.client.connect(
-                    self.host,
-                    port=self.port,
-                    username=self.username,
-                    password=self.password,
-                    timeout=5
-                )
+                logger.debug(self.pkey)
+                if self.pkey:
+                    private_key = paramiko.RSAKey.from_private_key_file(self.pkey)
+                    self.client.connect(
+                        self.host,
+                        port=self.port,
+                        username=self.username,
+                        pkey=private_key,
+                        timeout=5
+                    )
+                elif self.password:
+                    self.client.connect(
+                        self.host,
+                        port=self.port,
+                        username=self.username,
+                        password=self.password,
+                        timeout=5
+                    )
+                else:
+                    raise ValueError("Neither password nor private key provided")
                 logger.info(f"成功连接到远程服务器: {self.host}:{self.port}")
                 return True
             except Exception as e:
@@ -428,8 +442,9 @@ class GPUMonitorManager:
                 self.setup_monitor(
                     server["host"],
                     server["username"],
-                    server["password"],
-                    server.get("port", 22)  # 使用默认端口22
+                    server.get("password", ""),
+                    server.get("port", 22),  # 使用默认端口22
+                    server.get("pkey_path", "")  # 使用默认私钥路径
                 )
                 logger.info(f"GPU监控器初始化成功: {server['host']}:{server.get('port', 22)}")
             else:
@@ -439,7 +454,7 @@ class GPUMonitorManager:
             logger.error(f"初始化GPU监控器失败: {e}")
             self.monitor = None
     
-    def setup_monitor(self, host: str, username: str, password: str, port: int = 22):
+    def setup_monitor(self, host: str, username: str, password: str, port: int = 22, pkey: str = ""):
         """设置GPU监控器
         
         Args:
@@ -447,9 +462,10 @@ class GPUMonitorManager:
             username: 用户名
             password: 密码
             port: SSH端口
+            pkey: 私钥路径（可选）
         """
         try:
-            self.monitor = GPUMonitor(host, username, password, port)
+            self.monitor = GPUMonitor(host, username, password, port, pkey)
             logger.info(f"GPU监控器设置成功: {host}:{port}")
         except Exception as e:
             logger.error(f"设置GPU监控器失败: {e}")

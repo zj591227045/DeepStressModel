@@ -16,6 +16,7 @@ from src.monitor.gpu_monitor import GPUMonitorManager
 from src.data.db_manager import db_manager
 from src.monitor.gpu_monitor import gpu_monitor
 from src.gui.i18n.language_manager import LanguageManager
+import os
 
 logger = setup_logger("gpu_settings")
 
@@ -102,13 +103,17 @@ class ServerEditDialog(QDialog):
     
     def get_server_data(self) -> dict:
         """获取服务器数据"""
+        pkey_path = self.pkey_path_btn.text().strip()
+        if pkey_path and not os.path.exists(pkey_path):
+            logger.warning(f"私钥文件不存在: {pkey_path}")
+            pkey_path = ""
         return {
             "name": self.name_input.text().strip(),
             "host": self.host_input.text().strip(),
             "port": self.port_input.value(),
             "username": self.username_input.text().strip(),
             "password": self.password_input.text().strip(),
-            "pkey_path": self.pkey_path_btn.text().strip(),
+            "pkey_path": pkey_path,
         }
     
     def tr(self, key):

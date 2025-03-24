@@ -236,6 +236,10 @@ TRANSLATIONS = {
         'select_result_first': 'Please select a result first',
         'file_not_exist': 'Result file does not exist',
         'load_error': 'Failed to load result file',
+        'auth_mode': 'Auth mode',
+        'pkey_auth': 'Private Key',
+        'sel_pkey_file': 'Select Private Key File',
+        'pwd_auth': 'Password',
     },
     'zh_CN': {
         'settings': '设置',
@@ -474,6 +478,10 @@ TRANSLATIONS = {
         'select_result_first': '请先选择一个结果',
         'file_not_exist': '结果文件不存在',
         'load_error': '加载结果文件失败',
+        'auth_mode': '认证方式',
+        'pkey_auth': '私钥认证',
+        'sel_pkey_file': '选择私钥文件',
+        'pwd_auth': '密码认证',
     },
     'fr': {
         'settings': 'Paramètres',

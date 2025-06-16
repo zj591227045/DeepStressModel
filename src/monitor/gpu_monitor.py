@@ -175,7 +175,7 @@ class GPUMonitor:
         """获取网络速度"""
         try:
             # 获取当前网络数据
-            net_command = "cat /proc/net/dev | grep -E 'eth0|ens|enp' | head -n1 | awk '{print $2,$10}'"
+            net_command = "cat /proc/net/dev | grep -E 'eth0|ens|enp|wlp|wlan' | head -n1 | awk '{print $2,$10}'"
             net_output = self._execute_command(net_command)
             if not net_output:
                 return {'receive': 0, 'transmit': 0, 'receive_rate': 0.1, 'send_rate': 0.1}
@@ -315,7 +315,7 @@ class GPUMonitor:
             
             # 获取网络IO信息
             stdin, stdout, stderr = self.client.exec_command(
-                "cat /proc/net/dev | grep -e eth0 -e ens -e eno -e enp | awk '{print $2,$10}'"
+                r"cat /proc/net/dev | grep -E '\b(eth|ens|enp|eno|wl|wlp|wlan)[a-z0-9]*\b:' | awk '{print $2,$10}' || echo '0 0'"
             )
             net_output = stdout.read().decode().strip().split()
             if len(net_output) >= 2:

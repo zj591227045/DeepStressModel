@@ -195,7 +195,7 @@ class GPUSettingsWidget(QWidget):
         self.details_label = QLabel()
         self.details_label.setWordWrap(True)
         self.details_label.setTextFormat(Qt.TextFormat.RichText)
-        self.details_label.setStyleSheet("QLabel { background-color: #f0f0f0; padding: 5px; border-radius: 3px; }")
+        self.details_label.setStyleSheet("QLabel { background-color: #707070; padding: 5px; border-radius: 3px; }")
         group_layout.addWidget(self.details_label)
         
         self.server_group.setLayout(group_layout)
